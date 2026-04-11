@@ -171,22 +171,17 @@ Détail complet → voir `./orchestration/_legacy.md`.
 
 -----
 
-## §17 Todo & Session
+## §17 Todo & Session → `./runtime/todo-session.md`
 
-Pattern obligatoire si > 3 fichiers ou agents multiples :
-
-```
-[ ] Analyser  [→] Implémenter  [ ] Tester  [ ] Commit
-```
-
-Reprise de session : lire TodoRead → reprendre au dernier `[→]`.
+Tracking obligatoire si > 3 fichiers ou agents multiples. Reprise de session :
+dernier `[→]` ou premier `[ ]` pending. Détail → satellite.
 
 -----
 
-## §18 Extended Thinking
+## §18 Extended Thinking → `./runtime/extended-thinking.md`
 
-Default cible : `MAX_THINKING_TOKENS: 10000`.
-`/effort low` tâches simples · `/effort medium` standard · `/effort high` architecture/debug critique.
+Défaut : `MAX_THINKING_TOKENS: 10000`. `/effort low | medium | high`.
+Monter en `high` uniquement pour architecture, debug complexe, décision irréversible.
 
 -----
 
