@@ -1,0 +1,49 @@
+{
+  "name": "claude-atelier",
+  "version": "0.1.0",
+  "description": "Opinionated Claude Code configuration: bilingual runtime rules, orchestration patterns, autonomy modes, security gates and stack-specific satellites. Installable via CLI.",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "anthropic",
+    "config",
+    "ai",
+    "agent",
+    "prompt-engineering",
+    "llm",
+    "developer-tools"
+  ],
+  "author": "Malik Karaoui",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/malikkaraoui/claude-atelier.git"
+  },
+  "bugs": {
+    "url": "https://github.com/malikkaraoui/claude-atelier/issues"
+  },
+  "homepage": "https://github.com/malikkaraoui/claude-atelier#readme",
+  "type": "module",
+  "bin": {
+    "claude-atelier": "./bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "scripts/",
+    "hooks/",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "lint": "echo 'Lint not yet implemented (P4)' && exit 0",
+    "test": "echo 'Tests not yet implemented (P4)' && exit 0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
