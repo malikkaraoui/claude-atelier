@@ -140,14 +140,15 @@ Déclenchement : après feature, audit global, blocage.
 
 ```markdown
 # Code Review
-## Problèmes identifiés
-## Angles morts détectés
-## Contradiction active  ← produire ≥ 1 critique même si le code semble correct
+## Problèmes identifiés          ← vides autorisés si rien de réel
+## Angles morts détectés         ← vides autorisés si rien de réel
 ## Actions correctives
-## Refactoring proposé
+## Refactoring proposé           ← optionnel
 ```
 
 Règle : analyser avant corriger. Isoler la cause. Ne pas itérer sans changer d’approche.
+Si le code est correct : le dire clairement, sections vides = signal de qualité, pas une faiblesse.
+**§5 prime** : ne jamais inventer une critique pour remplir une section.
 
 -----
 
