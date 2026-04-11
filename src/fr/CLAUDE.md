@@ -119,11 +119,11 @@ Principes : composition > héritage, injection de dépendances, pas de monolithe
 
 -----
 
-## §10 Standards par langage
+## §10 Standards par stack → `../stacks/`
 
-**JS/TS** : fonctions pures, immutabilité, typage strict (zéro `any`), `map/filter/reduce` > boucles impératives.
-**Python** : PEP8, typage explicite `def fn(x: int) -> str`, lisibilité > cleverness.
-**Java** : `Optional` (jamais `null`), `Consumer/Function/Supplier`, exceptions toujours loggées.
+Chargement conditionnel selon §0 « Stack » du projet courant. Stacks disponibles :
+`javascript` · `python` · `java` · `react-vite` · `firebase` · `docker` · `ollama`.
+Règle : charger uniquement les stacks présentes dans le projet.
 
 -----
 
