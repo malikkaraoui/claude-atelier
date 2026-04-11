@@ -127,20 +127,10 @@ Couvrir : nominal + edge cases + erreurs.
 
 -----
 
-## §12 Code Review
+## §12 Code Review → `./runtime/code-review.md`
 
 Déclenchement : après feature, audit global, blocage.
-
-```markdown
-# Code Review
-## Problèmes identifiés          ← vides autorisés si rien de réel
-## Angles morts détectés         ← vides autorisés si rien de réel
-## Actions correctives
-## Refactoring proposé           ← optionnel
-```
-
-Règle : analyser avant corriger. Isoler la cause. Ne pas itérer sans changer d’approche.
-Si le code est correct : le dire clairement, sections vides = signal de qualité, pas une faiblesse.
+Template + discipline + anti-patterns → satellite.
 **§5 prime** : ne jamais inventer une critique pour remplir une section.
 
 -----
