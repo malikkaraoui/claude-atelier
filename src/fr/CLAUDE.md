@@ -1,241 +1,140 @@
-> Dernière mise à jour : 2026-04-10 15:20:00
-> ⚠️ Si heure système indisponible : estimation interne — signaler l’incertitude explicitement
-
 # CLAUDE.md — Core Runtime
 
------
+> Cible ≤ 150 lignes · rechargé à chaque message · 2026-04-12 · détails hors core → `./rules/`, `./runtime/`, `./orchestration/`, `./autonomy/`, `./security/`, `./ecosystem/`, `../stacks/`, `../templates/`
 
 ## §0 Contexte projet actif
 
-> Mettre à jour à chaque projet ou changement de phase.
+| Clé | Valeur |
+| --- | --- |
+| Projet courant | — |
+| Phase | — |
+| Stack | React/Vite · Firebase · Python · Java · Docker · Ollama |
+| Repo | — |
+| Conventions | — |
+| Endpoints actifs | — |
+| Contraintes métier | — |
+| MCPs actifs | — |
+| Gate pré-push | `bash scripts/pre-push-gate.sh` |
 
-|Clé               |Valeur                                                 |
-|------------------|-------------------------------------------------------|
-|Projet courant    |—                                                      |
-|Phase             |—                                                      |
-|Stack             |React/Vite · Firebase · Python · Java · Docker · Ollama|
-|Repo              |—                                                      |
-|Conventions       |—                                                      |
-|Endpoints actifs  |—                                                      |
-|Contraintes métier|—                                                      |
-|MCPs actifs       |—                                                      |
-|Gate pré-push     |`bash scripts/pre-push-gate.sh`                        |
-
-
-> Mise à jour : “Mets à jour §0 : [ce qui change]” → Claude édite + commit atomique.
-
------
+Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + commit atomique.
 
 ## §1 Horodatage
 
-```bash
-# ~/.zshrc
-alias claude='~/scripts/inject_date.sh ~/.claude/CLAUDE.md && claude'
-```
-
-Format : `[YYYY-MM-DD HH:MM:SS]` en tête de chaque réponse.
-Fallback si script indisponible : indiquer `[date estimée — système non accessible]`.
-
------
+Format `[YYYY-MM-DD HH:MM:SS]` en tête de réponse si injecté. Sinon `[date estimée]`.
 
 ## §2 Langue & Ton
 
 Français. Direct. Actionnable. Zéro pédagogie inutile.
 
------
-
 ## §3 Flow de traitement
 
-```
-Explore → Plan → Implement → Verify
-```
+**Explore → Plan → Implement → Verify.**
 
-- **Explore** : lire uniquement les fichiers concernés (subagent Haiku si large)
-- **Plan** : lister impacts et dépendances avant d’écrire
+- **Explore** : fichiers concernés uniquement (subagent Haiku si large)
+- **Plan** : impacts + dépendances avant d'écrire
 - **Implement** : minimal viable
 - **Verify** : tests + gate pré-push
 
-`Shift+Tab × 2` = Plan Mode avant opération coûteuse.
-
-**Mode rapide autorisé si :** < 2 fichiers impactés ET pas de logique critique.
-→ Dans ce cas : Implement → Verify uniquement. Todo et gate allégée.
-
------
+Mode rapide (< 2 fichiers, non critique) : Implement → Verify seulement. `Shift+Tab × 2` = Plan Mode.
 
 ## §4 Format de réponse
 
-1. Solution / Plan — en premier
-1. Détails, variantes, pièges
-1. Next steps — toujours en fin
+1. Solution / Plan en premier
+2. Détails, variantes, pièges
+3. Next steps en fin
 
 Outils : checklists, tableaux, blocs copier-coller.
 
------
+## §5 Anti-hallucination — règle absolue
 
-## §5 Anti-hallucination (règle n°1 absolue)
-
-Interdit d’inventer : faits, commandes, API, options, chiffres, comportements non vus.
-
-Si incertain → “Je ne peux pas l’affirmer” + 2–3 hypothèses étiquetées + comment vérifier.
-Info récente/instable → signaler explicitement.
-
------
+Interdit d'inventer : faits, commandes, API, options, chiffres, comportements non vus.
+Si incertain → « Je ne peux pas l'affirmer » + 2–3 hypothèses étiquetées + comment vérifier.
+Info récente ou instable → signaler explicitement.
 
 ## §6 Gestion des erreurs
 
-- Une tentative corrective directe
-- Échec → changer d’approche, pas itérer à l’identique
-- Produire : hypothèses + points de rupture + stratégie alternative
-
------
+Une tentative corrective directe. Échec → changer d'approche, jamais itérer à l'identique. Produire hypothèses + points de rupture + stratégie alternative.
 
 ## §7 Qualité du code
 
-Prêt prod, pas sur-ingénié : validation d’inputs, erreurs propres, logs utiles, commentaires si non trivial.
-Si plusieurs approches → recommander la plus robuste, 2 lignes de justification max.
-
------
+Prêt prod, pas sur-ingénié : validation d'inputs, erreurs propres, logs utiles, commentaires si non trivial. Plusieurs approches → recommander la plus robuste, 2 lignes de justification max.
 
 ## §8 Anti-patterns
 
-Refus : duplication, sur-ingénierie, optimisation prématurée, fonctions > 30 lignes sans raison, logique dispersée.
-Règle : logique réutilisée ≥ 2 fois → extraire dans `/core` ou `/utils`.
-
------
+Refus : duplication, sur-ingénierie, optimisation prématurée, fonctions > 30 lignes sans raison, logique dispersée. Règle : logique réutilisée ≥ 2 fois → extraire.
 
 ## §9 Architecture → `../templates/project-structure.md`
 
-Template par défaut : `/core` · `/modules` · `/services` · `/utils` · `/tests`.
-Règle d'affectation : réutilisé ≥ 2 fois → `/core` ou `/utils`.
-Principes : composition > héritage, injection de dépendances, pas de monolithes.
-Projets opinionnés (Next.js, Django…) → suivre la convention du framework.
-
------
+Template par défaut : `/core` · `/modules` · `/services` · `/utils` · `/tests`. Projets opinionnés (Next.js, Django…) → suivre la convention du framework.
 
 ## §10 Standards par stack → `../stacks/`
 
-Chargement conditionnel selon §0 « Stack » du projet courant. Stacks disponibles :
-`javascript` · `python` · `java` · `react-vite` · `firebase` · `docker` · `ollama`.
-Règle : charger uniquement les stacks présentes dans le projet.
-
------
+Chargement conditionnel selon §0 « Stack ». Disponibles : `javascript` · `python` · `java` · `react-vite` · `firebase` · `docker` · `ollama`.
 
 ## §11 Tests
 
-Obligatoires si : logique métier, transformation, comportement critique.
-Couvrir : nominal + edge cases + erreurs.
-
------
+Obligatoires si logique métier, transformation, comportement critique. Couvrir nominal + edge cases + erreurs.
 
 ## §12 Code Review → `./runtime/code-review.md`
 
-Déclenchement : après feature, audit global, blocage.
-Template + discipline + anti-patterns → satellite.
-**§5 prime** : ne jamais inventer une critique pour remplir une section.
-
------
+Déclenchement : après feature, audit global, blocage. **§5 prime** : jamais de critique inventée pour remplir une section.
 
 ## §13 Git Workflow
 
-```bash
-git add . && git commit -m "message en français" && git push
-```
-
-Règles : commits atomiques, messages français actionnables, jamais signer, checkpoint avant action risquée.
-`git push` toujours précédé de la gate (§24 → `./security/_legacy.md`).
-
------
+Commits atomiques, messages en français, **jamais signer** (pas de trailer `Co-Authored-By`). Checkpoint avant action risquée. `git push` toujours précédé de la gate (§24).
 
 ## §14 Cloud / CI-CD
 
 Stateless, idempotent, secrets externalisés, IaC, fail fast, tests locaux avant déploiement.
 
------
-
 ## §15 Token Management → `../templates/settings.json`
 
-> Règle fondamentale : ce fichier est rechargé à chaque message. Cible : ≤ 150 lignes.
-> Détails → satellites `./rules/`, `./runtime/`, `./orchestration/`, `./autonomy/`, `./security/`, `./ecosystem/` — jamais inline ici.
-
-Settings consolidé (env + permissions + budget) : `../templates/settings.json`.
-Routing : Haiku → exploration / Sonnet → standard / Opus → architecture critique uniquement.
-Compaction : `/compact` après explore, après feature, avant switch de contexte.
-
------
+Settings consolidé (env + permissions + budget). Routing : Haiku → exploration / Sonnet → standard / Opus → architecture critique. Compaction : `/compact` après explore, après feature, avant switch de contexte.
 
 ## §16 Orchestration → `./orchestration/_legacy.md`
 
-3 modes : Fork (subagent isolé) · Teammate (peer-to-peer) · Worktree (branche git isolée).
-Règle : refactor > 3 fichiers → toujours `isolation: worktree`.
-Détail complet → voir `./orchestration/_legacy.md`.
-
------
+3 modes : Fork · Teammate · Worktree. Refactor > 3 fichiers → toujours `isolation: worktree`.
 
 ## §17 Todo & Session → `./runtime/todo-session.md`
 
-Tracking obligatoire si > 3 fichiers ou agents multiples. Reprise de session :
-dernier `[→]` ou premier `[ ]` pending. Détail → satellite.
-
------
+Tracking obligatoire si > 3 fichiers ou agents multiples. Reprise : dernier `[→]` ou premier `[ ]` pending.
 
 ## §18 Extended Thinking → `./runtime/extended-thinking.md`
 
-Défaut : `MAX_THINKING_TOKENS: 10000`. `/effort low | medium | high`.
-Monter en `high` uniquement pour architecture, debug complexe, décision irréversible.
+Défaut `MAX_THINKING_TOKENS: 10000`. `/effort low | medium | high`. `high` uniquement pour architecture, debug complexe, décision irréversible.
 
------
+## §19 MCP → `./orchestration/_legacy.md`
 
-## §19 MCP
-
-Charger uniquement les MCPs nécessaires. Lister dans §0. Purger en fin de session.
-Trop de MCPs : fenêtre 200k → ~70k. Détail → `./orchestration/_legacy.md`.
-
------
+Charger uniquement les MCPs nécessaires. Lister dans §0. Purger en fin de session. Trop de MCPs : fenêtre 200k → ~70k.
 
 ## §20 Mémoire & Évolution
 
-Ce fichier évolue sur instruction explicite. Ce qui ne change jamais sans validation : §5 et §21.
+Ce fichier évolue sur instruction explicite. Immuables sans validation : §5, §21, §22.
 
-|Événement      |Section     |
-|---------------|------------|
-|Nouveau projet |§0          |
-|Nouvel endpoint|§0          |
-|Décision archi |§9 + note §0|
-|MCP ajouté     |§0 + §19    |
-
------
+| Événement | Section |
+| --- | --- |
+| Nouveau projet | §0 |
+| Nouvel endpoint | §0 |
+| Décision archi | §9 + note §0 |
+| MCP ajouté | §0 + §19 |
 
 ## §21 Hiérarchie des règles
 
-```
-1. §5  Anti-hallucination       → absolu
-2. §22 Secrets & Sécurité Git   → absolu
+```text
+1. §5  Anti-hallucination        → absolu
+2. §22 Secrets & Sécurité Git    → absolu
 3.     Contrat front/back        → sans validation explicite
-4. §7  Qualité / conventions    → systématique
-5. §15 Optimisation tokens      → si 1–4 satisfaits
+4. §7  Qualité / conventions     → systématique
+5. §15 Optimisation tokens       → si 1-4 satisfaits
 ```
-
------
 
 ## §22 Secrets & Sécurité Git → `./security/_legacy.md`
 
-**Résumé non négociable :**
-
-- Jamais de clé/token en dur dans le code
-- `.gitignore` + `.claudeignore` obligatoires avant tout premier commit
-- `git push` interdit sans gate pré-push
-- Pattern suspect détecté → stopper et signaler
-- Détail complet + procédure urgence → `./security/_legacy.md`
-
------
+Non négociable : jamais de clé/token en dur, `.gitignore` + `.claudeignore` obligatoires avant premier commit, `git push` interdit sans gate, pattern suspect → stopper et signaler.
 
 ## §23 Autonomie & Mode Nuit → `./autonomy/_legacy.md`
 
-Plan Pro → `acceptEdits` + allow/deny list (auto mode = Team/Enterprise uniquement).
-`maxBudgetUsd` toujours défini. `git push` toujours en `deny`.
-Détail complet → `./autonomy/_legacy.md`.
-
------
+Plan Pro → `acceptEdits` + allow/deny list. `maxBudgetUsd` toujours défini. `git push` toujours en `deny`.
 
 ## §24 Pre-push Gate → `./security/_legacy.md`
 
@@ -243,10 +142,7 @@ Détail complet → `./autonomy/_legacy.md`.
 bash scripts/pre-push-gate.sh
 ```
 
-5 étapes : secrets → fichiers sensibles → lint → build → tests.
-Jamais de `--no-verify`. Détail + script → `./security/_legacy.md`.
-
------
+5 étapes : secrets → fichiers sensibles → lint → build → tests. Jamais de `--no-verify`.
 
 ## §25 Inter-agents
 
