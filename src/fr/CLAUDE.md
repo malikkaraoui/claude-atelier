@@ -103,19 +103,12 @@ Règle : logique réutilisée ≥ 2 fois → extraire dans `/core` ou `/utils`.
 
 -----
 
-## §9 Architecture
+## §9 Architecture → `../templates/project-structure.md`
 
-```
-/core       → logique métier pure
-/modules    → fonctionnalités isolées
-/services   → I/O, APIs, infra
-/utils      → helpers réutilisables
-/tests      → couverture métier
-/docs/claude → règles externalisées (voir ci-dessous)
-```
-
-Règle d’affectation : réutilisé ≥ 2 fois → `/core` ou `/utils`.
+Template par défaut : `/core` · `/modules` · `/services` · `/utils` · `/tests`.
+Règle d'affectation : réutilisé ≥ 2 fois → `/core` ou `/utils`.
 Principes : composition > héritage, injection de dépendances, pas de monolithes.
+Projets opinionnés (Next.js, Django…) → suivre la convention du framework.
 
 -----
 
