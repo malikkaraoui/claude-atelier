@@ -162,25 +162,13 @@ Stateless, idempotent, secrets externalisés, IaC, fail fast, tests locaux avant
 
 -----
 
-## §15 Token Management
+## §15 Token Management → `../templates/settings.json`
 
-> Règle fondamentale : ce fichier est rechargé à chaque message. Cible : < 200 lignes.
+> Règle fondamentale : ce fichier est rechargé à chaque message. Cible : ≤ 150 lignes.
 > Détails → satellites `./rules/`, `./runtime/`, `./orchestration/`, `./autonomy/`, `./security/`, `./ecosystem/` — jamais inline ici.
 
-```json
-{
-  "model": "sonnet",
-  "env": {
-    "MAX_THINKING_TOKENS": "10000",
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50",
-    "CLAUDE_CODE_SUBAGENT_MODEL": "haiku",
-    "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1"
-  }
-}
-```
-
+Settings consolidé (env + permissions + budget) : `../templates/settings.json`.
 Routing : Haiku → exploration / Sonnet → standard / Opus → architecture critique uniquement.
-Caveman : `npx skills add JuliusBrussee/caveman` → `/caveman full`.
 Compaction : `/compact` après explore, après feature, avant switch de contexte.
 
 -----
