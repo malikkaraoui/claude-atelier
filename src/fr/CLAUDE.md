@@ -159,7 +159,7 @@ git add . && git commit -m "message en français" && git push
 ```
 
 Règles : commits atomiques, messages français actionnables, jamais signer, checkpoint avant action risquée.
-`git push` toujours précédé de la gate (§24 → `docs/claude/security.md`).
+`git push` toujours précédé de la gate (§24 → `./security/_legacy.md`).
 
 -----
 
@@ -172,7 +172,7 @@ Stateless, idempotent, secrets externalisés, IaC, fail fast, tests locaux avant
 ## §15 Token Management
 
 > Règle fondamentale : ce fichier est rechargé à chaque message. Cible : < 200 lignes.
-> Détails → `/docs/claude/` — jamais inline ici.
+> Détails → satellites `./rules/`, `./runtime/`, `./orchestration/`, `./autonomy/`, `./security/`, `./ecosystem/` — jamais inline ici.
 
 ```json
 {
@@ -192,11 +192,11 @@ Compaction : `/compact` après explore, après feature, avant switch de contexte
 
 -----
 
-## §16 Orchestration → `docs/claude/orchestration.md`
+## §16 Orchestration → `./orchestration/_legacy.md`
 
 3 modes : Fork (subagent isolé) · Teammate (peer-to-peer) · Worktree (branche git isolée).
 Règle : refactor > 3 fichiers → toujours `isolation: worktree`.
-Détail complet → voir `/docs/claude/orchestration.md`.
+Détail complet → voir `./orchestration/_legacy.md`.
 
 -----
 
@@ -222,7 +222,7 @@ Default cible : `MAX_THINKING_TOKENS: 10000`.
 ## §19 MCP
 
 Charger uniquement les MCPs nécessaires. Lister dans §0. Purger en fin de session.
-Trop de MCPs : fenêtre 200k → ~70k. Détail → `/docs/claude/orchestration.md`.
+Trop de MCPs : fenêtre 200k → ~70k. Détail → `./orchestration/_legacy.md`.
 
 -----
 
@@ -251,7 +251,7 @@ Ce fichier évolue sur instruction explicite. Ce qui ne change jamais sans valid
 
 -----
 
-## §22 Secrets & Sécurité Git → `docs/claude/security.md`
+## §22 Secrets & Sécurité Git → `./security/_legacy.md`
 
 **Résumé non négociable :**
 
@@ -259,26 +259,26 @@ Ce fichier évolue sur instruction explicite. Ce qui ne change jamais sans valid
 - `.gitignore` + `.claudeignore` obligatoires avant tout premier commit
 - `git push` interdit sans gate pré-push
 - Pattern suspect détecté → stopper et signaler
-- Détail complet + procédure urgence → `/docs/claude/security.md`
+- Détail complet + procédure urgence → `./security/_legacy.md`
 
 -----
 
-## §23 Autonomie & Mode Nuit → `docs/claude/autonomy.md`
+## §23 Autonomie & Mode Nuit → `./autonomy/_legacy.md`
 
 Plan Pro → `acceptEdits` + allow/deny list (auto mode = Team/Enterprise uniquement).
 `maxBudgetUsd` toujours défini. `git push` toujours en `deny`.
-Détail complet → `/docs/claude/autonomy.md`.
+Détail complet → `./autonomy/_legacy.md`.
 
 -----
 
-## §24 Pre-push Gate → `docs/claude/security.md`
+## §24 Pre-push Gate → `./security/_legacy.md`
 
 ```bash
 bash scripts/pre-push-gate.sh
 ```
 
 5 étapes : secrets → fichiers sensibles → lint → build → tests.
-Jamais de `--no-verify`. Détail + script → `/docs/claude/security.md`.
+Jamais de `--no-verify`. Détail + script → `./security/_legacy.md`.
 
 -----
 
