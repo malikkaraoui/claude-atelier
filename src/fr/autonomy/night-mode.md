@@ -107,6 +107,38 @@ git push
 - Génération + itération sur une suite de tests
 - Bug difficile laissé en exploration autonome avec hypothèses
 
+## Supervision — Dispatch watchdog (architecture cible)
+
+> **Le bash watchdog (`scripts/night-watchdog.sh`) est un fallback.**
+> La vraie solution utilise les outils natifs Anthropic.
+
+**Architecture cible :**
+
+1. **Claude Code (VSCode)** travaille en `acceptEdits` sur la tâche
+2. **Dispatch (Claude desktop app)** est programmé en parallèle comme
+   superviseur : il vérifie périodiquement que le repo bouge (git status,
+   fichiers modifiés récents)
+3. Si Dispatch détecte une inactivité > N minutes → **notification push**
+   sur iPhone via l'app Claude
+4. Optionnel : Dispatch peut tenter de relancer la session ou créer un
+   rapport de l'état au moment du crash
+
+**Avantages vs bash watchdog :**
+
+- Notifications push natives (iPhone) au lieu de osascript macOS
+- Dispatch survit au crash de VSCode (processus indépendant)
+- Cowork peut inspecter l'état visuel de VSCode si besoin
+- Pas de script custom à maintenir
+
+**Prérequis à investiguer :**
+
+- [ ] Dispatch « Programmé » : peut-il exécuter un check récurrent ?
+- [ ] Dispatch : a-t-il accès aux fichiers locaux / terminal ?
+- [ ] Cowork : peut-il surveiller un autre processus Claude ?
+
+> Quand ces questions sont résolues, remplacer cette section par la
+> procédure concrète et retirer `scripts/night-watchdog.sh` du repo.
+
 ## Cas où ce mode est une mauvaise idée
 
 - Décision architecturale ouverte (pas assez de cadrage)
