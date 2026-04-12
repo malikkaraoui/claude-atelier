@@ -6,4 +6,5 @@ AM,angle-mort,Angle Mort,"Demande à Copilot de chercher les angles morts",revie
 AS,audit-safe,Audit Safe,"Audit sécurité complet (secrets, gate, permissions)",security,false
 NL,night-launch,Night Launch,"Prépare et vérifie le night-mode",autonomy,false
 DR,atelier-doctor,Doctor,"Diagnostic de santé de l'installation",diagnostic,false
+IR,integrate-review,Intégrer Review,"Ferme la boucle handoff: lit réponse Copilot, trie, génère checklist",review,false
 TR,token-routing,Token Routing,"Explique et configure le routing Haiku/Sonnet/Opus",config,false
