@@ -63,23 +63,32 @@ Le watchdog Cowork compense en cliquant sur les éventuels prompts restants.
 **Règle de conception :** pour toute règle critique, préférer un hook ou
 une deny list. CLAUDE.md sert de référence, pas de garde-fou.
 
-### Matrice d'enforcement — hooks actifs
+### Matrice d'enforcement — vue complète
 
 Tous les hooks sont dans `hooks/` et branchés dans `.claude/settings.json`.
 
-| § | Règle | Hook | Type | Déclencheur |
-| --- | --- | --- | --- | --- |
-| §6 | Anti-boucle (3+ échecs identiques) | `guard-anti-loop.sh` | PostToolUse | Chaque commande Bash |
-| §13 | Jamais signer (Co-Authored-By) | `guard-no-sign.sh` | PreToolUse | `git commit` |
-| §13 | Commits en français | `guard-commit-french.sh` | PreToolUse | `git commit` |
-| §15 | Routing modèle (Opus/Sonnet/Haiku) | `routing-check.sh` | UserPromptSubmit | Chaque message |
-| §15 | Diagnostic QMD/§0/handoff/gate | `routing-check.sh` | UserPromptSubmit | Toutes les 30 min |
-| §22 | Secrets, push sans gate | Deny list | Système | `git push` bloqué |
-| §24 | Tests avant push | `guard-tests-before-push.sh` | PreToolUse | `git push` |
-| §25 | Review auto 100+ lignes | `guard-review-auto.sh` | PostToolUse | `git commit` |
+| § | Règle | Enforcement | Statut |
+| --- | --- | --- | --- |
+| §2 | Français, direct, pas de preamble | — | Intention |
+| §3 | Explore → Plan → Implement → Verify | — | Intention |
+| §5 | Anti-hallucination | — | **Non automatisable** (jugement) |
+| §6 | Anti-boucle (3+ échecs identiques) | `guard-anti-loop.sh` PostToolUse | **Rail** |
+| §7 | Qualité du code | — | **Non automatisable** (jugement) |
+| §8 | Anti-patterns | — | **Non automatisable** (jugement) |
+| §11 | Tests obligatoires avant push | `guard-tests-before-push.sh` PreToolUse | **Rail** |
+| §13 | Commits atomiques | — | Intention |
+| §13 | Jamais signer (Co-Authored-By) | `guard-no-sign.sh` PreToolUse | **Rail** |
+| §13 | Commits en français | `guard-commit-french.sh` PreToolUse | **Rail** |
+| §15 | Routing modèle (Opus/Sonnet/Haiku) | `routing-check.sh` UserPromptSubmit | **Rail** |
+| §15 | Diagnostic QMD/§0/handoff/gate | `routing-check.sh` throttle 30 min | **Rail** |
+| §18 | Extended thinking auto-montée/descente | — | Intention |
+| §22 | Secrets, push sans gate | Deny list settings.json | **Rail** |
+| §24 | Pre-push gate | Deny list settings.json | **Rail** |
+| §25 | Review auto si 100+ lignes | `guard-review-auto.sh` PostToolUse | **Rail** |
 
-**Non automatisable** (jugement requis) : §5 anti-hallucination, §7 qualité
-code, §8 anti-patterns. Ces règles restent des intentions dans CLAUDE.md.
+**Bilan : 9 rails / 16 règles.** Les 4 non automatisables (§5, §7, §8)
+relèvent du jugement du modèle. Les 3 intentions restantes (§2, §3, §18)
+pourraient devenir des rails si un pattern de détection fiable est trouvé.
 
 ---
 
