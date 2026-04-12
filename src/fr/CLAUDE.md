@@ -24,7 +24,7 @@ Format `[YYYY-MM-DD HH:MM:SS]` en tête de réponse si injecté. Sinon `[date es
 
 ## §2 Langue & Ton
 
-Français. Direct. Actionnable. Zéro pédagogie inutile.
+Français. Direct. Actionnable. Zéro pédagogie inutile. Pas de preamble, hedge ni platitude.
 
 ## §3 Flow de traitement
 
@@ -32,7 +32,7 @@ Français. Direct. Actionnable. Zéro pédagogie inutile.
 
 - **Explore** : fichiers concernés uniquement (subagent Haiku si large)
 - **Plan** : impacts + dépendances avant d'écrire
-- **Implement** : minimal viable
+- **Implement** : minimal viable · Edit ciblé toujours — jamais réécriture complète si > 20 lignes non modifiées
 - **Verify** : tests + gate pré-push
 
 Mode rapide (< 2 fichiers, non critique) : Implement → Verify seulement. `Shift+Tab × 2` = Plan Mode.
@@ -89,7 +89,7 @@ Stateless, idempotent, secrets externalisés, IaC, fail fast, tests locaux avant
 
 ## §15 Token Management → `../templates/settings.json`
 
-Settings consolidé (env + permissions + budget). Routing : Haiku exploration / Sonnet standard / Opus architecture. **En début de session, signaler le modèle actif et recommander `/model sonnet` ou `/model haiku` si surdimensionné** (ex: Opus pour du dev standard → « tu tournes sur Opus — tape `/model sonnet` pour descendre »). Compaction : `/compact` après explore, après feature, avant switch.
+Input : ne pas relire un fichier déjà lu dans la session sauf si modifié. Settings consolidé (env + permissions + budget). Routing : Haiku exploration / Sonnet standard / Opus architecture. **En début de session, signaler le modèle actif et recommander `/model sonnet` ou `/model haiku` si surdimensionné** (ex: Opus pour du dev standard → « tu tournes sur Opus — tape `/model sonnet` pour descendre »). Compaction : `/compact` après explore, après feature, avant switch.
 
 ## §16 Orchestration → `./orchestration/`
 
