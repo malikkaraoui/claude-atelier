@@ -9,7 +9,7 @@ replaces: src/fr/security/_legacy.md (partiel)
 
 > Chargé à la demande. Documente le gate pré-push qui vérifie
 > l'intégrité avant tout `git push`. Le script réel est dans
-> `../../scripts/pre-push-gate.sh`.
+> `../../../scripts/pre-push-gate.sh`.
 
 ## Principe
 

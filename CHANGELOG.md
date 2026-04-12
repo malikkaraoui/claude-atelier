@@ -15,9 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (validation tooling)
+
+- Real validation entrypoints:
+  - `npm run lint` now checks markdown relative references and enforces
+    `src/fr/CLAUDE.md` length ≤ 150 lines
+  - `claude-atelier lint` runs the same validations from the CLI
+
+### Fixed (validation tooling)
+
+- Drift between project docs and runtime state reduced:
+  - CLI help now advertises `lint` as an implemented command
+  - `src/fr/security/pre-push-gate.md` now points to the real script path
+
 ### Phase 2 — Core refactor (in progress)
 
-#### Fixed
+#### Fixed (phase 2)
 
 - **Contradiction §5 vs §12 resolved.** `§12 Code Review` used to demand
   « at least one critique even if the code seems correct », forcing Claude
@@ -30,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Legacy markdown lint issues cleared** in `src/fr/CLAUDE.md` (MD041,
   MD012, MD040, MD047, MD060).
 
-#### Changed
+#### Changed (phase 2)
 
 - **`src/fr/CLAUDE.md` trimmed from 285 → 149 lines** (target ≤ 150).
   Sections §0–§25 preserved for stable referencing.
@@ -39,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`§13 Git Workflow`** now explicitly states « jamais signer (pas de
   trailer `Co-Authored-By`) » — enforces the user's permanent preference.
 
-#### Added
+#### Added (phase 2)
 
 - `src/templates/settings.json` — single source of truth consolidating
   `env`, `permissions.allow`, `permissions.deny`, `preferences.maxBudgetUsd`.
@@ -58,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Phase 1 — Foundation (completed 2026-04-11)
 
-#### Added
+#### Added (phase 1)
 
 - MIT `LICENSE`
 - Root `.gitignore` (node_modules, secrets, OS files, Claude Code local state)

@@ -11,6 +11,7 @@
  *   claude-atelier <command> [options]
  */
 
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -31,7 +32,7 @@ Commands:
   init              Install config into ./.claude/ (or ~/.claude/ with --global)
   update            Update config, preserving project §0
   doctor            Verify installation integrity
-  lint              Lint markdown references and structure
+  lint              Validate markdown references and CLAUDE core length
 
 Options:
   --version, -v     Print version and exit
@@ -40,9 +41,40 @@ Options:
   --lang <fr|en>    Language (default: fr)
 
 Status:
-  P1 scaffolding only — commands are stubs until P4.
+  Available now: lint
+  Still stubbed: init, update, doctor
   Repo: ${pkg.homepage}
 `;
+
+function runNodeScript(relativePath) {
+  const result = spawnSync(process.execPath, [join(__dirname, '..', relativePath)], {
+    stdio: 'inherit'
+  });
+
+  if (typeof result.status === 'number') {
+    return result.status;
+  }
+
+  if (result.error) {
+    process.stderr.write(`${result.error.message}\n`);
+  }
+
+  return 1;
+}
+
+function runLint() {
+  const scripts = ['test/lint-refs.js', 'test/lint-length.js'];
+
+  for (const script of scripts) {
+    const exitCode = runNodeScript(script);
+
+    if (exitCode !== 0) {
+      return exitCode;
+    }
+  }
+
+  return 0;
+}
 
 function main(argv) {
   const args = argv.slice(2);
@@ -66,8 +98,12 @@ function main(argv) {
     return 1;
   }
 
+  if (command === 'lint') {
+    return runLint();
+  }
+
   process.stderr.write(
-    `error: command "${command}" is not yet implemented (planned for P4)\n`
+    `error: command "${command}" is not yet implemented\n`
   );
   return 2;
 }

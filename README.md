@@ -21,7 +21,7 @@ Travailler avec Claude Code sans guardrails ni routine codifiée, c'est bosser s
 
 ### Structure (cible)
 
-```
+```text
 src/
 ├── fr/ · en/          Runtime rules bilingues (FR source de vérité)
 │   ├── CLAUDE.md      Core ≤ 150 lignes, rechargé à chaque message
@@ -41,7 +41,8 @@ hooks/                 Hooks Claude Code prêts à l'emploi
 
 ### Installation
 
-> ⚠️ **Pas encore publié sur NPM.** Le CLI est un squelette pour l'instant.
+> ⚠️ **Pas encore publié sur NPM.** Le CLI sait déjà faire `--help`, `--version`
+> et `lint`, mais `init`, `update` et `doctor` restent à implémenter.
 
 Prévu à partir de `0.2.0` :
 
@@ -90,7 +91,7 @@ Using Claude Code without guardrails or a codified routine is like building on a
 
 ### Structure (target)
 
-```
+```text
 src/
 ├── fr/ · en/          Bilingual runtime rules (FR is the source of truth)
 │   ├── CLAUDE.md      Core, ≤ 150 lines, reloaded on every message
@@ -108,9 +109,10 @@ scripts/               Actual shell scripts shipped (pre-push-gate, inject-date)
 hooks/                 Ready-to-use Claude Code hooks
 ```
 
-### Installation
+### Installation (EN)
 
-> ⚠️ **Not yet published on NPM.** CLI is currently a stub.
+> ⚠️ **Not yet published on NPM.** CLI already supports `--help`,
+> `--version`, and `lint`, but `init`, `update`, and `doctor` are still stubs.
 
 Planned from `0.2.0` onwards:
 
