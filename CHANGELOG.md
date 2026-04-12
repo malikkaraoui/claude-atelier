@@ -28,7 +28,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CLI help now advertises `lint` as an implemented command
   - `src/fr/security/pre-push-gate.md` now points to the real script path
 
-### Phase 2 — Core refactor (in progress)
+### Phase 3 — Satellites & modernité (completed 2026-04-12)
+
+#### Added (phase 3 — ecosystem)
+
+- `src/fr/ecosystem/skills.md` — skills system (local + plugin), when to
+  use, when not to, hygiene (max 2-3 simultaneous), creating a skill
+- `src/fr/ecosystem/plugins.md` — marketplace plugins, discipline,
+  understanding plugin suggestions (MANDATORY vs best-practice)
+- `src/fr/ecosystem/hooks.md` — Claude Code hooks (SessionStart,
+  UserPromptSubmit, PreToolUse, PostToolUse, Stop), pitfalls (false
+  positives, context saturation)
+- `src/fr/ecosystem/memory-system.md` — auto-memory system
+  (`~/.claude/projects/*/memory/`), types (user/feedback/project/reference),
+  read/write discipline
+- `src/fr/ecosystem/qmd-integration.md` — how Claude should use QMD
+  (when to query, score filtering, invocation patterns)
+
+#### Added (phase 3 — orchestration)
+
+- `src/fr/orchestration/modes.md` — Fork/Teammate/Worktree details
+- `src/fr/orchestration/subagents.md` — **new**: complete catalog of
+  available subagents (Explore, Plan, feature-dev:*, code-simplifier,
+  superpowers:*, plugin agents) with cost indicators
+- `src/fr/orchestration/parallelization.md` — when to parallelize and
+  patterns (fork exploratoire, feature parallèle, audit croisé)
+- `src/fr/orchestration/models-routing.md` — model per role table
+  (Haiku/Sonnet/Opus), when to escalate
+- `src/fr/orchestration/spawn-rules.md` — 5 fundamental spawn rules,
+  prompt template, limits
+- `src/fr/orchestration/mcp-lifecycle.md` — MCP loading/purging, context
+  window impact (200k → ~70k)
+
+#### Added (phase 3 — security)
+
+- `src/fr/security/secrets-rules.md` — absolute principle, forbidden files
+  list, suspect patterns regex, manual audit commands
+- `src/fr/security/pre-push-gate.md` — gate documentation (5 steps, stack
+  auto-detection table, git hook installation)
+- `src/fr/security/emergency.md` — secret leak procedure (revoke →
+  filter-branch → force push → notify), timeline, post-mortem template
+- `scripts/pre-push-gate.sh` — **finally shipped**: the pre-push gate
+  script referenced since P1 §0, with stack auto-detection (node/python/
+  maven/gradle), `--quick` mode, colored output, strict bash
+- `src/templates/.claudeignore` — template for files Claude must never read
+- `src/templates/.gitignore` — multi-stack .gitignore template
+
+#### Added (phase 3 — autonomy)
+
+- `src/fr/autonomy/permission-modes.md` — 5 permission modes with rules,
+  recommendations per context, anti-patterns
+- `src/fr/autonomy/night-mode.md` — **canonical source** (was duplicated
+  between autonomy and orchestration), specs template, pitfalls, use cases
+- `src/fr/autonomy/loop-watchers.md` — **canonical source** (was duplicated),
+  syntax, discipline, anti-patterns
+
+#### Changed (phase 3)
+
+- `src/fr/CLAUDE.md` — all `_legacy.md` references replaced with structured
+  satellite paths. File now at 145 lines (target ≤ 150).
+
+#### Removed (phase 3)
+
+- `src/fr/autonomy/_legacy.md` — replaced by 3 structured satellites
+- `src/fr/orchestration/_legacy.md` — replaced by 6 structured satellites
+- `src/fr/security/_legacy.md` — replaced by 3 structured satellites
+- **All `_legacy.md` files are now gone.** Zero legacy debt remaining.
+
+#### Fixed (phase 3)
+
+- **Night-mode duplication eliminated.** Was duplicated between autonomy
+  and orchestration. Now single canonical source in `autonomy/night-mode.md`.
+- **`/loop` duplication eliminated.** Same fix, canonical source in
+  `autonomy/loop-watchers.md`.
+
+### Phase 2 — Core refactor (completed 2026-04-12)
 
 #### Fixed (phase 2)
 
