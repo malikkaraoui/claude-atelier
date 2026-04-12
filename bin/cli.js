@@ -41,8 +41,8 @@ Options:
   --lang <fr|en>    Language (default: fr)
 
 Status:
-  Available now: lint, doctor
-  Still stubbed: init, update
+  Available now: init, lint, doctor
+  Still stubbed: update
   Repo: ${pkg.homepage}
 `;
 
@@ -76,7 +76,7 @@ function runLint() {
   return 0;
 }
 
-function main(argv) {
+async function main(argv) {
   const args = argv.slice(2);
 
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
@@ -106,10 +106,15 @@ function main(argv) {
     return runNodeScript('test/doctor.js');
   }
 
+  if (command === 'init') {
+    const { runInit } = await import('./init.js');
+    return runInit(process.argv);
+  }
+
   process.stderr.write(
     `error: command "${command}" is not yet implemented\n`
   );
   return 2;
 }
 
-process.exit(main(process.argv));
+main(process.argv).then(code => process.exit(code));
