@@ -107,37 +107,92 @@ git push
 - Génération + itération sur une suite de tests
 - Bug difficile laissé en exploration autonome avec hypothèses
 
-## Supervision — Dispatch watchdog (architecture cible)
+## Supervision — Tâche planifiée Cowork
 
-> **Le bash watchdog (`scripts/night-watchdog.sh`) est un fallback.**
-> La vraie solution utilise les outils natifs Anthropic.
+Le watchdog utilise les **tâches planifiées Cowork** (app Claude desktop),
+pas un script bash custom. La tâche planifiée tourne en parallèle de
+Claude Code dans VSCode, sur la même machine.
 
-**Architecture cible :**
+### Comment ça marche
 
-1. **Claude Code (VSCode)** travaille en `acceptEdits` sur la tâche
-2. **Dispatch (Claude desktop app)** est programmé en parallèle comme
-   superviseur : il vérifie périodiquement que le repo bouge (git status,
-   fichiers modifiés récents)
-3. Si Dispatch détecte une inactivité > N minutes → **notification push**
-   sur iPhone via l'app Claude
-4. Optionnel : Dispatch peut tenter de relancer la session ou créer un
-   rapport de l'état au moment du crash
+| Composant | Rôle |
+| --- | --- |
+| Claude Code (VSCode) | Travaille en `acceptEdits` sur la tâche |
+| Tâche planifiée Cowork | Vérifie périodiquement que le repo bouge |
+| Dispatch (mobile) | Reçoit les notifications push si crash détecté |
 
-**Avantages vs bash watchdog :**
+### Créer le watchdog
 
-- Notifications push natives (iPhone) au lieu de osascript macOS
-- Dispatch survit au crash de VSCode (processus indépendant)
-- Cowork peut inspecter l'état visuel de VSCode si besoin
-- Pas de script custom à maintenir
+**App Claude desktop → Programmé → + Nouvelle tâche :**
 
-**Prérequis à investiguer :**
+- **Nom** : `night-watchdog`
+- **Description** : Surveille l'activité Claude Code sur le projet courant
+- **Prompt** :
 
-- [ ] Dispatch « Programmé » : peut-il exécuter un check récurrent ?
-- [ ] Dispatch : a-t-il accès aux fichiers locaux / terminal ?
-- [ ] Cowork : peut-il surveiller un autre processus Claude ?
+```text
+Regarde les fichiers du dossier de travail. Trouve le fichier modifie
+le plus recemment. Si aucun fichier n'a ete modifie depuis plus de
+10 minutes, envoie une notification : "Claude Code semble bloque sur
+[nom du projet] — aucune activite depuis 10 minutes. Dernier fichier
+modifie : [nom] a [heure]." Si des fichiers ont ete modifies recemment,
+ne fais rien et termine silencieusement.
+```
 
-> Quand ces questions sont résolues, remplacer cette section par la
-> procédure concrète et retirer `scripts/night-watchdog.sh` du repo.
+- **Fréquence** : Horaire (puis ajuster via `/schedule update` si besoin)
+- **Dossier de travail** : le repo du projet courant
+- **Modèle** : Claude Haiku 4.5 (suffisant, pas cher)
+
+### 3 méthodes de scheduling comparées
+
+| Méthode | Tourne sur | Machine allumée ? | Accès fichiers locaux | Intervalle min |
+| --- | --- | --- | --- | --- |
+| **Desktop (Cowork)** | Ta machine | Oui + app ouverte | Oui | 1 min |
+| **Cloud** (claude.ai) | Cloud Anthropic | **Non** | Non (clone GitHub) | 1 heure |
+| **`/loop`** | Ta machine | Oui + session ouverte | Oui | 1 min |
+
+**Desktop = le bon choix pour le night-mode** : ta machine est allumée
+(sinon Claude Code ne tournerait pas), l'app Claude est ouverte, et la
+tâche a accès aux fichiers locaux.
+
+Cloud = utile si tu veux vérifier le repo GitHub même machine éteinte
+(ex : un CI overnight). Intervalle minimum 1 heure.
+
+### Ce que Dispatch apporte
+
+Dispatch = un fil de conversation persistant entre ton iPhone et le
+desktop. Quand la tâche planifiée détecte un problème :
+
+1. **Notification push sur iPhone** via l'app Claude
+2. Tu peux **répondre depuis ton tel** (ex : « relance la session »)
+3. Dispatch route ta demande vers Cowork sur le desktop
+4. Claude agit (relance, diagnostic, rapport)
+
+### Procédure night-mode complète
+
+```bash
+# 1. Soir — préparer les specs
+vim docs/specs.md
+
+# 2. Créer le watchdog dans l'app Claude desktop
+#    (Programmé → + Nouvelle tâche → config ci-dessus)
+
+# 3. Lancer Claude Code
+claude --permission-mode acceptEdits \
+  "Implementer selon docs/specs.md. Committer chaque etape. Ne pas pusher."
+
+# 4. Aller dormir — le watchdog surveille
+
+# 5. Matin — review
+git log --oneline
+bash scripts/pre-push-gate.sh
+git push
+```
+
+### Fallback : watchdog bash
+
+Si l'app Claude desktop n'est pas disponible (headless, serveur CI),
+le script `scripts/night-watchdog.sh` reste utilisable comme fallback.
+Il notifie via `osascript` (macOS) au lieu de Dispatch.
 
 ## Cas où ce mode est une mauvaise idée
 
