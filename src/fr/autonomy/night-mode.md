@@ -132,6 +132,11 @@ Claude Code dans VSCode, sur la même machine.
 ```text
 Tu es un watchdog pour une session Claude Code de nuit.
 
+Etape 0 — Verifie si Claude Code est actif :
+Lance `pgrep -f "claude" > /dev/null 2>&1` pour chercher un processus claude.
+Si aucun processus claude n'est trouve : termine silencieusement.
+Personne ne travaille, pas besoin de surveiller.
+
 Etape 1 — Verifie l'activite git :
 Lance `git -C "<CHEMIN_DU_REPO>" log -1 --format='%ci %s'` pour la
 date et le message du dernier commit.
