@@ -140,6 +140,6 @@ Plan Pro → `acceptEdits` + allow/deny, `maxBudgetUsd` défini, `git push` en `
 
 `bash scripts/pre-push-gate.sh` — 5 étapes : secrets → fichiers sensibles → lint → build → tests. Jamais de `--no-verify`.
 
-## §25 Inter-agents
+## §25 Inter-agents — Review Copilot auto
 
-Validation par double analyse. Divergence constructive. Convergence passive = échec.
+Proposer un handoff Copilot (`docs/handoffs/`) **sans attendre** si : feature terminée, bug fix critique, 100+ lignes modifiées, ou 3+ tentatives échouées. « Malik, je prépare un handoff review ? » = réflexe, pas un choix.
