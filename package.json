@@ -25,7 +25,7 @@
   "homepage": "https://github.com/malikkaraoui/claude-atelier#readme",
   "type": "module",
   "bin": {
-    "claude-atelier": "./bin/cli.js"
+    "claude-atelier": "bin/cli.js"
   },
   "files": [
     "bin/",
