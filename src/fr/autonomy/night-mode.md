@@ -127,40 +127,71 @@ Claude Code dans VSCode, sur la même machine.
 
 - **Nom** : `night-watchdog`
 - **Description** : Surveille l'activité Claude Code sur le projet courant
-- **Prompt** (v3, testé et validé 2026-04-12) :
+- **Prompt** (v4, testé et validé 2026-04-12 — diagnostic visuel + auto-clic) :
 
 ```text
 Tu es un watchdog pour une session Claude Code de nuit.
 
 Etape 1 — Verifie l'activite git :
-Lance `git -C "<CHEMIN_DU_REPO>" log -1 --format='%ci'` pour obtenir
-la date du dernier commit.
-Lance `date '+%Y-%m-%d %H:%M:%S'` pour obtenir l'heure actuelle.
+Lance `git -C "<CHEMIN_DU_REPO>" log -1 --format='%ci %s'` pour la
+date et le message du dernier commit.
+Lance `date '+%Y-%m-%d %H:%M:%S'` pour l'heure actuelle.
 Calcule la difference en minutes.
 
-Etape 2 — Decision :
-- Si le dernier commit date de moins de 15 minutes -> termine
-  silencieusement, ne dis rien.
-- Si le dernier commit date de plus de 15 minutes -> passe a l'etape 3.
+Si le dernier commit date de moins de 15 minutes : termine silencieusement.
 
-Etape 3 — Alerte :
-Envoie un iMessage au numero <TON_NUMERO> avec ce message :
-"Claude Code semble bloque sur <NOM_PROJET>. Aucun commit depuis [N]
-minutes. Dernier commit : [date et message du commit]. Tu veux que
-je relance ?"
+Etape 2 — Diagnostic visuel (si inactivite > 15 min) :
+Prends un screenshot de l'ecran.
+Analyse ce que tu vois :
+- Est-ce que VSCode est au premier plan ?
+- Est-ce qu'il y a une boite de dialogue de permission Claude Code
+  (bouton "Allow", "Yes" ou "Always allow" visible) ?
+- Est-ce que Claude Code semble en cours de traitement (spinner) ?
+- Est-ce que la session semble figee (aucun signe d'activite) ?
 
-Ne modifie aucun fichier. Ne committe rien. Lecture seule.
+Etape 3 — Action selon le diagnostic :
+
+CAS A — Demande de permission visible :
+Clique sur le bouton pour donner l'acces.
+Envoie un iMessage a <TON_NUMERO> : "Watchdog: Claude Code etait bloque
+par une demande de permission sur <NOM_PROJET>. J'ai clique Allow.
+La session devrait reprendre."
+
+CAS B — Claude Code semble actif (spinner, traitement en cours) :
+Ne fais rien. Termine silencieusement.
+
+CAS C — Session figee (pas de spinner, pas de dialogue) :
+Envoie un iMessage a <TON_NUMERO> : "ALERTE: Claude Code semble
+completement fige sur <NOM_PROJET>. Aucun commit depuis [N] minutes.
+La session est probablement crashee. Tu dois intervenir manuellement."
+
+CAS D — VSCode non visible / app fermee :
+Envoie un iMessage a <TON_NUMERO> : "ALERTE: VSCode ne semble pas
+ouvert. Claude Code ne peut pas tourner. Verifie ta machine."
+
+Ne modifie aucun fichier du projet. Ne committe rien.
 ```
 
-> Remplacer `<CHEMIN_DU_REPO>`, `<TON_NUMERO>`, `<NOM_PROJET>` par les
-> valeurs réelles. Le prompt se base uniquement sur **git** (pas les
-> timestamps de fichiers) pour éviter les faux positifs causés par les
-> modifications de skills/config Cowork.
+> Remplacer `<CHEMIN_DU_REPO>`, `<TON_NUMERO>`, `<NOM_PROJET>`.
+> Le prompt se base sur git + screenshot (computer use). Dispatch notifie
+> automatiquement via push quand la tâche répond (pas besoin de
+> l'instruire explicitement).
 
 - **Fréquence** : Horaire
 - **Dossier de travail** : n'importe lequel (le chemin git est en dur)
 - **Modèle** : Claude Haiku 4.5
 - **Connecteurs** : Read and Send iMessages
+- **Computer use** : activé (Settings → General → Computer use → ON)
+
+### Capacités du watchdog v4 (testées)
+
+| Situation | Action du watchdog | Résultat |
+| --- | --- | --- |
+| Activité récente (< 15 min) | Termine silencieusement | Zéro coût |
+| Bouton permission visible | Screenshot → clic auto → iMessage | Session débloquée |
+| Spinner actif | Termine silencieusement | Faux positif évité |
+| Session crashée | iMessage alerte | Intervention humaine requise |
+| VSCode fermé | iMessage alerte | Intervention humaine requise |
 
 ### 3 méthodes de scheduling comparées
 
