@@ -157,30 +157,17 @@ Fichiers à créer :
 
 ---
 
-## 🚧 P3.e — Cleanup refs CLAUDE.md
+## ✅ P3.e — Cleanup refs CLAUDE.md (terminé)
 
-Un commit unique pour passer en revue `src/fr/CLAUDE.md` et s'assurer
-que **plus aucune ref `_legacy.md` ne subsiste** après P3.c et P3.d.
-
-Vérifier aussi :
-
-- §16 Orchestration → `./orchestration/` (dossier)
-- §19 MCP → `./orchestration/mcp-lifecycle.md`
-- §22 Secrets → `./security/`
-- §24 Pre-push → `./security/pre-push-gate.md` + script
-- §25 Inter-agents : déplacer dans `./orchestration/subagents.md` ?
-  Ou garder comme rappel inline ? Décision à prendre.
-- Longueur finale : **≤ 150 lignes obligatoire**
+Toutes les refs `_legacy.md` supprimées. §16→`./orchestration/`,
+§19→`./orchestration/mcp-lifecycle.md`, §22→`./security/`,
+§24→`./security/pre-push-gate.md`. 0 ref cassée (vérifié par lint).
 
 ---
 
-## 🚧 P3.f — CHANGELOG P3
+## ✅ P3.f — CHANGELOG P3 (terminé)
 
-Mettre à jour la section `[Unreleased]` avec toutes les additions P3 :
-5 satellites ecosystem, 3 fichiers autonomy, 6 fichiers orchestration,
-3 fichiers security, script pre-push-gate.sh, template .claudeignore.
-
-Format : même style que la section P2 dans CHANGELOG.md actuel.
+Section `[Unreleased]` mise à jour avec tous les ajouts P3.
 
 ---
 
@@ -188,75 +175,72 @@ Format : même style que la section P2 dans CHANGELOG.md actuel.
 
 4 stubs à enrichir avec du contenu vrai :
 
-- `src/stacks/react-vite.md` — composants, hooks rules, Zustand/Jotai,
-  Vitest, a11y, perf (memo/lazy/suspense)
-- `src/stacks/firebase.md` — règles Firestore/Storage, Cloud Functions,
-  emulator suite, Secret Manager
-- `src/stacks/docker.md` — multi-stage, non-root user, healthchecks,
-  BuildKit secrets, tags immuables
-- `src/stacks/ollama.md` — modèle local vs cloud, Modelfile, VRAM,
-  quantization, embeddings, sécurité API locale
+- `src/stacks/react-vite.md`, `firebase.md`, `docker.md`, `ollama.md`
 
 À faire quand l'utilisateur démarre un projet réel utilisant chaque
 stack — le contenu sera meilleur en étant dicté par le vrai besoin.
 
 ---
 
-## 🚧 P4 — CLI & tests & CI
+## ✅ P4 — CLI & tests & CI (terminé 2026-04-12)
 
-### P4.a — Vrai installeur `bin/cli.js`
+### ✅ P4.1 — CI GitHub Actions
 
-Remplacer les stubs par :
+`.github/workflows/ci.yml` — `npm run lint` + `shellcheck` sur push
+main et PR. Pas de secrets, pas d'input non fiable.
 
-- `init` : copie `src/` dans `.claude/` (projet) ou `~/.claude/` (global),
-  fusionne `settings.json` sans écraser un existant, crée `CLAUDE.project.md`
-  depuis `templates/CLAUDE.project.md`, installe les hooks
-- `init --lang fr|en` : choix de la langue (fr défaut)
-- `init --global` : installe dans `~/.claude/`
-- `init --dry-run` : affiche ce qui serait copié sans rien faire
-- `update` : met à jour en préservant `§0` du projet et `settings.json` custom
-- `doctor` : vérifie que `.claude/` est conforme à `src/`, signale les
-  drifts, les refs cassées, les hooks manquants
-- `lint` : valide que tous les refs markdown résolvent
+### ✅ P4.2 — `doctor` réel
 
-### P4.b — Tests auto
+`test/doctor.js` — 27 checks : CLAUDE.md longueur, 21 satellites
+présents, settings.json valide, .gitignore/.claudeignore, gate
+executable, refs markdown, zéro _legacy, hook git pre-push (optional).
+Dual mode source repo / projet installé.
 
-- `test/lint-refs.js` — regex + fs.existsSync sur tous les liens
-  `./X/Y.md` et `../X/Y.md` dans `src/`
-- `test/lint-length.js` — `CLAUDE.md` ≤ 150 lignes (échec si dépassé)
-- `test/lint-contradictions.js` — détecte les patterns problématiques
-  (ex : nouvelle « Contradiction active » qui reviendrait dans §12)
-- `test/lint-translations.js` — parité structurelle FR ↔ EN (sections,
-  ordre, nombre de satellites)
-- `test/shellcheck.sh` — lance shellcheck sur `scripts/` et `hooks/`
+### ✅ P4.3 — `init` réel
 
-### P4.c — CI GitHub Actions
+`bin/init.js` — 32 fichiers installés. Copie `src/<lang>/` vers
+`.claude/`, stacks vers `.claude/stacks/`, merge intelligent
+`settings.json` (union allow/deny, preserve existant), templates
+`.claudeignore` + `.gitignore` (skip si existe), `scripts/pre-push-gate.sh`.
+Modes `--global`, `--lang fr|en`, `--dry-run`.
 
-- `.github/workflows/ci.yml` — lance `lint`, `test`, `shellcheck` sur
-  chaque PR et sur push `main`
-- `.github/workflows/release.yml` — à la création d'un tag `v*`,
-  lance la CI puis `npm publish --access public`
+### ✅ P4.4 — Stratégie EN
 
-### P4.d — Premier vrai release NPM
+FR-only pour v0.2.0. `src/en/README.md` placeholder explique la
+stratégie et le guide de contribution EN. `init --lang en` est câblé.
 
-- Bump semver (0.1.0 → 0.2.0, pré-release possible en `0.2.0-beta.1`)
-- Tag git signé (`git tag -a v0.2.0`)
-- `npm publish`
-- Vérifier que `npx claude-atelier init` fonctionne depuis un dossier vierge
+### ✅ P4.5 — Système de handoff inter-LLM
+
+`docs/handoffs/` — convention, template, premier handoff réel
+(review P1→P4 pour Copilot/GPT). Pipeline : générer → copier →
+répondre → coller → intégrer. Indexable par QMD.
 
 ---
 
-## 🚧 P5 — Claude Code plugin wrapper (optionnel)
+## 🚧 Reste à faire
+
+### P4.d — Premier vrai release NPM
+
+- Bump semver (0.1.0 → 0.2.0)
+- Tag git (`git tag -a v0.2.0`)
+- `npm publish --access public`
+- Vérifier que `npx claude-atelier init` fonctionne depuis un dossier vierge
+- Ajouter `release.yml` GitHub Actions (tag `v*` → CI → publish)
+
+### P5 — Claude Code plugin wrapper (optionnel)
 
 Packager la config comme un **Claude Code plugin** installable via
 `/plugin install claude-atelier`.
 
-- Créer `.claude-plugin/plugin.json` au format marketplace
-- Exposer les slash commands (`/claude-atelier-init`, etc.)
-- Publier via un repo marketplace (le repo actuel ou un fork)
+Priorité : basse. À faire **après** que P4 soit stable.
 
-Priorité : basse. À faire **après** que P4 soit stable et qu'on ait
-des retours d'usage sur P4 quelques semaines.
+### Backlog
+
+- `update` command (mise à jour en préservant §0 et settings.json custom)
+- `lint-contradictions.js` (détecte les patterns §5↔§12-like)
+- `lint-translations.js` (parité FR↔EN quand EN existe)
+- `hooks/session-start.sh` et `hooks/user-prompt-submit.sh`
+- Étoffer les 4 stubs de stacks (P3.g, opportuniste)
 
 ---
 

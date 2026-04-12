@@ -15,18 +15,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added (validation tooling)
+### Phase 4 — CLI, CI & inter-LLM (completed 2026-04-12)
+
+#### Added (phase 4)
+
+- `.github/workflows/ci.yml` — GitHub Actions CI: `npm run lint` +
+  `shellcheck scripts/pre-push-gate.sh` on push main and PRs
+- `test/doctor.js` — 27-check health verification (CLAUDE.md length,
+  21 satellite files present, settings.json valid, .gitignore/.claudeignore,
+  gate executable, markdown refs, zero _legacy, git hooks).
+  Dual mode: source repo vs installed project.
+- `bin/init.js` — real installer: copies 32 files to `.claude/`,
+  merges `settings.json` intelligently (union allow/deny lists, preserves
+  existing values), copies templates to project root, copies scripts.
+  Supports `--global`, `--lang fr|en`, `--dry-run`.
+- `src/en/README.md` — EN strategy placeholder. FR-only for v0.2.0,
+  EN parity planned for v0.3.0.
+- `docs/handoffs/` — inter-LLM handoff system (Claude ↔ Copilot/GPT):
+  convention, template, first real handoff (P1→P4 review request).
+  Structured markdown exchange, versionable, QMD-indexable.
+
+#### Changed (phase 4)
+
+- `bin/cli.js` — `init` and `doctor` commands now functional (were stubs).
+  `main()` is now async. Help text updated.
+- `package.json` — added `doctor` script, `test` now runs `lint + doctor`
+
+### Added (validation tooling — pre-P4)
 
 - Real validation entrypoints:
-  - `npm run lint` now checks markdown relative references and enforces
-    `src/fr/CLAUDE.md` length ≤ 150 lines
-  - `claude-atelier lint` runs the same validations from the CLI
+  - `npm run lint` checks markdown references + CLAUDE.md length
+  - `claude-atelier lint` runs the same from CLI
 
-### Fixed (validation tooling)
+### Fixed (validation tooling — pre-P4)
 
-- Drift between project docs and runtime state reduced:
-  - CLI help now advertises `lint` as an implemented command
-  - `src/fr/security/pre-push-gate.md` now points to the real script path
+- CLI help advertises `lint` as implemented
+- `src/fr/security/pre-push-gate.md` points to real script path
 
 ### Phase 3 — Satellites & modernité (completed 2026-04-12)
 
