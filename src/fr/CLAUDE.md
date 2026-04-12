@@ -13,7 +13,7 @@
 | Conventions | — |
 | Endpoints actifs | — |
 | Contraintes métier | — |
-| MCPs actifs | — |
+| MCPs actifs | qmd (moteur recherche .md hybride) |
 | Gate pré-push | `bash scripts/pre-push-gate.sh` |
 
 Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + commit atomique.

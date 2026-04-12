@@ -48,6 +48,19 @@ bloquant le night-mode.
 **Philosophie :** tout autoriser sauf ce qui est destructif ou irréversible.
 Le watchdog Cowork compense en cliquant sur les éventuels prompts restants.
 
+### Limitation fondamentale — Intentions vs Garanties
+
+**Les règles CLAUDE.md sans hooks d'enforcement sont des intentions, pas des garanties.**
+
+| Mécanisme | Fiabilité | Peut être bypassé ? |
+| --- | --- | --- |
+| Règle dans CLAUDE.md | Faible | Oui — contexte saturé, inattention |
+| Hook `UserPromptSubmit` | Forte | Non — injecté avant chaque traitement |
+| Watchdog Cowork (externe) | Forte | Non — externe à Claude |
+| Deny list settings.json | Absolue | Non — bloqué au niveau système |
+
+**Règle de conception :** pour toute règle critique (routing, push, secrets), préférer un hook ou une deny list. CLAUDE.md sert de référence, pas de garde-fou.
+
 ---
 
 ## 3. Git Workflow — Discipline sans cérémonie
