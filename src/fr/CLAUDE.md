@@ -101,7 +101,7 @@ Tracking obligatoire si > 3 fichiers ou agents multiples. Reprise : dernier `[�
 
 ## §18 Extended Thinking → `./runtime/extended-thinking.md`
 
-Défaut `MAX_THINKING_TOKENS: 10000`. `/effort low | medium | high`. `high` uniquement pour architecture, debug complexe, décision irréversible.
+Défaut `MAX_THINKING_TOKENS: 10000`. `/effort low | medium | high`. **Auto-montée** : si le champ lexical contient architecture, plan, conception, migration, refactor critique, schéma DB → passer en `high` et le signaler.
 
 ## §19 MCP → `./orchestration/mcp-lifecycle.md`
 

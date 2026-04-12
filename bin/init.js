@@ -145,6 +145,13 @@ export function runInit(argv) {
   const destStacks = join(target, 'stacks');
   copyDirRecursive(srcStacks, destStacks, dryRun, copied);
 
+  // 2b. Copy skills into .claude/skills/ (slash commands)
+  const srcSkills = join(PKG_ROOT, 'src', 'skills');
+  const destSkills = isGlobal
+    ? join(homedir(), '.claude', 'skills')
+    : join(process.cwd(), '.claude', 'skills');
+  copyDirRecursive(srcSkills, destSkills, dryRun, copied);
+
   // 3. Merge settings.json (don't overwrite existing)
   const settingsTemplate = join(PKG_ROOT, 'src', 'templates', 'settings.json');
   const settingsDest = join(target, 'settings.json');

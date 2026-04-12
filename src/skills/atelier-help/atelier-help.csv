@@ -1,0 +1,9 @@
+code,skill,display-name,description,phase,required
+HE,atelier-help,Aide Atelier,"Affiche cette aide et l'état du projet",anytime,false
+SU,atelier-setup,Setup Atelier,"Onboarding interactif post-install",setup,true
+RC,review-copilot,Review Copilot,"Génère un handoff review pour Copilot/GPT",review,false
+AM,angle-mort,Angle Mort,"Demande à Copilot de chercher les angles morts",review,false
+AS,audit-safe,Audit Safe,"Audit sécurité complet (secrets, gate, permissions)",security,false
+NL,night-launch,Night Launch,"Prépare et vérifie le night-mode",autonomy,false
+DR,atelier-doctor,Doctor,"Diagnostic de santé de l'installation",diagnostic,false
+TR,token-routing,Token Routing,"Explique et configure le routing Haiku/Sonnet/Opus",config,false

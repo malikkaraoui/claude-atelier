@@ -58,3 +58,4 @@ coverage/
 .claude/projects/
 .claude/todos/
 .claude/shell-snapshots/
+watchdog-report-*.txt
