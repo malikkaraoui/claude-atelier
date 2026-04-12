@@ -217,47 +217,175 @@ répondre → coller → intégrer. Indexable par QMD.
 
 ---
 
-## 🚧 Reste à faire
+## 🚧 P5 — Skills, agents & onboarding (en cours)
 
-### P4.d — Premier vrai release NPM
+L'atelier devient un **framework complet** avec des slash commands,
+un onboarding interactif, et l'intégration BMAD/QMD.
 
-- Bump semver (0.1.0 → 0.2.0)
-- Tag git (`git tag -a v0.2.0`)
-- `npm publish --access public`
-- Vérifier que `npx claude-atelier init` fonctionne depuis un dossier vierge
-- Ajouter `release.yml` GitHub Actions (tag `v*` → CI → publish)
+Inspiré de BMAD-METHOD (même pattern architectural : `SKILL.md` comme
+entry point, progressive disclosure, step files pour workflows longs).
 
-### P5 — Claude Code plugin wrapper (optionnel)
+### P5.a — Architecture skills
 
-Packager la config comme un **Claude Code plugin** installable via
-`/plugin install claude-atelier`.
+Créer `src/skills/` avec le format BMAD (SKILL.md + fichiers support).
+Chaque skill = un dossier = une slash command.
 
-Priorité : basse. À faire **après** que P4 soit stable.
+```text
+src/skills/
+├── atelier-help/          → /atelier-help  (oracle "où j'en suis")
+├── atelier-setup/         → /atelier-setup (onboarding interactif)
+├── review-copilot/        → /review-copilot (handoff inter-LLM)
+├── audit-safe/            → /audit-safe (audit sécurité)
+├── angle-mort/            → /angle-mort (review Copilot ciblée)
+├── night-launch/          → /night-launch (prépare le night-mode)
+├── doctor/                → /atelier-doctor (diagnostic étendu)
+└── token-routing/         → /token-routing (explique le routing Haiku/Sonnet/Opus)
+```
 
-### Backlog
+### P5.b — Skill `/atelier-help` (oracle)
 
-- `update` command (mise à jour en préservant §0 et settings.json custom)
-- `lint-contradictions.js` (détecte les patterns §5↔§12-like)
-- `lint-translations.js` (parité FR↔EN quand EN existe)
-- `hooks/session-start.sh` et `hooks/user-prompt-submit.sh`
-- Étoffer les 4 stubs de stacks (P3.g, opportuniste)
+Catalogue CSV de toutes les commandes. Détecte l'état du projet
+(§0 rempli ? watchdog configuré ? gate installée ?) et recommande
+la prochaine action. Equivalent de `bmad-help`.
+
+### P5.c — Skill `/atelier-setup` (onboarding)
+
+Checklist interactive post-install :
+
+```text
+[✅] .claude/CLAUDE.md installé
+[✅] settings.json mergé (permissions Bash(*) + deny list)
+[✅] .claudeignore + .gitignore
+[✅] scripts/pre-push-gate.sh
+[❌] Night Watchdog 🐶 → guide pour créer la tâche Cowork
+[❌] Review Reminder → guide pour créer la tâche Cowork
+[❌] §0 de CLAUDE.md → remplir projet/stack/repo
+[ ] BMAD-METHOD → "Projet conséquent ? Veux-tu lancer BMAD ?"
+[ ] QMD → proposé si ≥ 5 fichiers .md détectés dans le projet
+```
+
+### P5.d — Skill `/review-copilot` et `/angle-mort`
+
+Génère automatiquement un handoff structuré dans `docs/handoffs/`.
+`/review-copilot` = review générale.
+`/angle-mort` = review ciblée "cherche ce que je ne vois pas".
+
+Le prompt copier-coller est généré automatiquement avec le contexte
+du projet (derniers commits, fichiers modifiés, stats).
+
+### P5.e — Skill `/audit-safe`
+
+Lance `scripts/pre-push-gate.sh` + scan secrets + vérifie .claudeignore
++ vérifie les deny list settings.json. Rapport structuré.
+
+### P5.f — Skill `/night-launch`
+
+Vérifie les prérequis (§0 rempli, watchdog 🐶 configuré, budget défini,
+.claudeignore en place), génère le prompt de lancement, rappelle la
+procédure du matin.
+
+### P5.g — Intégration BMAD-METHOD
+
+Fork de BMAD dans l'atelier (ou dépendance optionnelle).
+Le skill `/atelier-setup` demande : "Projet conséquent avec phases
+analyse → plan → architecture → implémentation ? Lancer BMAD ?"
+
+Si oui : installe les skills BMAD dans `.claude/skills/`.
+Si non : continue sans.
+
+BMAD n'est **pas obligatoire** — c'est une option pour les gros projets.
+
+### P5.h — Intégration QMD
+
+Fork ou dépendance optionnelle.
+`init` détecte le nombre de `.md` dans le projet :
+
+- < 5 fichiers : ne propose pas QMD
+- ≥ 5 fichiers : "Tu as [N] fichiers .md. QMD peut les indexer pour
+  retrouver du contexte rapidement. Installer ?"
+
+### P5.i — Méthodologie complète documentée
+
+L'atelier ne se limite pas aux fichiers de config. C'est un **framework
+de travail** qui couvre :
+
+- **Token routing** : Haiku exploration / Sonnet standard / Opus critique.
+  Configurable dans settings.json (`CLAUDE_CODE_SUBAGENT_MODEL`).
+  Le but primaire : éviter que Claude mange tous les tokens en une nuit.
+- **Permissions optimisées** : `Bash(*)` + deny list au lieu de 56
+  règles au cas par cas. Zéro prompt de permission en night-mode.
+- **Git workflow** : commits atomiques, messages français, jamais signer,
+  pre-push gate 5 étapes, push précédé de tests.
+- **Night-mode** : watchdog Cowork avec auto-clic permissions + iMessage.
+- **Review inter-LLM** : Claude ↔ Copilot via handoffs markdown.
+- **Supervision** : tâches planifiées Cowork (watchdog + review reminder).
+- **Sécurité** : .claudeignore, secrets scan, deny list, gate, emergency.
+- **Multi-stack** : satellites React/Vite, Firebase, Python, Java, Docker,
+  Ollama chargés conditionnellement.
+
+Tout ça est documenté dans les satellites `src/fr/` et exposé via
+les slash commands pour que l'utilisateur n'ait pas à lire 33 fichiers.
+
+### P5.j — Watchdog prompt v5 (fix "VSCode ouvert mais Claude inactif")
+
+Le watchdog actuel ne distingue pas "VSCode ouvert sans Claude" de
+"Claude actif". Le v5 vérifie le processus Claude Code spécifiquement :
+
+```text
+Vérifie si un processus Claude Code est actif :
+Lance `pgrep -f "claude" | head -1` pour chercher un processus claude.
+Si aucun processus claude n'est trouvé ET VSCode est ouvert :
+  → "VSCode ouvert mais Claude Code n'est pas actif. Pas de session
+    de travail en cours." → termine silencieusement.
+Si aucun processus claude ET VSCode fermé :
+  → termine silencieusement (personne ne travaille).
+Seulement si un processus claude EST actif → continue le diagnostic.
+```
 
 ---
 
-## Ordre de priorité recommandé
+## 🚧 P6 — Publication NPM + Plugin Claude Code
+
+### P6.a — Release NPM 0.2.0
+
+- Bump semver 0.1.0 → 0.2.0
+- Tag git `v0.2.0`
+- `npm publish --access public`
+- Vérifier `npx claude-atelier init` depuis un dossier vierge
+- `release.yml` GitHub Actions (tag `v*` → CI → publish)
+
+### P6.b — Plugin Claude Code (marketplace)
+
+`.claude-plugin/marketplace.json` — packager les skills comme plugin
+installable via `/plugin install claude-atelier`.
+
+---
+
+## Backlog (quand le besoin se présente)
+
+- `update` command (mise à jour en préservant §0 et settings.json)
+- `lint-contradictions.js` (détecte les patterns §5↔§12-like)
+- `lint-translations.js` (parité FR↔EN quand EN existe)
+- Étoffer les 4 stubs de stacks (react-vite, firebase, docker, ollama)
+- EN parity v0.3.0
+
+---
+
+## Ordre de priorité
 
 ```text
-1. P3.c — Orchestration refactor         (7 commits)
-2. P3.d — Security refactor + script     (6 commits)
-3. P3.e — Cleanup CLAUDE.md refs         (1 commit)
-4. P3.f — CHANGELOG P3                   (1 commit)
-5. Push  → checkpoint GitHub
-6. P4.a — Vrai installeur CLI            (~10 commits)
-7. P4.b — Tests auto                     (~5 commits)
-8. P4.c — CI GitHub Actions              (~2 commits)
-9. P4.d — Release NPM 0.2.0              (~2 commits)
-10. P3.g — Étoffer stubs stacks          (opportuniste, 4 commits)
-11. P5   — Plugin wrapper                (plus tard)
+1. P5.a — Architecture skills (dossiers, format SKILL.md)
+2. P5.b — /atelier-help (oracle)
+3. P5.c — /atelier-setup (onboarding interactif)
+4. P5.d — /review-copilot + /angle-mort
+5. P5.e — /audit-safe
+6. P5.f — /night-launch
+7. P5.g — Intégration BMAD (optionnel gros projets)
+8. P5.h — Intégration QMD (optionnel ≥5 .md)
+9. P5.i — Doc méthodologie complète
+10. P5.j — Watchdog v5 (fix VSCode ouvert sans Claude)
+11. P6.a — Release NPM 0.2.0
+12. P6.b — Plugin Claude Code marketplace
 ```
 
 ## Checklist de reprise (à suivre à chaque session)
