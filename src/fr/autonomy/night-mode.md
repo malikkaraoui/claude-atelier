@@ -127,20 +127,40 @@ Claude Code dans VSCode, sur la même machine.
 
 - **Nom** : `night-watchdog`
 - **Description** : Surveille l'activité Claude Code sur le projet courant
-- **Prompt** :
+- **Prompt** (v3, testé et validé 2026-04-12) :
 
 ```text
-Regarde les fichiers du dossier de travail. Trouve le fichier modifie
-le plus recemment. Si aucun fichier n'a ete modifie depuis plus de
-10 minutes, envoie une notification : "Claude Code semble bloque sur
-[nom du projet] — aucune activite depuis 10 minutes. Dernier fichier
-modifie : [nom] a [heure]." Si des fichiers ont ete modifies recemment,
-ne fais rien et termine silencieusement.
+Tu es un watchdog pour une session Claude Code de nuit.
+
+Etape 1 — Verifie l'activite git :
+Lance `git -C "<CHEMIN_DU_REPO>" log -1 --format='%ci'` pour obtenir
+la date du dernier commit.
+Lance `date '+%Y-%m-%d %H:%M:%S'` pour obtenir l'heure actuelle.
+Calcule la difference en minutes.
+
+Etape 2 — Decision :
+- Si le dernier commit date de moins de 15 minutes -> termine
+  silencieusement, ne dis rien.
+- Si le dernier commit date de plus de 15 minutes -> passe a l'etape 3.
+
+Etape 3 — Alerte :
+Envoie un iMessage au numero <TON_NUMERO> avec ce message :
+"Claude Code semble bloque sur <NOM_PROJET>. Aucun commit depuis [N]
+minutes. Dernier commit : [date et message du commit]. Tu veux que
+je relance ?"
+
+Ne modifie aucun fichier. Ne committe rien. Lecture seule.
 ```
 
-- **Fréquence** : Horaire (puis ajuster via `/schedule update` si besoin)
-- **Dossier de travail** : le repo du projet courant
-- **Modèle** : Claude Haiku 4.5 (suffisant, pas cher)
+> Remplacer `<CHEMIN_DU_REPO>`, `<TON_NUMERO>`, `<NOM_PROJET>` par les
+> valeurs réelles. Le prompt se base uniquement sur **git** (pas les
+> timestamps de fichiers) pour éviter les faux positifs causés par les
+> modifications de skills/config Cowork.
+
+- **Fréquence** : Horaire
+- **Dossier de travail** : n'importe lequel (le chemin git est en dur)
+- **Modèle** : Claude Haiku 4.5
+- **Connecteurs** : Read and Send iMessages
 
 ### 3 méthodes de scheduling comparées
 
