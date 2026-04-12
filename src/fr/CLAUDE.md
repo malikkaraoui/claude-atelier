@@ -89,7 +89,7 @@ Stateless, idempotent, secrets externalisés, IaC, fail fast, tests locaux avant
 
 ## §15 Token Management → `../templates/settings.json`
 
-Settings consolidé (env + permissions + budget). Routing : Haiku exploration / Sonnet standard / Opus architecture. **En début de session, signaler le modèle actif et recommander un switch si surdimensionné** (ex: Opus pour du dev standard → « tu tournes sur Opus, Sonnet suffirait »). Compaction : `/compact` après explore, après feature, avant switch.
+Settings consolidé (env + permissions + budget). Routing : Haiku exploration / Sonnet standard / Opus architecture. **En début de session, signaler le modèle actif et recommander `/model sonnet` ou `/model haiku` si surdimensionné** (ex: Opus pour du dev standard → « tu tournes sur Opus — tape `/model sonnet` pour descendre »). Compaction : `/compact` après explore, après feature, avant switch.
 
 ## §16 Orchestration → `./orchestration/`
 

@@ -68,6 +68,19 @@ Sinon → monte et signale « Je monte en effort high pour cette tâche. »
 `medium` pour l'implémentation. Jamais `high` sauf bug bloquant
 (le but premier : ne pas brûler tous les tokens en une nuit).
 
+## Changer de modèle en cours de session
+
+La commande `/model` fonctionne mid-session dans Claude Code :
+
+```
+/model haiku    # passer en Haiku (exploration, watchdog)
+/model sonnet   # passer en Sonnet (dev standard)
+/model opus     # passer en Opus (architecture, debug bloquant)
+```
+
+Claude signale si le modèle actif est surdimensionné pour la tâche en
+cours et suggère la commande exacte.
+
 ## Action
 
 Si la config n'est pas en place → proposer de l'ajouter dans
