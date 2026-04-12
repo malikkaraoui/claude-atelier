@@ -160,6 +160,16 @@ conditionnellement selon §0 :
 - Fichiers distincts par agent (zéro overlap)
 - Nettoyer dès terminé (coût idle)
 
+### 3 patterns de puissance
+
+| Pattern | Principe | Effet |
+| --- | --- | --- |
+| **Parallel Audit Storm** | 4 agents Haiku lancés en un seul message (secrets + lint + refs + tests) | Audit complet en 3 min au lieu de 15 |
+| **Background Copilot Review** | Agent background écrit le handoff pendant que tu continues à coder | Zero interruption du flow dev |
+| **Multi-Session CLI** | 2-3 terminaux Claude indépendants (dev + tests continus + lint watcher) | CI locale temps réel, feedback loop permanent |
+
+Détails complets + scénarios + prompts → `src/fr/orchestration/parallelization.md`
+
 ---
 
 ## 9. Slash Commands — Les portes d'entrée
