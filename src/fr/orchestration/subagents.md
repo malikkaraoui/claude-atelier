@@ -2,6 +2,7 @@
 kind: orchestration
 name: subagents
 status: new (P3.c)
+volatile: true
 loads_from: src/fr/CLAUDE.md §16
 ---
 

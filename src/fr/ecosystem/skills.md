@@ -1,7 +1,7 @@
 ---
 kind: ecosystem
 name: skills
-loads_from: src/fr/CLAUDE.md (pas encore reference, a ajouter en P3.e)
+loads_from: src/fr/CLAUDE.md (header + §16)
 ---
 
 # Ecosystem — Skills

@@ -41,10 +41,8 @@ hooks/                 Hooks Claude Code prêts à l'emploi
 
 ### Installation
 
-> ⚠️ **Pas encore publié sur NPM.** Le CLI sait déjà faire `--help`, `--version`
-> et `lint`, mais `init`, `update` et `doctor` restent à implémenter.
-
-Prévu à partir de `0.2.0` :
+> ⚠️ **Pas encore publié sur NPM.** Le CLI fonctionne localement (`init`, `lint`, `doctor`).
+> Seul `update` reste à implémenter.
 
 ```bash
 # Installer dans le projet courant (./.claude/)
@@ -67,10 +65,10 @@ npx claude-atelier update
 
 Voir [CHANGELOG.md](CHANGELOG.md).
 
-- **P1 — Foundation** : en cours (arborescence, manifests, déplacement des fichiers existants)
-- **P2 — Refactor core** : à venir (découpage de `CLAUDE.md`, résolution des contradictions)
-- **P3 — Satellites & modernité** : à venir (skills, plugins, hooks, memory, stacks)
-- **P4 — CLI & tests** : à venir (installeur, lint markdown, CI)
+- **P1 — Foundation** : terminé (arborescence, manifests, CLI squelette)
+- **P2 — Refactor core** : terminé (CLAUDE.md 285→145 lignes, contradictions résolues)
+- **P3 — Satellites & modernité** : terminé (20 satellites, 0 legacy, pre-push-gate livré)
+- **P4 — CLI & tests & CI** : terminé (init, doctor, lint, CI GitHub Actions, handoff inter-LLM)
 
 ### Licence
 
@@ -111,10 +109,8 @@ hooks/                 Ready-to-use Claude Code hooks
 
 ### Installation (EN)
 
-> ⚠️ **Not yet published on NPM.** CLI already supports `--help`,
-> `--version`, and `lint`, but `init`, `update`, and `doctor` are still stubs.
-
-Planned from `0.2.0` onwards:
+> ⚠️ **Not yet published on NPM.** CLI works locally (`init`, `lint`, `doctor`).
+> Only `update` is still a stub.
 
 ```bash
 # Install into the current project (./.claude/)
@@ -137,10 +133,10 @@ npx claude-atelier update
 
 See [CHANGELOG.md](CHANGELOG.md).
 
-- **P1 — Foundation**: in progress (scaffolding, manifests, relocating existing files)
-- **P2 — Core refactor**: pending (split `CLAUDE.md`, resolve contradictions)
-- **P3 — Satellites & modern surface**: pending (skills, plugins, hooks, memory, stacks)
-- **P4 — CLI & tests**: pending (installer, markdown lint, CI)
+- **P1 — Foundation**: done (scaffolding, manifests, CLI skeleton)
+- **P2 — Core refactor**: done (CLAUDE.md 285→145 lines, contradictions resolved)
+- **P3 — Satellites & modern surface**: done (20 satellites, 0 legacy, pre-push-gate shipped)
+- **P4 — CLI & tests & CI**: done (init, doctor, lint, GitHub Actions CI, inter-LLM handoff)
 
 ### License
 

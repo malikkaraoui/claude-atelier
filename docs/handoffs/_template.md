@@ -34,7 +34,14 @@ src/fr/orchestration/subagents.md
 
 ## Réponse de : [Copilot/GPT | Claude]
 
-<!-- Collé par l'utilisateur après avoir obtenu la réponse de l'autre LLM. -->
+**INSTRUCTION POUR LE LLM QUI REPOND :**
+Tu DOIS écrire ta réponse **directement dans ce fichier**, dans cette
+section. N'écris PAS ta réponse dans le chat. Utilise ton outil d'édition
+de fichier (Edit, Write, ou équivalent) pour écrire ci-dessous.
+Quand tu as fini, dis simplement à l'utilisateur :
+"J'ai écrit ma réponse dans [chemin du fichier]. Tu peux la montrer à [l'autre LLM]."
+
+<!-- Réponse ci-dessous -->
 
 ---
 

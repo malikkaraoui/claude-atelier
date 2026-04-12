@@ -32,6 +32,7 @@
     "src/",
     "scripts/",
     "hooks/",
+    "test/",
     "LICENSE",
     "README.md",
     "CHANGELOG.md"

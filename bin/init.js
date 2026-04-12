@@ -106,12 +106,18 @@ function mergeSettings(existingPath, templatePath) {
 export function runInit(argv) {
   const { global: isGlobal, dryRun, lang } = parseArgs(argv);
 
-  // Validate lang
+  // Validate lang — must have a CLAUDE.md to be considered ready
   const langDir = join(PKG_ROOT, 'src', lang);
+  const langClaude = join(langDir, 'CLAUDE.md');
   if (!existsSync(langDir)) {
     const available = readdirSync(join(PKG_ROOT, 'src'))
       .filter(d => statSync(join(PKG_ROOT, 'src', d)).isDirectory() && !['stacks', 'templates'].includes(d));
     process.stderr.write(`${RED}error${NC}: language "${lang}" not available. Available: ${available.join(', ')}\n`);
+    return 1;
+  }
+  if (!existsSync(langClaude)) {
+    process.stderr.write(`${RED}error${NC}: language "${lang}" exists but has no CLAUDE.md — not ready for use.\n`);
+    process.stderr.write(`See src/${lang}/README.md for the translation roadmap.\n`);
     return 1;
   }
 
