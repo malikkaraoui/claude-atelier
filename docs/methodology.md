@@ -24,6 +24,10 @@ consomme la totalité des tokens.
 - Auto-montée `/effort high` sur champ lexical complexe, auto-descente
   quand la tâche est terminée
 - Pas de changement plus d'une fois par message (anti-flapping)
+- **Input tokens** : ne pas relire un fichier déjà lu dans la session
+- **Edit ciblé** : jamais réécriture complète si > 20 lignes non modifiées
+- **`/compress`** : compresse la prose de CLAUDE.md avant un night-mode long
+  (~40-65% de réduction → économie permanente sur toute la session)
 
 ---
 
@@ -172,4 +176,5 @@ conditionnellement selon §0 :
 /token-routing      → Configure Haiku/Sonnet/Opus
 /bmad-init          → Installe BMAD (optionnel, gros projets)
 /qmd-init           → Installe QMD (optionnel, ≥ 5 fichiers .md)
+/compress           → Compresse CLAUDE.md pour réduire les tokens input
 ```

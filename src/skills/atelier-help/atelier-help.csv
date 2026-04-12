@@ -10,3 +10,4 @@ IR,integrate-review,Intégrer Review,"Ferme la boucle handoff: lit réponse Copi
 TR,token-routing,Token Routing,"Explique et configure le routing Haiku/Sonnet/Opus",config,false
 BI,bmad-init,BMAD Init,"Installe BMAD-METHOD (optionnel, gros projets)",setup,false
 QI,qmd-init,QMD Init,"Installe QMD (optionnel, >= 5 fichiers .md)",setup,false
+CO,compress,Compress,"Compresse CLAUDE.md pour réduire les tokens input (backup auto)",tokens,false
