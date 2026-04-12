@@ -97,18 +97,34 @@ case "$STACK" in
         ;;
     python)
         if command -v ruff &>/dev/null; then
-            ruff check . 2>&1 | tail -5 && pass "Lint OK (ruff)" || fail "Lint echoue (ruff)"
+            if ruff check . 2>&1 | tail -5; then
+                pass "Lint OK (ruff)"
+            else
+                fail "Lint echoue (ruff)"
+            fi
         elif command -v flake8 &>/dev/null; then
-            flake8 . 2>&1 | tail -5 && pass "Lint OK (flake8)" || fail "Lint echoue (flake8)"
+            if flake8 . 2>&1 | tail -5; then
+                pass "Lint OK (flake8)"
+            else
+                fail "Lint echoue (flake8)"
+            fi
         else
             warn "Pas de linter Python installe (ruff ou flake8). Lint skippe."
         fi
         ;;
     maven)
-        mvn checkstyle:check -q 2>&1 | tail -5 && pass "Lint OK" || fail "Lint echoue"
+        if mvn checkstyle:check -q 2>&1 | tail -5; then
+            pass "Lint OK"
+        else
+            fail "Lint echoue"
+        fi
         ;;
     gradle)
-        ./gradlew checkstyleMain -q 2>&1 | tail -5 && pass "Lint OK" || fail "Lint echoue"
+        if ./gradlew checkstyleMain -q 2>&1 | tail -5; then
+            pass "Lint OK"
+        else
+            fail "Lint echoue"
+        fi
         ;;
     *)
         warn "Stack non reconnue. Lint skippe."
@@ -131,10 +147,18 @@ case "$STACK" in
         warn "Pas de step de build standard pour Python. Skippe."
         ;;
     maven)
-        mvn compile -q 2>&1 | tail -10 && pass "Build OK" || fail "Build echoue"
+        if mvn compile -q 2>&1 | tail -10; then
+            pass "Build OK"
+        else
+            fail "Build echoue"
+        fi
         ;;
     gradle)
-        ./gradlew compileJava -q 2>&1 | tail -10 && pass "Build OK" || fail "Build echoue"
+        if ./gradlew compileJava -q 2>&1 | tail -10; then
+            pass "Build OK"
+        else
+            fail "Build echoue"
+        fi
         ;;
     *)
         warn "Stack non reconnue. Build skippe."
@@ -155,16 +179,28 @@ case "$STACK" in
         ;;
     python)
         if command -v pytest &>/dev/null; then
-            pytest --tb=short -q 2>&1 | tail -20 && pass "Tests OK (pytest)" || fail "Tests echoues (pytest)"
+            if pytest --tb=short -q 2>&1 | tail -20; then
+                pass "Tests OK (pytest)"
+            else
+                fail "Tests echoues (pytest)"
+            fi
         else
             warn "pytest non installe. Tests skippes."
         fi
         ;;
     maven)
-        mvn test -q 2>&1 | tail -20 && pass "Tests OK" || fail "Tests echoues"
+        if mvn test -q 2>&1 | tail -20; then
+            pass "Tests OK"
+        else
+            fail "Tests echoues"
+        fi
         ;;
     gradle)
-        ./gradlew test -q 2>&1 | tail -20 && pass "Tests OK" || fail "Tests echoues"
+        if ./gradlew test -q 2>&1 | tail -20; then
+            pass "Tests OK"
+        else
+            fail "Tests echoues"
+        fi
         ;;
     *)
         warn "Stack non reconnue. Tests skippes."
