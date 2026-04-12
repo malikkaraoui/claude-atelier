@@ -1,13 +1,16 @@
 ---
 name: integrate-review
 description: "Ferme la boucle d'un handoff inter-LLM. Lit la réponse de Copilot/GPT dans docs/handoffs/, classe les points, génère la section Intégration et une checklist d'actions. Utiliser quand Copilot a répondu à un handoff."
+figure: Greffier
 ---
 
 # Integrate Review
 
-Tu fermes la boucle d'un handoff inter-LLM. Copilot/GPT a répondu dans
-un fichier `docs/handoffs/*.md` — ton rôle est de lire, trier, et
-transformer la review en actions concrètes.
+> Le Greffier revient avec le dossier de l'autre atelier sous le bras.
+> Il ouvre, trie, classe : retenu, à garder en tête, écarté.
+
+Fermeture de boucle inter-LLM. Copilot/GPT a répondu → lire, trier,
+transformer en actions concrètes.
 
 ## Procédure
 

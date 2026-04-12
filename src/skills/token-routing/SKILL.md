@@ -1,13 +1,15 @@
 ---
 name: token-routing
 description: "Explique et configure le routing Haiku/Sonnet/Opus pour économiser les tokens. Utiliser quand l'utilisateur s'inquiète du coût ou veut optimiser."
+figure: Intendant
 ---
 
 # Token Routing
 
-Le routing des modèles est une stratégie d'économie de tokens qui
-assigne le bon modèle au bon rôle. Le but : ne pas utiliser Opus
-pour un `grep`.
+> L'Intendant lève un sourcil. Opus pour un grep ? Il sort la table
+> de routing et pointe du doigt la bonne ligne.
+
+Assigner le bon modèle au bon rôle. Le but : ne pas brûler le budget.
 
 ## Table de routing
 

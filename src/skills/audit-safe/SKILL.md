@@ -1,12 +1,15 @@
 ---
 name: audit-safe
 description: "Audit sécurité complet : secrets scan, pre-push gate, permissions, .claudeignore. Utiliser avant un push, avant de dormir, ou quand un doute sur la sécurité."
+figure: Inspecteur
 ---
 
 # Audit Safe
 
-Audit sécurité complet du projet courant. Vérifie tout ce qui pourrait
-fuiter ou casser.
+> L'Inspecteur ouvre les tiroirs un par un. Secrets, permissions, gate,
+> fichiers sensibles. Rien ne sort de l'atelier sans son visa.
+
+Audit sécurité complet. Vérifie tout ce qui pourrait fuiter ou casser.
 
 ## Procédure
 

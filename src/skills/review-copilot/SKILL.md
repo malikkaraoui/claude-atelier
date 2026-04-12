@@ -1,12 +1,15 @@
 ---
 name: review-copilot
 description: "Génère un handoff review structuré pour Copilot/GPT. Utiliser après une feature, un bug fix, ou quand > 100 lignes ont changé. Aussi déclenché automatiquement par §25."
+figure: Greffier
 ---
 
 # Review Copilot
 
-Tu génères un handoff structuré pour faire reviewer le travail par
-Copilot/GPT. Le fichier est créé dans `docs/handoffs/`.
+> Le Greffier passe en arrière-salle, rassemble les commits, relit
+> le diff, et prépare le dossier de review.
+
+Handoff structuré pour Copilot/GPT, créé dans `docs/handoffs/`.
 
 ## Procédure
 

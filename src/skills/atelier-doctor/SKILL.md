@@ -1,11 +1,14 @@
 ---
 name: atelier-doctor
 description: "Diagnostic complet de l'installation claude-atelier (27+ checks). Utiliser pour vérifier que tout est en ordre."
+figure: Inspecteur
 ---
 
 # Atelier Doctor
 
-Lance le diagnostic complet de l'installation.
+> L'Inspecteur sort sa grille. 27 points de contrôle. Il ne négocie pas.
+
+Diagnostic complet de l'installation.
 
 ## Procédure
 

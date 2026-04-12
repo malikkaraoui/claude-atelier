@@ -1,11 +1,16 @@
 ---
 name: angle-mort
-description: "Demande à Copilot/GPT de chercher les angles morts du projet. Review ciblée sur ce qu'on ne voit plus parce qu'on est trop dedans."
+description: "Review anti-complaisance avant release. Cherche le fragile, le manquant, le faux-confort. Ne félicite pas, n'embellit pas, n'arrondit pas."
+figure: Inspecteur
 ---
 
-# Angle Mort
+# Angle Mort — Le miroir dur
 
-Variante de `/review-copilot` ciblée sur une seule question :
+> La convocation de l'Inspecteur.
+> Quand la feature te paraît "finie" trop vite, quand la release approche,
+> quand tu veux qu'un autre regard casse le confort : tu appelles `/angle-mort`.
+
+Review anti-complaisance. La question est toujours la même :
 **"Qu'est-ce que je ne vois pas parce que je suis trop dedans ?"**
 
 ## Procédure

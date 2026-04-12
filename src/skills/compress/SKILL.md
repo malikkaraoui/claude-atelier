@@ -1,13 +1,15 @@
 ---
 name: compress
 description: "Compresse CLAUDE.md (et optionnellement les satellites) pour réduire les tokens input à chaque message. Compression prose uniquement — code, chemins, commandes intouchables."
+figure: Intendant
 ---
 
 # Compress — Réduction tokens input
 
-CLAUDE.md est rechargé à chaque message. Chaque ligne économisée = tokens
-économisés sur toute la durée de la session. Ce skill applique une
-compression syntaxique sur la prose, sans toucher au code ni à la sémantique.
+> L'Intendant pèse chaque mot du manifeste. Ce qui ne porte pas de sens
+> est supprimé. Ce qui reste pèse moins lourd à chaque message.
+
+Compression syntaxique de CLAUDE.md. Code et chemins intouchables.
 
 ## Quand utiliser
 

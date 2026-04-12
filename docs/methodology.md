@@ -179,7 +179,7 @@ Détails complets + scénarios + prompts → `src/fr/orchestration/parallelizati
 /atelier-setup      → Onboarding interactif (7 étapes)
 /review-copilot     → Handoff review pour Copilot/GPT
 /integrate-review   → Ferme la boucle (lit réponse, trie, checklist)
-/angle-mort         → Review ciblée "qu'est-ce que je ne vois pas"
+/angle-mort         → Review anti-complaisance avant release
 /audit-safe         → Audit sécurité (5 checks)
 /night-launch       → Prépare le night-mode (8 prérequis)
 /atelier-doctor     → Diagnostic santé (27+ checks)
@@ -188,3 +188,32 @@ Détails complets + scénarios + prompts → `src/fr/orchestration/parallelizati
 /qmd-init           → Installe QMD (optionnel, ≥ 5 fichiers .md)
 /compress           → Compresse CLAUDE.md pour réduire les tokens input
 ```
+
+---
+
+## 10. Le Théâtre d'atelier — Mise en scène contextuelle
+
+L'atelier n'est pas une doc avec du texte cosplay. C'est un système
+de **rôles contextuels** qui rend les rituels de travail tangibles.
+
+### Les 5 figures
+
+| Figure | Rôle | Commandes | Ton |
+| --- | --- | --- | --- |
+| **Le Maître d'atelier** | Accueil, orientation, setup | `/atelier-help` `/atelier-setup` | Calme, structurant |
+| **L'Inspecteur** | Audit, review, angle mort | `/audit-safe` `/angle-mort` `/atelier-doctor` | Sec, lucide, implacable |
+| **Le Veilleur de nuit** | Night mode, watchdog, budget | `/night-launch` | Bas, posé, protecteur |
+| **Le Greffier** | Handoffs, traces, intégration | `/review-copilot` `/integrate-review` | Méthodique, factuel |
+| **L'Intendant** | Coût, routing, compression | `/token-routing` `/compress` | Nerveux, anti-gaspillage |
+
+### La règle
+
+Les figures ne sont pas des personnages permanents. Ce sont des
+**masques fonctionnels** qui apparaissent uniquement sur les moments
+de bascule : fin de feature, audit, night-mode, handoff, 100+ lignes.
+
+Format : **1 phrase d'entrée + 1 image mentale + action concrète**.
+Jamais l'inverse. Jamais plus de 3 lignes. Si la mise en scène
+ralentit l'action → la supprimer.
+
+Détails complets → `src/fr/runtime/theatre.md`

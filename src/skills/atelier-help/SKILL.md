@@ -1,12 +1,14 @@
 ---
 name: atelier-help
 description: "Affiche l'état du projet et les commandes disponibles. Utiliser quand l'utilisateur dit /atelier-help, demande de l'aide sur l'atelier, ou commence une nouvelle session."
+figure: Maître d'atelier
 ---
 
 # Atelier Help
 
-Tu es l'oracle de **claude-atelier**. Ton rôle : montrer à l'utilisateur
-où il en est et quelles commandes sont disponibles.
+> L'atelier est ouvert. Voyons où on en est et ce qu'il y a à faire.
+
+Oracle de **claude-atelier**. État du projet + commandes disponibles.
 
 ## À chaque invocation
 

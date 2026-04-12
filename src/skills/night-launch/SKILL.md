@@ -1,11 +1,14 @@
 ---
 name: night-launch
 description: "Prépare et vérifie tout pour le night-mode. Utiliser le soir avant de lancer Claude en autonomie."
+figure: Veilleur de nuit
 ---
 
-# Night Launch 🌙
+# Night Launch
 
-Tu prépares l'utilisateur pour une session de nuit en mode autonome.
+> Il est tard. Le Veilleur passe entre les établis, touche du doigt
+> le dernier commit, et vérifie que tout est en ordre avant la nuit.
+
 Checklist complète, vérification des prérequis, génération du prompt.
 
 ## Procédure
