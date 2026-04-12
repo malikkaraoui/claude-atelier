@@ -69,8 +69,8 @@ Tous les hooks sont dans `hooks/` et branchés dans `.claude/settings.json`.
 
 | § | Règle | Enforcement | Statut |
 | --- | --- | --- | --- |
-| §2 | Français, direct, pas de preamble | — | Intention |
-| §3 | Explore → Plan → Implement → Verify | — | Intention |
+| §2 | Français, direct, pas de preamble | Préférences Claude App (système) | **Rail** |
+| §3 | Explore → Plan → Implement → Verify | `guard-review-auto.sh` → `/angle-mort` | **Rail** |
 | §5 | Anti-hallucination | — | **Non automatisable** (jugement) |
 | §6 | Anti-boucle (3+ échecs identiques) | `guard-anti-loop.sh` PostToolUse | **Rail** |
 | §7 | Qualité du code | — | **Non automatisable** (jugement) |
@@ -81,14 +81,14 @@ Tous les hooks sont dans `hooks/` et branchés dans `.claude/settings.json`.
 | §13 | Commits en français | `guard-commit-french.sh` PreToolUse | **Rail** |
 | §15 | Routing modèle (Opus/Sonnet/Haiku) | `routing-check.sh` UserPromptSubmit | **Rail** |
 | §15 | Diagnostic QMD/§0/handoff/gate | `routing-check.sh` throttle 30 min | **Rail** |
-| §18 | Extended thinking auto-montée/descente | — | Intention |
+| §18 | Extended thinking auto-montée/descente | — | Intention (1 restante) |
 | §22 | Secrets, push sans gate | Deny list settings.json | **Rail** |
 | §24 | Pre-push gate | Deny list settings.json | **Rail** |
 | §25 | Review auto si 100+ lignes | `guard-review-auto.sh` PostToolUse | **Rail** |
 
-**Bilan : 9 rails / 16 règles.** Les 4 non automatisables (§5, §7, §8)
-relèvent du jugement du modèle. Les 3 intentions restantes (§2, §3, §18)
-pourraient devenir des rails si un pattern de détection fiable est trouvé.
+**Bilan : 11 rails / 16 règles.** Les 4 non automatisables (§5, §7, §8,
+§13 atomique) relèvent du jugement du modèle. 1 intention restante (§18
+extended thinking) — pas de pattern de détection fiable trouvé.
 
 ---
 
