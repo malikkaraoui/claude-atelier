@@ -188,11 +188,12 @@ bash scripts/pre-push-gate.sh
 git push
 ```
 
-### Fallback : watchdog bash
+### Note
 
-Si l'app Claude desktop n'est pas disponible (headless, serveur CI),
-le script `scripts/night-watchdog.sh` reste utilisable comme fallback.
-Il notifie via `osascript` (macOS) au lieu de Dispatch.
+Les scripts bash watchdog (`night-watchdog.sh`, `night-launch.sh`) ont été
+retirés du repo. La tâche planifiée Cowork les remplace entièrement :
+processus indépendant, notification iMessage/Dispatch, pas de script à
+maintenir.
 
 ## Cas où ce mode est une mauvaise idée
 
