@@ -55,11 +55,31 @@ Le watchdog Cowork compense en cliquant sur les éventuels prompts restants.
 | Mécanisme | Fiabilité | Peut être bypassé ? |
 | --- | --- | --- |
 | Règle dans CLAUDE.md | Faible | Oui — contexte saturé, inattention |
+| Hook `PreToolUse` / `PostToolUse` | Forte | Non — bloquant (exit 2) |
 | Hook `UserPromptSubmit` | Forte | Non — injecté avant chaque traitement |
 | Watchdog Cowork (externe) | Forte | Non — externe à Claude |
 | Deny list settings.json | Absolue | Non — bloqué au niveau système |
 
-**Règle de conception :** pour toute règle critique (routing, push, secrets), préférer un hook ou une deny list. CLAUDE.md sert de référence, pas de garde-fou.
+**Règle de conception :** pour toute règle critique, préférer un hook ou
+une deny list. CLAUDE.md sert de référence, pas de garde-fou.
+
+### Matrice d'enforcement — hooks actifs
+
+Tous les hooks sont dans `hooks/` et branchés dans `.claude/settings.json`.
+
+| § | Règle | Hook | Type | Déclencheur |
+| --- | --- | --- | --- | --- |
+| §6 | Anti-boucle (3+ échecs identiques) | `guard-anti-loop.sh` | PostToolUse | Chaque commande Bash |
+| §13 | Jamais signer (Co-Authored-By) | `guard-no-sign.sh` | PreToolUse | `git commit` |
+| §13 | Commits en français | `guard-commit-french.sh` | PreToolUse | `git commit` |
+| §15 | Routing modèle (Opus/Sonnet/Haiku) | `routing-check.sh` | UserPromptSubmit | Chaque message |
+| §15 | Diagnostic QMD/§0/handoff/gate | `routing-check.sh` | UserPromptSubmit | Toutes les 30 min |
+| §22 | Secrets, push sans gate | Deny list | Système | `git push` bloqué |
+| §24 | Tests avant push | `guard-tests-before-push.sh` | PreToolUse | `git push` |
+| §25 | Review auto 100+ lignes | `guard-review-auto.sh` | PostToolUse | `git commit` |
+
+**Non automatisable** (jugement requis) : §5 anti-hallucination, §7 qualité
+code, §8 anti-patterns. Ces règles restent des intentions dans CLAUDE.md.
 
 ---
 
