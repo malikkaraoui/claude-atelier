@@ -41,8 +41,8 @@ Options:
   --lang <fr|en>    Language (default: fr)
 
 Status:
-  Available now: lint
-  Still stubbed: init, update, doctor
+  Available now: lint, doctor
+  Still stubbed: init, update
   Repo: ${pkg.homepage}
 `;
 
@@ -100,6 +100,10 @@ function main(argv) {
 
   if (command === 'lint') {
     return runLint();
+  }
+
+  if (command === 'doctor') {
+    return runNodeScript('test/doctor.js');
   }
 
   process.stderr.write(

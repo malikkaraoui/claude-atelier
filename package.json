@@ -43,7 +43,8 @@
     "lint": "node test/lint-refs.js && node test/lint-length.js",
     "lint:refs": "node test/lint-refs.js",
     "lint:length": "node test/lint-length.js",
-    "test": "npm run lint"
+    "doctor": "node test/doctor.js",
+    "test": "npm run lint && npm run doctor"
   },
   "publishConfig": {
     "access": "public"
