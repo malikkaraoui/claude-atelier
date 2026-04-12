@@ -1,8 +1,9 @@
 # claude-atelier
 
-> Opinionated Claude Code configuration — bilingual runtime rules, orchestration patterns, autonomy modes, security gates, stack-specific satellites. Installable via CLI.
->
-> Version: `0.1.0` — **work in progress**, not yet published to NPM.
+> Framework de travail pour Claude Code — règles runtime bilingues, enforcement par hooks, orchestration multi-agents, sécurité, satellites par stack. Installable en une commande.
+
+[![npm version](https://img.shields.io/npm/v/claude-atelier.svg)](https://www.npmjs.com/package/claude-atelier)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 🇫🇷 [Français](#français) · 🇬🇧 [English](#english)
 
@@ -10,65 +11,192 @@
 
 ## Français
 
-### Pourquoi
+### Le problème
 
-Travailler avec Claude Code sans guardrails ni routine codifiée, c'est bosser sur un tréteau : ça tient debout, mais chaque bourrasque relance la même discussion. `claude-atelier` est la configuration que j'utilise au quotidien, extraite et durcie, pour que mes sessions Claude soient :
+Claude Code sans structure, c'est ça :
+- Opus qui tourne toute la nuit sur une tâche Haiku → budget cramé
+- Commit signé avec `Co-Authored-By` × 50 → historique pollué
+- Push sans tests → régression en prod silencieuse
+- 200+ lignes modifiées sans review → angles morts garantis
+- Rules dans CLAUDE.md → intentions. Pas des garanties.
 
-- **Prévisibles** — mêmes règles runtime partout
-- **Sûres** — secrets, gate pré-push, modes d'autonomie cadrés
-- **Rapides** — budget tokens maîtrisé, satellites chargés à la demande
-- **Extensibles** — satellites par stack (React/Vite, Firebase, Python, Java, Docker, Ollama)
+`claude-atelier` remplace les intentions par des rails.
 
-### Structure (cible)
+---
 
-```text
-src/
-├── fr/ · en/          Runtime rules bilingues (FR source de vérité)
-│   ├── CLAUDE.md      Core ≤ 150 lignes, rechargé à chaque message
-│   ├── rules/         Règles absolues (anti-hallucination, secrets, qualité)
-│   ├── runtime/       Flow Explore→Plan→Implement→Verify, format, erreurs, ton
-│   ├── orchestration/ Fork/Teammate/Worktree, subagents, MCP, routing
-│   ├── autonomy/      Modes permission, night-mode, loop-watchers
-│   ├── security/      Secrets, pre-push gate, procédure d'urgence
-│   └── ecosystem/     Skills, plugins, hooks, memory, QMD
-├── stacks/            Satellites par stack (neutre linguistiquement)
-└── templates/         .gitignore, .claudeignore, settings.json, CLAUDE.project.md
+### Ce que c'est
 
-bin/cli.js             Installeur CLI (init, update, doctor, lint)
-scripts/               Scripts shell réellement fournis (pre-push-gate, inject-date)
-hooks/                 Hooks Claude Code prêts à l'emploi
-```
+Un framework complet pour Claude Code : règles runtime, hooks d'enforcement, skills slash commands, satellites par stack, mode nuit supervisé. Tout ce qu'on a durci en production.
+
+**11 règles sur 16 enforcées par des mécanismes système.** Pas du texte dans un fichier.
+
+---
 
 ### Installation
 
-> ⚠️ **Pas encore publié sur NPM.** Le CLI fonctionne localement (`init`, `lint`, `doctor`).
-> Seul `update` reste à implémenter.
-
 ```bash
-# Installer dans le projet courant (./.claude/)
+# Initialiser dans le projet courant
 npx claude-atelier init
 
-# Installer globalement (~/.claude/)
+# Initialiser globalement (~/.claude/)
 npx claude-atelier init --global
 
 # Choisir la langue (défaut: fr)
 npx claude-atelier init --lang en
 
-# Vérifier l'intégrité
+# Diagnostic santé (27+ checks)
 npx claude-atelier doctor
 
 # Mettre à jour (préserve le §0 du projet)
 npx claude-atelier update
 ```
 
-### État d'avancement
+---
 
-Voir [CHANGELOG.md](CHANGELOG.md).
+### Les rails — Hooks d'enforcement
 
-- **P1 — Foundation** : terminé (arborescence, manifests, CLI squelette)
-- **P2 — Refactor core** : terminé (CLAUDE.md 285→145 lignes, contradictions résolues)
-- **P3 — Satellites & modernité** : terminé (20 satellites, 0 legacy, pre-push-gate livré)
-- **P4 — CLI & tests & CI** : terminé (init, doctor, lint, CI GitHub Actions, handoff inter-LLM)
+Les règles critiques ne sont pas dans un README. Elles sont dans des hooks qui se déclenchent à chaque action.
+
+| Règle | Hook | Déclencheur |
+| --- | --- | --- |
+| Routing modèle (Opus/Sonnet/Haiku) | `routing-check.sh` UserPromptSubmit | Chaque message |
+| Diagnostic QMD / §0 / gate / handoff | `routing-check.sh` throttle 30 min | Toutes les 30 min |
+| Jamais signer les commits | `guard-no-sign.sh` PreToolUse | `git commit` |
+| Commits en français | `guard-commit-french.sh` PreToolUse | `git commit` |
+| Tests obligatoires avant push | `guard-tests-before-push.sh` PreToolUse | `git push` |
+| Review auto si 100+ lignes | `guard-review-auto.sh` PostToolUse | `git commit` |
+| `/angle-mort` aux moments clés | `guard-review-auto.sh` PostToolUse | feat/refactor commit ou 10e commit |
+| Anti-boucle (3+ échecs identiques) | `guard-anti-loop.sh` PostToolUse | Chaque commande bash |
+
+**Bilan : 11 rails / 16 règles.** Les 4 non automatisables (anti-hallucination, qualité code, anti-patterns) relèvent du jugement du modèle.
+
+---
+
+### Token Routing — Ne plus brûler son budget
+
+Le hook `routing-check.sh` injecte le modèle actif à chaque message et recommande un switch si mismatch :
+
+```
+[ROUTING] modèle: claude-opus-4-6 | Opus→archi | Sonnet→dev | Haiku→exploration
+```
+
+| Modèle | Usage | Coût relatif |
+| --- | --- | --- |
+| **Haiku 4.5** | Exploration, subagents, lint | 1× |
+| **Sonnet 4.6** | Dev quotidien, features, bug fixes | ~5× |
+| **Opus 4.6** | Architecture, debug bloquant, décision irréversible | ~50× |
+
+---
+
+### Skills — 12 slash commands
+
+```
+/atelier-help       → Oracle : état du projet + commandes disponibles
+/atelier-setup      → Onboarding interactif (7 étapes)
+/atelier-doctor     → Diagnostic santé (27+ checks)
+/angle-mort         → Review anti-complaisance avant release
+/audit-safe         → Audit sécurité (5 checks)
+/review-copilot     → Handoff review pour Copilot/GPT
+/integrate-review   → Ferme la boucle (lit réponse, trie, checklist)
+/night-launch       → Prépare le mode nuit (8 prérequis)
+/token-routing      → Configure Haiku/Sonnet/Opus
+/compress           → Compresse CLAUDE.md pour réduire les tokens input
+/qmd-init           → Installe QMD (moteur recherche markdown local)
+/bmad-init          → Installe BMAD (optionnel, gros projets)
+```
+
+---
+
+### Mode Nuit — Autonomie supervisée
+
+Claude qui crash à 22h34, personne s'en rend compte, 8h perdues.
+
+```text
+Claude Code (VSCode)          Watchdog Cowork (Haiku)
+acceptEdits mode              Tâche planifiée horaire
+commits atomiques             git log → delta > 15 min ?
+ne push jamais                Screenshot VSCode → diagnostic
+                              CAS A: bouton Allow → auto-clic
+                              CAS B: spinner → silence
+                              CAS C: figé → iMessage alerte
+                              CAS D: fermé → iMessage alerte
+```
+
+---
+
+### Parallelisation — 3 patterns de puissance
+
+**Parallel Audit Storm** — 4 agents Haiku en un message (secrets + lint + refs + tests). Audit complet en 3 min au lieu de 15.
+
+**Background Copilot Review** — Agent background écrit le handoff pendant que tu continues à coder. Zéro interruption du flow.
+
+**Multi-Session CLI** — 2-3 terminaux Claude indépendants (dev + tests continus + lint watcher). CI locale temps réel.
+
+---
+
+### Review Inter-LLM — Claude ↔ Copilot
+
+Un seul LLM ne voit pas ses propres angles morts.
+
+```
+/review-copilot → handoff .md → Copilot répond
+→ /integrate-review → trier (retenu / à garder / écarté) → actions
+```
+
+Déclenchement automatique via hook : feature terminée, 100+ lignes modifiées, 3+ tentatives échouées.
+
+---
+
+### Satellites par stack
+
+Chargés conditionnellement selon le projet actif.
+
+| Stack | Fichier |
+| --- | --- |
+| JavaScript/TypeScript | `stacks/javascript.md` |
+| Python | `stacks/python.md` |
+| Java | `stacks/java.md` |
+| React + Vite | `stacks/react-vite.md` |
+| Firebase | `stacks/firebase.md` |
+| Docker | `stacks/docker.md` |
+| Ollama | `stacks/ollama.md` |
+
+---
+
+### Structure
+
+```text
+src/
+├── fr/ · en/          Règles runtime bilingues (FR source de vérité)
+│   ├── CLAUDE.md      Core ≤ 150 lignes, rechargé à chaque message
+│   ├── orchestration/ Fork/Teammate/Worktree, subagents, MCP, routing
+│   ├── autonomy/      Modes permission, night-mode, loop-watchers
+│   ├── security/      Secrets, pre-push gate, procédure d'urgence
+│   ├── runtime/       Flow, format, extended thinking, todo-session
+│   └── ecosystem/     Skills, plugins, hooks, memory, QMD
+├── stacks/            Satellites par stack
+├── skills/            12 slash commands SKILL.md
+└── templates/         .gitignore, .claudeignore, settings.json
+
+hooks/                 6 hooks d'enforcement prêts à l'emploi
+scripts/               pre-push-gate.sh (5 checks : secrets→lint→build→tests)
+bin/cli.js             CLI (init, doctor, lint, update)
+```
+
+---
+
+### Sécurité
+
+| Couche | Protection |
+| --- | --- |
+| `.gitignore` | Fichiers sensibles exclus |
+| `.claudeignore` | Invisibles pour Claude |
+| `settings.json` deny list | Commandes destructives bloquées |
+| `pre-push-gate.sh` | 5 étapes avant chaque push |
+| Patterns regex | Détection secrets (sk-, AKIA, ghp_, AIza…) |
+| Hooks PreToolUse | Bloquant avant exécution (exit 2) |
+
+---
 
 ### Licence
 
@@ -78,65 +206,112 @@ MIT — voir [LICENSE](LICENSE).
 
 ## English
 
-### Why
+### The Problem
 
-Using Claude Code without guardrails or a codified routine is like building on a trestle: it stands, but every gust restarts the same discussion. `claude-atelier` is the config I use daily, extracted and hardened, so my Claude sessions stay:
+Claude Code without structure looks like this:
+- Opus running overnight on a Haiku-level task → budget gone
+- `Co-Authored-By` on every commit × 50 → polluted git history
+- Push without tests → silent regression in prod
+- 200+ lines changed with no review → guaranteed blind spots
+- Rules in CLAUDE.md → intentions. Not guarantees.
 
-- **Predictable** — same runtime rules everywhere
-- **Safe** — secrets, pre-push gate, bounded autonomy modes
-- **Fast** — controlled token budget, satellites loaded on demand
-- **Extensible** — per-stack satellites (React/Vite, Firebase, Python, Java, Docker, Ollama)
+`claude-atelier` replaces intentions with rails.
 
-### Structure (target)
+---
 
-```text
-src/
-├── fr/ · en/          Bilingual runtime rules (FR is the source of truth)
-│   ├── CLAUDE.md      Core, ≤ 150 lines, reloaded on every message
-│   ├── rules/         Absolute rules (anti-hallucination, secrets, quality)
-│   ├── runtime/       Explore→Plan→Implement→Verify flow, format, errors, tone
-│   ├── orchestration/ Fork/Teammate/Worktree, subagents, MCP, model routing
-│   ├── autonomy/      Permission modes, night mode, loop watchers
-│   ├── security/      Secrets, pre-push gate, emergency procedure
-│   └── ecosystem/     Skills, plugins, hooks, memory, QMD
-├── stacks/            Per-stack satellites (language-neutral)
-└── templates/         .gitignore, .claudeignore, settings.json, CLAUDE.project.md
+### What it is
 
-bin/cli.js             CLI installer (init, update, doctor, lint)
-scripts/               Actual shell scripts shipped (pre-push-gate, inject-date)
-hooks/                 Ready-to-use Claude Code hooks
-```
+A complete framework for Claude Code: runtime rules, enforcement hooks, slash command skills, per-stack satellites, supervised night mode. Everything hardened in production.
 
-### Installation (EN)
+**11 out of 16 rules enforced by system-level mechanisms.** Not text in a file.
 
-> ⚠️ **Not yet published on NPM.** CLI works locally (`init`, `lint`, `doctor`).
-> Only `update` is still a stub.
+---
+
+### Installation
 
 ```bash
-# Install into the current project (./.claude/)
+# Initialize in current project
 npx claude-atelier init
 
-# Install globally (~/.claude/)
+# Initialize globally (~/.claude/)
 npx claude-atelier init --global
 
 # Pick language (default: fr)
 npx claude-atelier init --lang en
 
-# Verify integrity
+# Health diagnostic (27+ checks)
 npx claude-atelier doctor
 
-# Update (preserves project's §0)
+# Update (preserves project §0)
 npx claude-atelier update
 ```
 
-### Status
+---
 
-See [CHANGELOG.md](CHANGELOG.md).
+### The Rails — Enforcement Hooks
 
-- **P1 — Foundation**: done (scaffolding, manifests, CLI skeleton)
-- **P2 — Core refactor**: done (CLAUDE.md 285→145 lines, contradictions resolved)
-- **P3 — Satellites & modern surface**: done (20 satellites, 0 legacy, pre-push-gate shipped)
-- **P4 — CLI & tests & CI**: done (init, doctor, lint, GitHub Actions CI, inter-LLM handoff)
+Critical rules aren't in a README. They're in hooks that fire on every action.
+
+| Rule | Hook | Trigger |
+| --- | --- | --- |
+| Model routing (Opus/Sonnet/Haiku) | `routing-check.sh` UserPromptSubmit | Every message |
+| Diagnostic QMD / §0 / gate / handoff | `routing-check.sh` 30-min throttle | Every 30 min |
+| Never sign commits | `guard-no-sign.sh` PreToolUse | `git commit` |
+| Commits in French | `guard-commit-french.sh` PreToolUse | `git commit` |
+| Tests required before push | `guard-tests-before-push.sh` PreToolUse | `git push` |
+| Auto review at 100+ lines | `guard-review-auto.sh` PostToolUse | `git commit` |
+| `/angle-mort` at key moments | `guard-review-auto.sh` PostToolUse | feat/refactor or 10th commit |
+| Anti-loop (3+ identical failures) | `guard-anti-loop.sh` PostToolUse | Every bash command |
+
+---
+
+### Token Routing — Stop burning budget
+
+The `routing-check.sh` hook injects the active model on every message and recommends a switch if there's a mismatch:
+
+| Model | Usage | Relative cost |
+| --- | --- | --- |
+| **Haiku 4.5** | Exploration, subagents, lint | 1× |
+| **Sonnet 4.6** | Daily dev, features, bug fixes | ~5× |
+| **Opus 4.6** | Architecture, blocking debug, irreversible decisions | ~50× |
+
+---
+
+### Skills — 12 slash commands
+
+```
+/atelier-help       → Oracle: project state + available commands
+/atelier-setup      → Interactive onboarding (7 steps)
+/atelier-doctor     → Health diagnostic (27+ checks)
+/angle-mort         → Anti-complacency review before release
+/audit-safe         → Security audit (5 checks)
+/review-copilot     → Handoff review for Copilot/GPT
+/integrate-review   → Close the loop (read response, sort, checklist)
+/night-launch       → Prepare night mode (8 prerequisites)
+/token-routing      → Configure Haiku/Sonnet/Opus
+/compress           → Compress CLAUDE.md to reduce input tokens
+/qmd-init           → Install QMD (local markdown search engine)
+/bmad-init          → Install BMAD (optional, large projects)
+```
+
+---
+
+### Night Mode — Supervised autonomy
+
+Claude crashes at 10:34pm, nobody notices, 8 hours lost.
+
+```text
+Claude Code (VSCode)          Watchdog Cowork (Haiku)
+acceptEdits mode              Hourly scheduled task
+atomic commits                git log → delta > 15 min?
+never pushes                  Screenshot VSCode → diagnosis
+                              CASE A: Allow button → auto-click
+                              CASE B: spinner → silence
+                              CASE C: frozen → iMessage alert
+                              CASE D: closed → iMessage alert
+```
+
+---
 
 ### License
 
