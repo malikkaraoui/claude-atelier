@@ -44,15 +44,29 @@ qu'une session routée :
 Le routing n'est pas de l'optimisation prématurée. C'est de la
 **survie budgétaire** en night-mode.
 
-## Quand monter en effort
+## Cycle montée / descente automatique
 
-- `/effort low` : rename, typo, lookup → ~2k thinking tokens
-- `/effort medium` : implémentation standard → ~10k (défaut)
-- `/effort high` : architecture, debug complexe → ~30k+
+```text
+low ──────── medium ──────── high
+ ↑  auto-descente  ↑  auto-montée  ↑
+ │                 │                │
+ │  rename, typo   │  implémentation│  architecture
+ │  lookup, grep   │  bug fix       │  plan, conception
+ │  format, lint   │  feature       │  migration DB
+ │                 │  tests         │  debug bloquant
+ │  ~2k tokens     │  ~10k tokens   │  ~30k+ tokens
+```
 
-Monter en `/effort high` automatiquement quand le champ lexical
-contient : architecture, plan, conception, migration, refactor
-critique, schéma DB, decision irréversible.
+**Montée** : Claude détecte un champ lexical complexe → **vérifie le
+niveau actuel d'abord**. Si déjà en `high` ou `max` → ne rien dire.
+Sinon → monte et signale « Je monte en effort high pour cette tâche. »
+
+**Descente** : la tâche complexe est terminée → redescend et signale
+« Tâche architecturale terminée, je redescends en effort medium. »
+
+**Night-mode** : forcer `low` pour l'exploration (grep, read),
+`medium` pour l'implémentation. Jamais `high` sauf bug bloquant
+(le but premier : ne pas brûler tous les tokens en une nuit).
 
 ## Action
 
