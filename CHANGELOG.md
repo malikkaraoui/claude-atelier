@@ -15,6 +15,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.2.0] — 2026-04-12
+
+### Phase 5 — Skills, méthodologie & token routing (completed 2026-04-12)
+
+#### Added (phase 5)
+
+- `src/skills/` — 11 slash commands as SKILL.md files:
+  `/atelier-help` (oracle + catalog CSV), `/atelier-setup` (7-step onboarding),
+  `/review-copilot` (handoff Copilot/GPT), `/integrate-review` (closes inter-LLM loop),
+  `/angle-mort` (blind-spot review), `/audit-safe` (5-step security audit),
+  `/night-launch` (night-mode preflight), `/atelier-doctor` (27-check diagnostic),
+  `/token-routing` (Haiku/Sonnet/Opus routing guide), `/bmad-init` (installs BMAD-METHOD),
+  `/qmd-init` (installs QMD if ≥ 5 .md files)
+- `src/skills/atelier-help/atelier-help.csv` — machine-readable catalog (code, skill,
+  display-name, description, phase, required)
+- `docs/methodology.md` — complete 9-section framework doc (Token Routing, Permissions,
+  Git Workflow, Night-Mode, Review Inter-LLM, Security, Multi-Stack, Orchestration,
+  Slash Commands)
+
+#### Changed (phase 5)
+
+- `src/fr/CLAUDE.md §15` — model alert now suggests `/model sonnet` / `/model haiku`
+  with the exact command instead of vague "recommend a switch"
+- `src/fr/CLAUDE.md §18` — auto-montée + auto-descente effort levels, anti-flapping rule
+  (no change > 1 per message)
+- `src/fr/CLAUDE.md §25` — automatic Copilot review trigger added (feature done, critical
+  bug fix, 100+ lines changed, 3+ failed attempts)
+- `src/fr/autonomy/night-mode.md` — watchdog v4 (screenshot + auto-click Allow +
+  iMessage), v5 adds Étape 0 pgrep check (terminate silently if no Claude process),
+  comparison table of 3 scheduling methods
+- `bin/init.js` — copies `src/skills/` into `.claude/skills/` during installation
+- `package.json` — added `test/` to `files` array (fix: CLI lint+doctor would crash
+  after npm publish)
+- `src/skills/token-routing/SKILL.md` — documents `/model` command for mid-session
+  model switching
+
 ### Phase 4 — CLI, CI & inter-LLM (completed 2026-04-12)
 
 #### Added (phase 4)
@@ -187,5 +225,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial scaffolding commit. No functional code yet — infrastructure only.
 
-[Unreleased]: https://github.com/malikkaraoui/claude-atelier/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/malikkaraoui/claude-atelier/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/malikkaraoui/claude-atelier/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/malikkaraoui/claude-atelier/releases/tag/v0.1.0
