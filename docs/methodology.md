@@ -184,6 +184,7 @@ conditionnellement selon §0 :
 | Firebase | `stacks/firebase.md` | Règles, Functions, Emulator |
 | Docker | `stacks/docker.md` | Multi-stage, non-root, healthchecks |
 | Ollama | `stacks/ollama.md` | Modelfile, VRAM, quantization |
+| iOS / tvOS + Xcode | `stacks/ios-xcode.md` | SwiftUI, MVVM, xcodebuild, Makefile V4 |
 
 ---
 

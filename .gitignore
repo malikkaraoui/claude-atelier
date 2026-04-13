@@ -54,6 +54,9 @@ Desktop.ini
 coverage/
 .nyc_output/
 
+# Documents de travail personnels (non versionnés)
+ios_vscode_claude_workflow_v4.md
+
 # Claude Code runtime (local state, pas versionné)
 .claude/projects/
 .claude/todos/

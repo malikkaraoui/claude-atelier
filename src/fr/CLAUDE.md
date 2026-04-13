@@ -69,7 +69,7 @@ Template par défaut : `/core` · `/modules` · `/services` · `/utils` · `/tes
 
 ## §10 Standards par stack → `../stacks/`
 
-Chargement conditionnel selon §0 « Stack ». Disponibles : `javascript` · `python` · `java` · `react-vite` · `firebase` · `docker` · `ollama`.
+Chargement conditionnel selon §0 « Stack ». Disponibles : `javascript` · `python` · `java` · `react-vite` · `firebase` · `docker` · `ollama` · `ios-xcode`.
 
 ## §11 Tests
 

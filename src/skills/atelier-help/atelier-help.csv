@@ -11,3 +11,4 @@ TR,token-routing,Token Routing,"Explique et configure le routing Haiku/Sonnet/Op
 BI,bmad-init,BMAD Init,"Installe BMAD-METHOD (optionnel, gros projets)",setup,false
 QI,qmd-init,QMD Init,"Installe QMD (optionnel, >= 5 fichiers .md)",setup,false
 CO,compress,Compress,"Compresse CLAUDE.md pour réduire les tokens input (backup auto)",tokens,false
+IS,ios-setup,iOS Setup,"Configure le workflow iOS/tvOS : VS Code + Claude Code + Xcode + Makefile V4",setup,false
