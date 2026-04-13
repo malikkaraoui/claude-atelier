@@ -15,10 +15,10 @@ echo "[ROUTING] modèle: $MODEL | Opus→archi | Sonnet→dev | Haiku→explorat
 
 # ===== DÉTECTION STACK (chaque message) =====
 # iOS / Xcode
-if echo "$PROMPT" | grep -qiE "xcode|ios|tvos|swiftui|swift|simctl|xcodebuild|iphone|ipad|app store|testflight|make run|make tvrun"; then
+if echo "$PROMPT" | grep -qiE "xcode|ios|tvos|ipados|swiftui|swift|simctl|xcodebuild|iphone|ipad|app store|testflight|make run|make tvrun"; then
   STACK_FILE="$REPO_ROOT/src/stacks/ios-xcode.md"
   if [ -f "$STACK_FILE" ]; then
-    echo "[STACK iOS] Contexte Xcode/iOS détecté — satellite chargé :"
+    echo "[STEVE] 🍎 Chantier Apple détecté. Steve prend le relais — satellite chargé."
     cat "$STACK_FILE"
   fi
 fi

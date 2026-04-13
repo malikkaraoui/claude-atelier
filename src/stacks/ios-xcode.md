@@ -7,9 +7,14 @@ triggers: xcode, ios, tvos, ipados, swift, swiftui, xcodebuild, simctl, xcrun, t
 
 # Stack — iOS / tvOS / iPadOS + Xcode
 
-> L'atelier ouvre un chantier Apple. Pas une app ordinaire — une app
-> qui se code dans VS Code, se build depuis le terminal, et n'ouvre
-> Xcode que quand Apple l'impose. C'est le workflow V4.
+> **Agent : Steve** 🍎
+>
+> L'atelier ouvre un chantier Apple. Steve entre en scène — il connaît
+> le workflow, les pièges Xcode, le FFI, les simulateurs. Il code dans
+> VS Code, build depuis le terminal, et n'ouvre Xcode que quand Apple
+> l'impose. C'est le workflow V4.
+>
+> *« Stay hungry, stay foolish — mais build depuis le Makefile. »*
 
 ## Philosophie
 
