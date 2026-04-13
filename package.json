@@ -1,6 +1,6 @@
 {
   "name": "claude-atelier",
-  "version": "0.3.11",
+  "version": "0.4.0",
   "description": "Opinionated Claude Code configuration: bilingual runtime rules, orchestration patterns, autonomy modes, security gates and stack-specific satellites. Installable via CLI.",
   "keywords": [
     "claude",
@@ -45,7 +45,8 @@
     "lint:refs": "node test/lint-refs.js",
     "lint:length": "node test/lint-length.js",
     "doctor": "node test/doctor.js",
-    "test": "npm run lint && npm run doctor"
+    "test:hooks": "node test/hooks.js",
+    "test": "npm run lint && npm run doctor && npm run test:hooks"
   },
   "publishConfig": {
     "access": "public"

@@ -103,12 +103,14 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 | **Steve** 🍎 | iOS / tvOS / iPadOS + Xcode | `swift`, `xcode`, `ios`, `simctl`... | Workflow V4 complet : Makefile, FFI Rust→Swift, troubleshooting, `Cmd+Shift+B` |
 | **Isaac** 📦 | NPM Publish / Registry | `npm publish`, `npm version`, `registry`... | Pipeline CI/CD, versionning sémantique, tokens, troubleshooting |
 | **Mohamed** 📋 | Review inter-LLM | `feat:` commit, 100+ lignes, 10 commits, session restart | Instruit le dossier review : commits, diff, question précise, handoff Copilot/GPT |
+| **Amine** 🧪 | Tests hooks | `feat:` commit sans fichier `test/` modifié | Alerte feat sans tests, 20 tests unitaires hooks, `npm run test:hooks` |
 
 *« Stay hungry, stay foolish — mais build depuis le Makefile. »* — Steve
 *« npm install — deux mots qui doivent toujours marcher. »* — Isaac
 *« Un code non challengé n'est pas fini. C'est une bombe à retardement. »* — Mohamed
+*« Pas de test, pas de feat. C'est pas négociable. »* — Amine
 
-Steve et Isaac sont injectés via `routing-check.sh` sur détection de stack. Mohamed arrive via les hooks Challenger (`guard-review-auto.sh`) et le cross-session check — automatiquement, sans que tu aies à y penser.
+Steve et Isaac sont injectés via `routing-check.sh` sur détection de stack. Mohamed arrive via les hooks Challenger (`guard-review-auto.sh`) et le cross-session check. Amine vérifie que chaque feat commit inclut des tests — automatiquement, sans que tu aies à y penser.
 
 ---
 
@@ -403,11 +405,15 @@ When a specific domain is detected in your message, the atelier automatically lo
 | --- | --- | --- | --- |
 | **Steve** 🍎 | iOS / tvOS / iPadOS + Xcode | `swift`, `xcode`, `ios`, `simctl`... | Full V4 workflow: Makefile, Rust→Swift FFI, troubleshooting, `Cmd+Shift+B` |
 | **Isaac** 📦 | NPM Publish / Registry | `npm publish`, `npm version`, `registry`... | CI/CD pipeline, semantic versioning, tokens, troubleshooting |
+| **Mohamed** 📋 | Inter-LLM Review | `feat:` commit, 100+ lines, 10 commits, session restart | Prepares review dossier: commits, diff, precise question, Copilot/GPT handoff |
+| **Amine** 🧪 | Hook Tests | `feat:` commit without `test/` changes | Alerts feat without tests, 20 hook unit tests, `npm run test:hooks` |
 
 *"Stay hungry, stay foolish — but build from the Makefile."* — Steve
 *"npm install — two words that must always work."* — Isaac
+*"Unchallenged code isn't done. It's a time bomb."* — Mohamed
+*"No test, no feat. Not negotiable."* — Amine
 
-The agent is injected via the `routing-check.sh` hook — no manual config. Mention Xcode, Steve shows up with full context.
+Steve and Isaac are injected via `routing-check.sh` on stack detection. Mohamed arrives via the Challenger hooks (`guard-review-auto.sh`) and the cross-session check. Amine verifies that every feat commit includes tests — automatically, no manual trigger.
 
 ---
 

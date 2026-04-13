@@ -75,7 +75,7 @@ Chargement conditionnel selon §0 « Stack ». Disponibles : `javascript` · `py
 
 ## §11 Tests
 
-Obligatoires si logique métier, transformation, comportement critique. Couvrir nominal + edge cases + erreurs.
+Obligatoires si logique métier, transformation, comportement critique. Couvrir nominal + edge cases + erreurs. Pour tout hook : ajouter/mettre à jour `test/hooks.js`. `npm test` doit passer avant chaque push.
 
 ## §12 Code Review → `./runtime/code-review.md`
 

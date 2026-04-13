@@ -42,6 +42,14 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
   echo "$COMMITS" > "$COMMITS_FILE"
 
   if [ "$FEATURE_DONE" = true ]; then
+    # Amine : vérifier si des tests accompagnent la feat
+    TEST_CHANGES=$(cd "$REPO_ROOT" && git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -cE "^test/" || echo 0)
+    if [ "${TEST_CHANGES:-0}" -eq 0 ]; then
+      echo ""
+      echo "🧪 [AMINE] Feat sans tests → \"$COMMIT_MSG\""
+      echo "   Chaque feat doit éclore avec ses tests. → test/hooks.js"
+      echo ""
+    fi
     echo ""
     echo "📋 [MOHAMED] Feature détectée : \"$COMMIT_MSG\""
     echo "   Mohamed est prêt à instruire le dossier avant que tu continues."
