@@ -175,15 +175,13 @@ ouvert. Claude Code ne peut pas tourner. Verifie ta machine."
 
 CAS F — Erreur API Anthropic visible ("API Error", "500", "Internal server error", "overloaded_error") :
 C'est une panne temporaire Anthropic, pas un crash de ta machine.
-  1. Attends 2 minutes (la panne est souvent courte)
-  2. Identifie le champ de saisie Claude Code sur le screenshot
-  3. Clique dessus
-  4. Tape : relance suite a une erreur API Anthropic
-  5. Appuie sur Return
-  6. Envoie un iMessage a <TON_NUMERO> : "Watchdog: Erreur API Anthropic 500 detentee
-     sur <NOM_PROJET>. J'ai tape 'relance'. Claude Code devrait reprendre."
-Si l'erreur persiste a la prochaine execution : envoie un iMessage d'alerte et
-ne retente pas (evite la boucle infinie).
+Ne pas interagir avec VSCode.
+Envoie un iMessage a <TON_NUMERO> : "Watchdog: Erreur API Anthropic 500 detectee
+sur <NOM_PROJET>. Claude Code est bloque. Interviens manuellement ou attends
+que la panne passe. Je surveille a la prochaine execution."
+Envoie aussi un message dans Dispatch avec le meme contenu.
+A la prochaine execution : si l'erreur a disparu et Claude Code est actif → termine
+silencieusement. Si l'erreur persiste → iMessage unique (ne pas spammer).
 
 CAS E — Panneau "session limit" / "quota" / "resets at" / "You've hit your limit" visible :
 C'est normal. NE PAS alerter l'utilisateur. NE PAS envoyer d'iMessage.
@@ -223,7 +221,7 @@ Ne modifie aucun fichier du projet. Ne committe rien.
 | Session crashée | iMessage alerte | Intervention humaine requise |
 | VSCode fermé | iMessage alerte | Intervention humaine requise |
 | Quota limit atteint | Silence → attend 1h → clic + type + Return | Session relancée sans alerte |
-| Erreur API 500 Anthropic | Attente 2 min → type "relance" → iMessage | Session relancée, utilisateur informé |
+| Erreur API 500 Anthropic | iMessage + Dispatch → surveille prochaine exécution | Utilisateur informé, pas d'interaction VSCode |
 
 ### 3 méthodes de scheduling comparées
 
