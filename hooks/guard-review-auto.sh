@@ -20,10 +20,10 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
 
   if [ "$TOTAL" -ge 100 ]; then
     echo ""
-    echo "🔍 [CHALLENGER] $TOTAL lignes modifiées depuis la dernière review."
-    echo "   Tu as la tête dans le guidon — un coéquipier verrait ce que tu ne vois plus."
-    echo "   → /review-copilot pour un handoff review externe"
-    echo "   → /angle-mort pour une auto-review anti-complaisance"
+    echo "📋 [MOHAMED] $TOTAL lignes modifiées — Mohamed instruit le dossier."
+    echo "   Tu as la tête dans le guidon. Il voit ce que tu ne vois plus."
+    echo "   → /review-copilot — Mohamed prépare le handoff"
+    echo "   → /angle-mort — auto-review anti-complaisance"
     echo ""
     echo "0" > "$LINES_FILE"
     git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > /tmp/claude-atelier-last-reviewed-commit || true
@@ -43,20 +43,20 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
 
   if [ "$FEATURE_DONE" = true ]; then
     echo ""
-    echo "🎯 [CHALLENGER] Feature/refactor détecté : \"$COMMIT_MSG\""
-    echo "   C'est le moment de challenger ce travail AVANT de continuer."
-    echo "   → /angle-mort — review anti-complaisance (miroir dur)"
-    echo "   → /review-copilot — handoff pour un autre LLM"
+    echo "📋 [MOHAMED] Feature détectée : \"$COMMIT_MSG\""
+    echo "   Mohamed est prêt à instruire le dossier avant que tu continues."
+    echo "   → /review-copilot — Mohamed prépare le handoff"
+    echo "   → /angle-mort — miroir dur, zéro complaisance"
     echo ""
-    echo "   📋 README : vérifier que cette feature est reflétée dans README.md (FR + EN)"
+    echo "   README : cette feature est-elle reflétée dans README.md (FR + EN) ?"
     echo ""
     echo "0" > "$COMMITS_FILE"
     git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > /tmp/claude-atelier-last-reviewed-commit || true
   elif [ "$COMMITS" -ge 10 ]; then
     echo ""
-    echo "⏰ [CHALLENGER] $COMMITS commits sans challenge externe."
-    echo "   Trop longtemps seul sur le code — les angles morts s'accumulent."
-    echo "   → /angle-mort ou /review-copilot"
+    echo "📋 [MOHAMED] $COMMITS commits sans review externe."
+    echo "   Trop longtemps seul. Mohamed attend — les angles morts s'accumulent."
+    echo "   → /review-copilot ou /angle-mort"
     echo ""
     echo "0" > "$COMMITS_FILE"
     git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > /tmp/claude-atelier-last-reviewed-commit || true

@@ -17,6 +17,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.10] — 2026-04-13
+
+### Mohamed 📋 — Agent review inter-LLM + narration silencieuse
+
+#### Added
+
+- **Mohamed 📋** — agent review inter-LLM. Figure du skill `/review-copilot`. Instruit le dossier : commits, diff, question précise, handoff Copilot/GPT. *"Un code non challengé n'est pas fini. C'est une bombe à retardement."*
+- **README FR** — Mohamed ajouté dans la table des agents avec storytelling + citation
+- **Tous les triggers Challenger** (`guard-review-auto.sh`) — rebrandés `[MOHAMED]` avec sa voix narrative
+
+#### Changed
+
+- `src/skills/review-copilot/SKILL.md` — `figure: Greffier` → `figure: Mohamed`, storytelling ajouté
+- `hooks/routing-check.sh` — trigger §25 cross-session rebrandé `[MOHAMED]`
+
+#### Fixed (feedback)
+
+- **Narration silencieuse** : les steps des skills ne sont plus annoncées à voix haute. Livrable direct, zéro narration interne visible.
+
+---
+
 ## [0.3.9] — 2026-04-13
 
 ### Fix §25 — Review cross-session (béton armé)

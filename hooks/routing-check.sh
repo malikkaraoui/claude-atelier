@@ -127,10 +127,10 @@ if [ ! -f "$SESSION_REVIEW_FLAG" ] && [ -d "$REPO_ROOT/.git" ]; then
 
     if [ "${FEAT_COUNT:-0}" -gt 0 ] || [ "${REVIEW_TOTAL:-0}" -ge 100 ]; then
       echo ""
-      echo "🔍 [REVIEW §25] Commits non reviewés depuis la dernière session :"
+      echo "📋 [MOHAMED] Commits non reviewés depuis la dernière session :"
       git -C "$REPO_ROOT" log $REVIEW_RANGE --oneline 2>/dev/null | head -5 | sed 's/^/   /'
       echo "   → ${REVIEW_TOTAL} lignes · ${FEAT_COUNT} feat/refactor"
-      echo "   → Malik, je prépare un handoff review ? (/review-copilot)"
+      echo "   → Mohamed instruit le dossier : /review-copilot"
       echo ""
       echo "$CURRENT_HEAD" > "$LAST_REVIEW_FILE"
     fi

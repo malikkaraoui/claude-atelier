@@ -102,11 +102,13 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 | --- | --- | --- | --- |
 | **Steve** 🍎 | iOS / tvOS / iPadOS + Xcode | `swift`, `xcode`, `ios`, `simctl`... | Workflow V4 complet : Makefile, FFI Rust→Swift, troubleshooting, `Cmd+Shift+B` |
 | **Isaac** 📦 | NPM Publish / Registry | `npm publish`, `npm version`, `registry`... | Pipeline CI/CD, versionning sémantique, tokens, troubleshooting |
+| **Mohamed** 📋 | Review inter-LLM | `feat:` commit, 100+ lignes, 10 commits, session restart | Instruit le dossier review : commits, diff, question précise, handoff Copilot/GPT |
 
 *« Stay hungry, stay foolish — mais build depuis le Makefile. »* — Steve
 *« npm install — deux mots qui doivent toujours marcher. »* — Isaac
+*« Un code non challengé n'est pas fini. C'est une bombe à retardement. »* — Mohamed
 
-L'agent est injecté via le hook `routing-check.sh` — aucune config manuelle. Tu mentionnes Xcode, Steve arrive avec tout le contexte.
+Steve et Isaac sont injectés via `routing-check.sh` sur détection de stack. Mohamed arrive via les hooks Challenger (`guard-review-auto.sh`) et le cross-session check — automatiquement, sans que tu aies à y penser.
 
 ---
 
