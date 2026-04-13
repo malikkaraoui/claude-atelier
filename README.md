@@ -1,9 +1,23 @@
 # claude-atelier
 
-> Framework de travail pour Claude Code — règles runtime bilingues, enforcement par hooks, orchestration multi-agents, sécurité, satellites par stack, agents nommés. Installable en une commande.
+<div align="center">
+
+## 🛠️
+
+### Framework de travail pour Claude Code
+
+Règles runtime bilingues · Enforcement par hooks · Orchestration multi-agents · Mode nuit autonome
 
 [![npm version](https://img.shields.io/npm/v/claude-atelier.svg)](https://www.npmjs.com/package/claude-atelier)
+[![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg)](https://www.npmjs.com/package/claude-atelier)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Wiki](https://img.shields.io/badge/Wiki-GitHub-blue.svg)](https://github.com/malikkaraoui/claude-atelier/wiki)
+
+**[📦 npm](https://www.npmjs.com/package/claude-atelier) · [📖 Wiki](https://github.com/malikkaraoui/claude-atelier/wiki) · [🐛 Issues](https://github.com/malikkaraoui/claude-atelier/issues)**
+
+</div>
+
+---
 
 🇫🇷 [Français](#français) · 🇬🇧 [English](#english)
 
