@@ -10,8 +10,29 @@ INPUT=$(cat)
 PROMPT=$(echo "$INPUT" | grep -o '"prompt"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/"prompt"[[:space:]]*:[[:space:]]*"//;s/"$//' 2>/dev/null || echo "")
 
 # ===== ROUTING (chaque message) =====
-MODEL="${CLAUDE_MODEL:-inconnu}"
-echo "[ROUTING] modèle: $MODEL | Opus→archi | Sonnet→dev | Haiku→exploration"
+MODEL_FILE="/tmp/claude-atelier-current-model"
+MODEL=$(cat "$MODEL_FILE" 2>/dev/null || echo "inconnu")
+
+# Détecter le tier pour recommander un switch
+TIER=""
+ALERT=""
+case "$MODEL" in
+  *opus*) TIER="Opus (archi)" ;;
+  *sonnet*) TIER="Sonnet (dev)" ;;
+  *haiku*) TIER="Haiku (exploration)" ;;
+  *) TIER="inconnu" ;;
+esac
+
+echo "[ROUTING] modèle actif: $MODEL ($TIER)"
+echo "  Opus→archi/décision | Sonnet→dev quotidien | Haiku→exploration/lint"
+
+# Alerte si Opus sur tâche courante (heuristique: message court = tâche simple)
+PROMPT_LEN=${#PROMPT}
+if echo "$MODEL" | grep -qi "opus"; then
+  if [ "$PROMPT_LEN" -lt 100 ]; then
+    echo "  ⚠️  Tu es sur Opus pour un message court. Sonnet suffirait → /model sonnet"
+  fi
+fi
 
 # ===== DÉTECTION STACK (chaque message) =====
 # iOS / Xcode
