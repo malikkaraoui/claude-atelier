@@ -41,6 +41,7 @@ if echo "$COMMAND" | grep -qi "git commit"; then
   # Rappel /angle-mort si feature terminée OU 10+ commits sans review
   if [ "$FEATURE_DONE" = true ]; then
     echo "§3 : feature détectée dans le commit. Moment clé → envisager /angle-mort avant de continuer."
+    echo "📋 README : nouvelle feature commited → vérifier que README.md reflète cette feature (sections FR + EN, tableaux agents/stacks/skills)."
     echo "0" > "$COMMIT_COUNT_FILE"
   elif [ "$COMMITS" -ge 10 ]; then
     echo "§3 : $COMMITS commits sans /angle-mort. Pause recommandée → /angle-mort"
