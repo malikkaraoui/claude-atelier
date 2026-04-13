@@ -20,8 +20,9 @@ Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + comm
 
 ## §1 Horodatage + Modèle
 
-Le hook `routing-check.sh` injecte `[HORODATAGE] YYYY-MM-DD HH:MM:SS | model` à chaque message (heure machine, pas serveurs Anthropic).
-**Ouvrir chaque réponse avec cette ligne exacte** : `[YYYY-MM-DD HH:MM:SS | model]`.
+Le hook `routing-check.sh` injecte le vrai modèle via `[ROUTING] modèle actif: MODEL-ID`.
+**Extraire le MODEL-ID de cette ligne** (pas du system prompt — qui peut être stale).
+**Ouvrir chaque réponse avec** : `[YYYY-MM-DD HH:MM:SS | MODEL-ID]` (heure machine, modèle runtime).
 Si non disponible → `[date estimée | modèle inconnu]`.
 
 ## §2 Langue & Ton
