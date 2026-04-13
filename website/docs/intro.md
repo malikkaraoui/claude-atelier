@@ -40,6 +40,22 @@ C'est tout. Claude Code est configuré avec 14 rails d'enforcement.
 
 ---
 
+## 💰 Jusqu'à 90% de réduction sur les coûts de tokens
+
+| Technique | Économie |
+| --------- | -------- |
+| Routing modèle — Haiku/Sonnet vs toujours-Opus | **~80%** |
+| `/compact` compression de contexte | **60–80%** par session |
+| Chargement conditionnel des stacks (§10) | **~30%** |
+| QMD-first — recherche avant lecture complète | **~20%** |
+| `maxBudgetUsd` plafond dur | 100% anti-runaway |
+
+Session typique de 2h : **$8–12** sans framework → **$0,80–1,50** avec claude-atelier.
+
+→ [Détails complets](./token-savings)
+
+---
+
 ## Philosophie
 
 > Rules in CLAUDE.md → intentions. Hooks → guarantees.

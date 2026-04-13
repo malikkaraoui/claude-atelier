@@ -4,7 +4,7 @@ import {themes as prismThemes} from 'prism-react-renderer';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'claude-atelier',
-  tagline: 'Framework de travail pour Claude Code',
+  tagline: 'Jusqu\'à 90% de réduction sur les coûts de tokens Claude',
   favicon: 'img/favicon.ico',
 
   url: 'https://claude-atelier.vercel.app',
@@ -63,7 +63,12 @@ const config = {
         respectPrefersColorScheme: true,
       },
       navbar: {
-        title: '🛠️ claude-atelier',
+        logo: {
+          alt: '🛠️',
+          src: 'img/logo.svg',
+          className: 'navbar-logo-emoji',
+        },
+        title: 'claude-atelier',
         items: [
           {
             type: 'docSidebar',
@@ -89,6 +94,7 @@ const config = {
           {
             title: 'Documentation',
             items: [
+              {label: '💰 Token Savings', to: '/token-savings'},
               {label: 'Installation', to: '/installation'},
               {label: 'Hooks', to: '/hooks'},
               {label: 'Mode Nuit', to: '/mode-nuit'},

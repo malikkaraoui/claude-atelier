@@ -1,3 +1,10 @@
+/* Navbar — big emoji logo */
+.navbar-logo-emoji {
+  width: 36px !important;
+  height: 36px !important;
+  margin-right: 6px;
+}
+
 :root {
   --ifm-color-primary: #4f86f7;
   --ifm-color-primary-dark: #2a6ef5;

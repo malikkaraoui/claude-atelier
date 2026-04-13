@@ -11,9 +11,23 @@ Règles runtime bilingues · Enforcement par hooks · Orchestration multi-agents
 [![npm version](https://img.shields.io/npm/v/claude-atelier.svg)](https://www.npmjs.com/package/claude-atelier)
 [![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg)](https://www.npmjs.com/package/claude-atelier)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Wiki](https://img.shields.io/badge/Wiki-GitHub-blue.svg)](https://github.com/malikkaraoui/claude-atelier/wiki)
+[![Token savings](https://img.shields.io/badge/token%20savings-up%20to%2090%25-brightgreen)](https://claude-atelier.vercel.app/token-savings)
 
-**[📦 npm](https://www.npmjs.com/package/claude-atelier) · [📖 Wiki](https://github.com/malikkaraoui/claude-atelier/wiki) · [🐛 Issues](https://github.com/malikkaraoui/claude-atelier/issues)**
+**[📦 npm](https://www.npmjs.com/package/claude-atelier) · [📖 Docs](https://claude-atelier.vercel.app) · [🐛 Issues](https://github.com/malikkaraoui/claude-atelier/issues)**
+
+---
+
+### 💰 Up to 90% token cost reduction
+
+| Technique                                     | Savings                    |
+| --------------------------------------------- | -------------------------- |
+| Model routing — Haiku/Sonnet vs always-Opus   | **~80%**                   |
+| `/compact` context compression                | **60–80%** per session     |
+| Conditional stack loading (§10)               | **~30%**                   |
+| QMD-first search instead of full file Read    | **~20%**                   |
+| `maxBudgetUsd` hard cap                       | 100% runaway prevention    |
+
+→ Typical 2h session: **$8–12** without framework → **$0.80–1.50** with claude-atelier · [Details](https://claude-atelier.vercel.app/token-savings)
 
 </div>
 

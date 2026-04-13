@@ -8,6 +8,11 @@ const sidebars = {
     },
     {
       type: 'doc',
+      id: 'token-savings',
+      label: '💰 Token Savings',
+    },
+    {
+      type: 'doc',
       id: 'installation',
       label: 'Installation',
     },
