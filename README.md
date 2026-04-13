@@ -84,6 +84,8 @@ Les règles critiques ne sont pas dans un README. Elles sont dans des hooks qui 
 | Review auto si 100+ lignes | `guard-review-auto.sh` PostToolUse | `git commit` |
 | `/angle-mort` aux moments clés | `guard-review-auto.sh` PostToolUse | feat/refactor commit ou 10e commit |
 | Anti-boucle (3+ échecs identiques) | `guard-anti-loop.sh` PostToolUse | Chaque commande bash |
+| Challenger (review + angle-mort + archi) | `guard-review-auto.sh` PostToolUse | Commit feat/refactor, 100+ lignes, 10 commits |
+| Rechargement hooks/MCP requis | `guard-hooks-reload.sh` PostToolUse | Edit/Write sur hooks, settings.json, .mcp.json |
 
 **Bilan : 11 rails / 16 règles.** Les 4 non automatisables (anti-hallucination, qualité code, anti-patterns) relèvent du jugement du modèle.
 
@@ -102,6 +104,22 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 *« npm install — deux mots qui doivent toujours marcher. »* — Isaac
 
 L'agent est injecté via le hook `routing-check.sh` — aucune config manuelle. Tu mentionnes Xcode, Steve arrive avec tout le contexte.
+
+---
+
+### Challenger — Le coéquipier qui te dit la vérité
+
+Un dev seul ne voit pas ses propres angles morts. Le système Challenger détecte automatiquement 5 situations où tu as besoin d'un regard extérieur :
+
+| Trigger | Seuil | Action |
+| --- | --- | --- |
+| Volume de code | 100+ lignes modifiées | → `/review-copilot` |
+| Feature terminée | Commit `feat:` ou `refactor:` | → `/angle-mort` + check README |
+| Endurance | 10 commits sans review | → `/angle-mort` |
+| Architecture | Nouveau fichier structurant | → `/review-copilot` |
+| Bug bloquant | 3+ échecs identiques | → `/review-copilot` + contexte erreur |
+
+Le Challenger ne bloque rien — il rappelle de demander de l'aide. Parce que personne ne le fait spontanément.
 
 ---
 
@@ -341,6 +359,8 @@ Critical rules aren't in a README. They're in hooks that fire on every action.
 | Auto review at 100+ lines | `guard-review-auto.sh` PostToolUse | `git commit` |
 | `/angle-mort` at key moments | `guard-review-auto.sh` PostToolUse | feat/refactor or 10th commit |
 | Anti-loop (3+ identical failures) | `guard-anti-loop.sh` PostToolUse | Every bash command |
+| Challenger (review + blind spots + archi) | `guard-review-auto.sh` PostToolUse | feat/refactor commit, 100+ lines, 10 commits |
+| Hook/MCP reload required | `guard-hooks-reload.sh` PostToolUse | Edit/Write on hooks, settings.json, .mcp.json |
 
 ---
 
@@ -357,6 +377,22 @@ When a specific domain is detected in your message, the atelier automatically lo
 *"npm install — two words that must always work."* — Isaac
 
 The agent is injected via the `routing-check.sh` hook — no manual config. Mention Xcode, Steve shows up with full context.
+
+---
+
+### Challenger — The teammate who tells you the truth
+
+A solo dev can't see their own blind spots. The Challenger system automatically detects 5 situations where you need an external pair of eyes:
+
+| Trigger | Threshold | Action |
+| --- | --- | --- |
+| Code volume | 100+ lines modified | → `/review-copilot` |
+| Feature complete | `feat:` or `refactor:` commit | → `/angle-mort` + README check |
+| Endurance | 10 commits without review | → `/angle-mort` |
+| Architecture | New structural file | → `/review-copilot` |
+| Blocking bug | 3+ identical failures | → `/review-copilot` + error context |
+
+The Challenger doesn't block anything — it reminds you to ask for help. Because nobody does it spontaneously.
 
 ---
 
