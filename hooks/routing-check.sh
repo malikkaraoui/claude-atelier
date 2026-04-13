@@ -27,14 +27,28 @@ case "$MODEL" in
   *) TIER="inconnu" ;;
 esac
 
-echo "[ROUTING] modèle actif: $MODEL ($TIER)"
-echo "  Opus→archi/décision | Sonnet→dev quotidien | Haiku→exploration/lint"
+# Si modèle inconnu → alerte forte, pas silencieux
+if [ "$MODEL" = "inconnu" ] || [ "$TIER" = "inconnu" ]; then
+  echo ""
+  echo "🚨 [ROUTING] MODÈLE INCONNU — quelque chose est cassé."
+  echo "   Le modèle n'a pas été capturé au démarrage de la session."
+  echo "   Causes possibles :"
+  echo "   1. Le hook SessionStart (session-model.sh) n'est pas configuré dans settings.json"
+  echo "   2. VS Code n'a pas été redémarré après ajout du hook"
+  echo "   3. Le fichier /tmp/claude-atelier-current-model n'existe pas ou est vide"
+  echo ""
+  echo "   Action : fermer et rouvrir VS Code. Si le problème persiste, vérifier .claude/settings.json"
+  echo ""
+else
+  echo "[ROUTING] modèle actif: $MODEL ($TIER)"
+  echo "  Opus→archi/décision | Sonnet→dev quotidien | Haiku→exploration/lint"
 
-# Alerte si Opus sur tâche courante (message court = tâche simple)
-PROMPT_LEN=${#PROMPT}
-if echo "$MODEL" | grep -qi "opus"; then
-  if [ "$PROMPT_LEN" -gt 0 ] && [ "$PROMPT_LEN" -lt 100 ]; then
-    echo "  ⚠️  Tu es sur Opus pour un message court. Sonnet suffirait → /model sonnet"
+  # Alerte si Opus sur tâche courante (message court = tâche simple)
+  PROMPT_LEN=${#PROMPT}
+  if echo "$MODEL" | grep -qi "opus"; then
+    if [ "$PROMPT_LEN" -gt 0 ] && [ "$PROMPT_LEN" -lt 100 ]; then
+      echo "  ⚠️  Tu es sur Opus pour un message court. Sonnet suffirait → /model sonnet"
+    fi
   fi
 fi
 
