@@ -8,7 +8,10 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 COUNTER_FILE="/tmp/claude-atelier-lines-since-review"
 COMMIT_COUNT_FILE="/tmp/claude-atelier-commits-since-anglemort"
 INPUT=$(cat)
-COMMAND=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/"command"[[:space:]]*:[[:space:]]*"//;s/"$//')
+COMMAND=$(echo "$INPUT" | sed -n 's/.*"tool_input"[[:space:]]*:[[:space:]]*{[^}]*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+if [ -z "$COMMAND" ]; then
+  COMMAND=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/"command"[[:space:]]*:[[:space:]]*"//;s/"$//')
+fi
 
 if echo "$COMMAND" | grep -qi "git commit"; then
   # --- §25 : compteur de lignes ---

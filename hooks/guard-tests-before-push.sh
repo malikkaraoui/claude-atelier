@@ -4,7 +4,10 @@
 
 TESTS_RAN_FILE="/tmp/claude-atelier-tests-ran"
 INPUT=$(cat)
-COMMAND=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/"command"[[:space:]]*:[[:space:]]*"//;s/"$//')
+COMMAND=$(echo "$INPUT" | sed -n 's/.*"tool_input"[[:space:]]*:[[:space:]]*{[^}]*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+if [ -z "$COMMAND" ]; then
+  COMMAND=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/"command"[[:space:]]*:[[:space:]]*"//;s/"$//')
+fi
 
 # Marquer que des tests ont tourné
 if echo "$COMMAND" | grep -qiE "npm test|npm run test|jest|vitest|pytest|mvn test|gradle test"; then

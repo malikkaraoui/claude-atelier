@@ -4,8 +4,18 @@
 
 LOOP_FILE="/tmp/claude-atelier-loop-detect"
 INPUT=$(cat)
-COMMAND=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/"command"[[:space:]]*:[[:space:]]*"//;s/"$//')
-EXIT_CODE=$(echo "$INPUT" | grep -o '"exit_code"[[:space:]]*:[[:space:]]*[0-9]*' | grep -oE '[0-9]+$' || echo 0)
+# tool_input.command contient la commande exécutée
+COMMAND=$(echo "$INPUT" | sed -n 's/.*"tool_input"[[:space:]]*:[[:space:]]*{[^}]*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+# Fallback: chercher "command" directement
+if [ -z "$COMMAND" ]; then
+  COMMAND=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/"command"[[:space:]]*:[[:space:]]*"//;s/"$//')
+fi
+EXIT_CODE=$(echo "$INPUT" | grep -o '"exitCode"[[:space:]]*:[[:space:]]*[0-9]*' | grep -oE '[0-9]+$' || echo 0)
+# Fallback: exit_code
+if [ "$EXIT_CODE" = "0" ]; then
+  ALT_CODE=$(echo "$INPUT" | grep -o '"exit_code"[[:space:]]*:[[:space:]]*[0-9]*' | grep -oE '[0-9]+$' || echo 0)
+  if [ "$ALT_CODE" != "0" ]; then EXIT_CODE="$ALT_CODE"; fi
+fi
 
 if [ -z "$COMMAND" ]; then
   exit 0
