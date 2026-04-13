@@ -17,6 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.2] — 2026-04-13
+
+### Night-mode — autonomie complète + watchdog CAS F
+
+#### Changed
+
+- **Push autonome autorisé la nuit** (`night-mode.md`, `CLAUDE.md §23`) : `git push` autorisé après gate verte — Claude pousse sans intervention humaine. Suppression de la règle "ne pas pusher la nuit".
+- **Procédure night-mode** : la commande de lancement inclut désormais le cycle commit → gate → push automatique.
+
+#### Added
+
+- **CAS F watchdog** (`night-mode.md`) : détection erreur API Anthropic 500 — iMessage + Dispatch envoyés, aucune interaction avec VSCode, anti-spam à la prochaine exécution.
+- **Protocole REPRISE étendu** : le mot-clé `relance` (seul) est reconnu comme déclencheur, au même titre que `REPRISE suite à la limite de quota`.
+
+---
+
 ## [0.3.11] — 2026-04-13
 
 ### Fix robustesse — 5 points review Copilot (tous traités)
