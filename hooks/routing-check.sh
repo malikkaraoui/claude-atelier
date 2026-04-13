@@ -40,6 +40,19 @@ if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
   fi
 fi
 
+# ===== LONGUEUR DE SESSION =====
+if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
+  SESSION_SIZE=$(stat -f %z "$TRANSCRIPT" 2>/dev/null || echo 0)
+  if [ "$SESSION_SIZE" -ge 600000 ]; then
+    echo ""
+    echo "🔴 [SESSION] Contexte très long ($(( SESSION_SIZE / 1024 ))KB) — chaque message brûle beaucoup de tokens."
+    echo "   → /compact pour compresser l'historique (économise 60-80% du contexte)"
+    echo ""
+  elif [ "$SESSION_SIZE" -ge 300000 ]; then
+    echo "⚠️  [SESSION] Contexte long ($(( SESSION_SIZE / 1024 ))KB) → /compact recommandé bientôt"
+  fi
+fi
+
 MODEL=$(cat "$MODEL_FILE" 2>/dev/null || echo "inconnu")
 
 TIER=""
@@ -71,6 +84,15 @@ else
   if echo "$MODEL" | grep -qi "opus"; then
     if [ "$PROMPT_LEN" -gt 0 ] && [ "$PROMPT_LEN" -lt 100 ]; then
       echo "  ⚠️  Tu es sur Opus pour un message court. Sonnet suffirait → /model sonnet"
+    fi
+  fi
+
+  # Suggestion Haiku pour tâches légères / exploration
+  if ! echo "$MODEL" | grep -qi "haiku"; then
+    if [ "$PROMPT_LEN" -gt 0 ] && [ "$PROMPT_LEN" -lt 200 ]; then
+      if echo "$PROMPT" | grep -qiE "(explore|cherche|liste|lister|trouve|find|montre|résumé|résume|décris|combien|grep|lint|audit|scan|parcours|inventaire|recherche|affiche|quels? fichiers|quels? sont|qu.est.ce que)"; then
+        echo "  💡 Exploration détectée → /model haiku (10x moins cher qu'Opus)"
+      fi
     fi
   fi
 fi

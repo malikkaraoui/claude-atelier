@@ -17,6 +17,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.7] — 2026-04-13
+
+### Token economy — session length + Haiku routing
+
+#### Added
+
+- **Hook session length** (`routing-check.sh`) — détecte la taille du transcript JSONL à chaque message :
+  - ≥ 300KB : avertissement `⚠️ [SESSION] Contexte long → /compact recommandé`
+  - ≥ 600KB : alerte forte `🔴 [SESSION] Contexte très long` avec suggestion `/compact`
+- **Suggestion Haiku automatique** (`routing-check.sh`) — si le prompt est court (< 200 chars) et contient des mots d'exploration (`cherche`, `liste`, `grep`, `audit`, `scan`, `résumé`...), suggère `/model haiku` (10x moins cher qu'Opus)
+
+---
+
 ## [0.2.0] — 2026-04-12
 
 ### Phase 5 — Skills, méthodologie & token routing (completed 2026-04-12)
