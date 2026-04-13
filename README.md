@@ -135,6 +135,20 @@ Le concept Hookify transforme chaque erreur répétée en un hook d'enforcement 
 
 ---
 
+### Permissions Proactives — Arrête de me demander
+
+Claude Code demande une permission. Tu approuves. Il redemande. Tu re-approuves. Encore une fois. Trois fois la même chose — le flow est cassé.
+
+L'atelier détecte ce pattern et propose :
+
+> *« Tu m'as donné 3 fois la permission pour éditer settings.json. Je l'ajoute définitivement ? »*
+
+Un seul "oui" et la permission est ajoutée dans `settings.json` → plus jamais interrompu pour la même action.
+
+Permissions incluses par défaut : `Read`, `Edit`, `Write`, `Glob`, `Grep`, `git *`, `npm *`, `gh *`. Les commandes destructives (`rm -rf`, `sudo`, `git push --force`) restent bloquées — toujours.
+
+---
+
 ### Token Routing — Ne plus brûler son budget
 
 Le hook `routing-check.sh` injecte le modèle actif à chaque message et recommande un switch si mismatch :
@@ -405,6 +419,20 @@ Observed error → Identifiable pattern? → Which hook? → Bash script → Tes
 ```
 
 The Hookify concept turns every repeated error into a permanent enforcement hook. See `src/fr/ecosystem/hookify.md` for the full guide.
+
+---
+
+### Proactive Permissions — Stop asking me
+
+Claude Code asks for permission. You approve. It asks again. You approve again. Three times for the same thing — flow broken.
+
+The atelier detects this pattern and proposes:
+
+> *"You've approved editing settings.json 3 times. Want me to add it permanently?"*
+
+One "yes" and the permission is added to `settings.json` — never interrupted for the same action again.
+
+Default permissions included: `Read`, `Edit`, `Write`, `Glob`, `Grep`, `git *`, `npm *`, `gh *`. Destructive commands (`rm -rf`, `sudo`, `git push --force`) stay blocked — always.
 
 ---
 
