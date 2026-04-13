@@ -11,7 +11,7 @@
  *   claude-atelier <command> [options]
  */
 
-import { spawnSync } from 'node:child_process';
+import { spawnSync, execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -117,4 +117,17 @@ async function main(argv) {
   return 2;
 }
 
-main(process.argv).then(code => process.exit(code));
+function checkForUpdate() {
+  try {
+    const latest = execSync('npm view claude-atelier version 2>/dev/null', { encoding: 'utf8', timeout: 5000 }).trim();
+    if (latest && latest !== pkg.version) {
+      process.stderr.write(`\n\x1b[33m[UPDATE]\x1b[0m claude-atelier ${pkg.version} → \x1b[32m${latest}\x1b[0m disponible\n`);
+      process.stderr.write(`  \x1b[36mnpm update claude-atelier\x1b[0m ou \x1b[36mnpx claude-atelier@latest init\x1b[0m\n\n`);
+    }
+  } catch (_) {}
+}
+
+main(process.argv).then(code => {
+  checkForUpdate();
+  process.exit(code);
+});

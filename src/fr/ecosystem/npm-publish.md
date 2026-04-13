@@ -85,3 +85,15 @@ Le workflow vérifie avant de publier :
 | 403 Forbidden | Token expiré ou mauvais scope | Recréer le token |
 | Version mismatch | Tag et package.json désynchronisés | `npm version patch` crée les deux ensemble |
 | Workflow ne se déclenche pas | Tag pas pushé | `git push --tags` |
+
+## Détection automatique des mises à jour
+
+L'atelier détecte automatiquement quand une nouvelle version est disponible :
+
+- **Hook `routing-check.sh`** : vérifie toutes les 30 min via le diagnostic
+  throttlé → affiche `🆕 claude-atelier 0.2.2 → 0.3.0 disponible`
+- **CLI** : chaque commande (`init`, `doctor`, `lint`) affiche un avertissement
+  en fin d'exécution si une version plus récente existe sur npm
+- **`bin/init.js`** : recommandation post-install si la version locale est obsolète
+
+L'utilisateur n'a jamais besoin de vérifier manuellement.

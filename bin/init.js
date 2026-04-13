@@ -13,6 +13,7 @@ import { existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, readd
 import { dirname, join, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
+import { execSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
@@ -240,6 +241,15 @@ export function runInit(argv) {
         }
       } catch (_) {}
     }
+
+    // Check for newer version on npm
+    try {
+      const pkg = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8'));
+      const latest = execSync('npm view claude-atelier version 2>/dev/null', { encoding: 'utf8' }).trim();
+      if (latest && latest !== pkg.version) {
+        recommendations.push(`${YELLOW}[UPDATE]${NC}  claude-atelier ${pkg.version} → ${GREEN}${latest}${NC} disponible\n       ${CYAN}npm update claude-atelier${NC} ou ${CYAN}npx claude-atelier@latest init${NC}`);
+      }
+    } catch (_) {}
 
     if (recommendations.length > 0) {
       console.log(`${CYAN}Recommandations post-install :${NC}\n`);

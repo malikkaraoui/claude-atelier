@@ -79,6 +79,18 @@ if [ "$RUN_DIAGNOSTIC" = true ]; then
     ISSUES="${ISSUES}\n⚠️  pre-push-gate.sh manquant"
   fi
 
+  # 5. Mise à jour claude-atelier disponible
+  PKG_JSON="$REPO_ROOT/node_modules/claude-atelier/package.json"
+  if [ -f "$PKG_JSON" ]; then
+    LOCAL_VERSION=$(node -p "require('$PKG_JSON').version" 2>/dev/null || echo "")
+    if [ -n "$LOCAL_VERSION" ]; then
+      LATEST_VERSION=$(npm view claude-atelier version 2>/dev/null || echo "")
+      if [ -n "$LATEST_VERSION" ] && [ "$LOCAL_VERSION" != "$LATEST_VERSION" ]; then
+        ISSUES="${ISSUES}\n🆕 claude-atelier $LOCAL_VERSION → $LATEST_VERSION disponible → npx claude-atelier update"
+      fi
+    fi
+  fi
+
   if [ -n "$ISSUES" ]; then
     echo -e "[DIAGNOSTIC]$ISSUES"
   fi
