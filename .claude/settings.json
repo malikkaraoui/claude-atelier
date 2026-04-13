@@ -1,4 +1,32 @@
 {
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(npm version *)",
+      "Bash(npm view *)",
+      "Bash(npm run lint*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git diff *)",
+      "Bash(git status*)",
+      "Bash(git log *)",
+      "Bash(git push*)",
+      "Bash(git push --tags*)",
+      "Bash(git tag *)",
+      "Bash(gh run *)",
+      "Bash(gh pr *)",
+      "Bash(ls *)",
+      "Bash(cat /tmp/claude-atelier*)",
+      "Bash(chmod *)",
+      "Bash(cd *)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
