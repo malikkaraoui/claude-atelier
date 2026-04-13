@@ -86,8 +86,11 @@ Les règles critiques ne sont pas dans un README. Elles sont dans des hooks qui 
 | Anti-boucle (3+ échecs identiques) | `guard-anti-loop.sh` PostToolUse | Chaque commande bash |
 | Challenger (review + angle-mort + archi) | `guard-review-auto.sh` PostToolUse | Commit feat/refactor, 100+ lignes, 10 commits |
 | Rechargement hooks/MCP requis | `guard-hooks-reload.sh` PostToolUse | Edit/Write sur hooks, settings.json, .mcp.json |
+| QMD-first : redirige `.md` → QMD | `guard-qmd-first.sh` PreToolUse | `Read` sur tout `.md` projet |
+| Longueur de session (300KB/600KB) | `routing-check.sh` UserPromptSubmit | Chaque message |
+| Suggestion Haiku (prompt court + mots d'exploration) | `routing-check.sh` UserPromptSubmit | Chaque message |
 
-**Bilan : 11 rails / 16 règles.** Les 4 non automatisables (anti-hallucination, qualité code, anti-patterns) relèvent du jugement du modèle.
+**Bilan : 14 rails / 16 règles.** Les 2 non automatisables (anti-hallucination, qualité code) relèvent du jugement du modèle.
 
 ---
 
@@ -162,6 +165,15 @@ Le hook `routing-check.sh` injecte le modèle actif à chaque message et recomma
 | **Haiku 4.5** | Exploration, subagents, lint | 1× |
 | **Sonnet 4.6** | Dev quotidien, features, bug fixes | ~5× |
 | **Opus 4.6** | Architecture, debug bloquant, décision irréversible | ~50× |
+
+**Session length monitoring** — à chaque message, le hook mesure la taille du transcript JSONL :
+
+- ≥ 300KB : `⚠️ [SESSION] Contexte long → /compact recommandé`
+- ≥ 600KB : `🔴 [SESSION] Contexte très long` — chaque message brûle des tokens en pure perte
+
+**Haiku auto-suggestion** — prompt court (< 200 chars) + mot d'exploration (`cherche`, `liste`, `grep`, `audit`, `scan`…) → `💡 Exploration détectée → /model haiku`
+
+**QMD-first** — tout `Read` sur un `.md` projet déclenche `guard-qmd-first.sh` : le hook injecte les commandes QMD équivalentes avant que la lecture s'exécute. Moins d'appels `Read`, moins de tokens input.
 
 ---
 
@@ -271,7 +283,7 @@ src/
 ├── skills/            13 slash commands SKILL.md
 └── templates/         .gitignore, .claudeignore, settings.json
 
-hooks/                 6 hooks d'enforcement prêts à l'emploi
+hooks/                 7 hooks d'enforcement prêts à l'emploi
 scripts/               pre-push-gate.sh (5 checks : secrets→lint→build→tests)
 bin/cli.js             CLI (init, doctor, lint, update)
 .github/workflows/     CI/CD : tests + npm publish automatique sur tag
@@ -375,6 +387,9 @@ Critical rules aren't in a README. They're in hooks that fire on every action.
 | Anti-loop (3+ identical failures) | `guard-anti-loop.sh` PostToolUse | Every bash command |
 | Challenger (review + blind spots + archi) | `guard-review-auto.sh` PostToolUse | feat/refactor commit, 100+ lines, 10 commits |
 | Hook/MCP reload required | `guard-hooks-reload.sh` PostToolUse | Edit/Write on hooks, settings.json, .mcp.json |
+| QMD-first: redirect `.md` → QMD | `guard-qmd-first.sh` PreToolUse | `Read` on any project `.md` |
+| Session length (300KB/600KB) | `routing-check.sh` UserPromptSubmit | Every message |
+| Haiku suggestion (short prompt + exploration) | `routing-check.sh` UserPromptSubmit | Every message |
 
 ---
 
@@ -445,6 +460,15 @@ The `routing-check.sh` hook injects the active model on every message and recomm
 | **Haiku 4.5** | Exploration, subagents, lint | 1× |
 | **Sonnet 4.6** | Daily dev, features, bug fixes | ~5× |
 | **Opus 4.6** | Architecture, blocking debug, irreversible decisions | ~50× |
+
+**Session length monitoring** — every message, the hook measures the JSONL transcript size:
+
+- ≥ 300KB: `⚠️ [SESSION] Long context → /compact recommended`
+- ≥ 600KB: `🔴 [SESSION] Very long context` — every message burns tokens wastefully
+
+**Haiku auto-suggestion** — short prompt (< 200 chars) + exploration keyword (`find`, `list`, `grep`, `audit`, `scan`…) → `💡 Exploration detected → /model haiku`
+
+**QMD-first** — every `Read` on a project `.md` triggers `guard-qmd-first.sh`: the hook injects QMD equivalent commands before the read executes. Fewer `Read` calls, fewer input tokens.
 
 ---
 

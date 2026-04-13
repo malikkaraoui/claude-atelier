@@ -40,6 +40,11 @@ if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
   fi
 fi
 
+MODEL=$(cat "$MODEL_FILE" 2>/dev/null || echo "inconnu")
+
+# ===== HORODATAGE + MODÈLE (toujours en premier — machine time) =====
+echo "[HORODATAGE] $(date '+%Y-%m-%d %H:%M:%S') | $MODEL"
+
 # ===== LONGUEUR DE SESSION =====
 if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
   SESSION_SIZE=$(stat -f %z "$TRANSCRIPT" 2>/dev/null || echo 0)
@@ -52,8 +57,6 @@ if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
     echo "⚠️  [SESSION] Contexte long ($(( SESSION_SIZE / 1024 ))KB) → /compact recommandé bientôt"
   fi
 fi
-
-MODEL=$(cat "$MODEL_FILE" 2>/dev/null || echo "inconnu")
 
 TIER=""
 case "$MODEL" in

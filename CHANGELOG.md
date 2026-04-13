@@ -17,6 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.8] — 2026-04-13
+
+### Horodatage machine + modèle en tête de réponse
+
+#### Added
+
+- **Hook horodatage** (`routing-check.sh`) — injecte `[HORODATAGE] YYYY-MM-DD HH:MM:SS | model` à chaque message UserPromptSubmit (heure machine via `date`, pas serveurs Anthropic)
+- **§1 CLAUDE.md** — règle mise à jour : Claude doit ouvrir chaque réponse avec `[YYYY-MM-DD HH:MM:SS | model]` en utilisant la valeur injectée par le hook
+
+#### Changed
+
+- **README FR+EN** — table des rails mise à jour : 11 → 14 rails documentés (QMD-first, session length, Haiku auto-suggestion)
+- **Structure README** — hooks : 6 → 7
+
+---
+
 ## [0.3.7] — 2026-04-13
 
 ### Token economy — session length + Haiku routing

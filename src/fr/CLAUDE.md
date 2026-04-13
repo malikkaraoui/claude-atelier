@@ -18,9 +18,11 @@
 
 Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + commit atomique.
 
-## §1 Horodatage
+## §1 Horodatage + Modèle
 
-Format `[YYYY-MM-DD HH:MM:SS]` en tête de réponse si injecté. Sinon `[date estimée]`.
+Le hook `routing-check.sh` injecte `[HORODATAGE] YYYY-MM-DD HH:MM:SS | model` à chaque message (heure machine, pas serveurs Anthropic).
+**Ouvrir chaque réponse avec cette ligne exacte** : `[YYYY-MM-DD HH:MM:SS | model]`.
+Si non disponible → `[date estimée | modèle inconnu]`.
 
 ## §2 Langue & Ton
 
