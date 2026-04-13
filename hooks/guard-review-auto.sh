@@ -26,6 +26,7 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
     echo "   → /angle-mort pour une auto-review anti-complaisance"
     echo ""
     echo "0" > "$LINES_FILE"
+    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > /tmp/claude-atelier-last-reviewed-commit || true
   fi
 
   # --- Feature/Refactor : /angle-mort ---
@@ -50,6 +51,7 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
     echo "   📋 README : vérifier que cette feature est reflétée dans README.md (FR + EN)"
     echo ""
     echo "0" > "$COMMITS_FILE"
+    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > /tmp/claude-atelier-last-reviewed-commit || true
   elif [ "$COMMITS" -ge 10 ]; then
     echo ""
     echo "⏰ [CHALLENGER] $COMMITS commits sans challenge externe."
@@ -57,6 +59,7 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
     echo "   → /angle-mort ou /review-copilot"
     echo ""
     echo "0" > "$COMMITS_FILE"
+    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > /tmp/claude-atelier-last-reviewed-commit || true
   fi
 
   # --- Architecture : fichiers structurants ---

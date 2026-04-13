@@ -100,6 +100,43 @@ else
   fi
 fi
 
+# ===== REVIEW CHECK §25 (béton armé — cross-session) =====
+# Fire au premier message de chaque session. Indépendant des commits in-session.
+LAST_REVIEW_FILE="/tmp/claude-atelier-last-reviewed-commit"
+SESSION_HASH=$(echo "${TRANSCRIPT:-no-transcript}" | cksum | cut -d' ' -f1 2>/dev/null || echo "default")
+SESSION_REVIEW_FLAG="/tmp/claude-atelier-review-checked-${SESSION_HASH}"
+
+if [ ! -f "$SESSION_REVIEW_FLAG" ] && [ -d "$REPO_ROOT/.git" ]; then
+  touch "$SESSION_REVIEW_FLAG"
+
+  CURRENT_HEAD=$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo "")
+  STORED_HEAD=$(cat "$LAST_REVIEW_FILE" 2>/dev/null || echo "")
+
+  if [ -n "$CURRENT_HEAD" ] && [ "$CURRENT_HEAD" != "$STORED_HEAD" ]; then
+    if [ -n "$STORED_HEAD" ] && git -C "$REPO_ROOT" cat-file -e "${STORED_HEAD}^{commit}" 2>/dev/null; then
+      REVIEW_RANGE="${STORED_HEAD}..HEAD"
+    else
+      REVIEW_RANGE="HEAD~10..HEAD"
+    fi
+
+    FEAT_COUNT=$(git -C "$REPO_ROOT" log $REVIEW_RANGE --oneline 2>/dev/null | grep -cE " (feat|refactor):" || echo 0)
+    REVIEW_STAT=$(git -C "$REPO_ROOT" diff "$REVIEW_RANGE" --shortstat 2>/dev/null || echo "")
+    REVIEW_LINES_A=$(echo "$REVIEW_STAT" | grep -oE "[0-9]+ insertion" | grep -oE "^[0-9]+" || echo 0)
+    REVIEW_LINES_D=$(echo "$REVIEW_STAT" | grep -oE "[0-9]+ deletion" | grep -oE "^[0-9]+" || echo 0)
+    REVIEW_TOTAL=$(( ${REVIEW_LINES_A:-0} + ${REVIEW_LINES_D:-0} ))
+
+    if [ "${FEAT_COUNT:-0}" -gt 0 ] || [ "${REVIEW_TOTAL:-0}" -ge 100 ]; then
+      echo ""
+      echo "🔍 [REVIEW §25] Commits non reviewés depuis la dernière session :"
+      git -C "$REPO_ROOT" log $REVIEW_RANGE --oneline 2>/dev/null | head -5 | sed 's/^/   /'
+      echo "   → ${REVIEW_TOTAL} lignes · ${FEAT_COUNT} feat/refactor"
+      echo "   → Malik, je prépare un handoff review ? (/review-copilot)"
+      echo ""
+      echo "$CURRENT_HEAD" > "$LAST_REVIEW_FILE"
+    fi
+  fi
+fi
+
 # ===== DÉTECTION STACK (chaque message) =====
 # iOS / Xcode → Steve
 if echo "$PROMPT" | grep -qiE "xcode|ios|tvos|ipados|swiftui|swift|simctl|xcodebuild|iphone|ipad|app store|testflight|make run|make tvrun"; then

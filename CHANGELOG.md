@@ -17,6 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.9] — 2026-04-13
+
+### Fix §25 — Review cross-session (béton armé)
+
+#### Fixed
+
+- **Trou dans la raquette §25** : `guard-review-auto.sh` était aveugle aux commits des sessions précédentes (il ne fire que PostToolUse `git commit` dans la session courante). Si les commits sont dans une session antérieure → le trigger ne partait jamais.
+
+#### Added
+
+- **`routing-check.sh` — REVIEW CHECK §25** : au premier message de chaque session, scanne `git log` pour détecter des commits `feat:` / `refactor:` non reviewés depuis le dernier checkpoint. Fire si `feat/refactor > 0` OU `lignes > 100`. Émet `🔍 [REVIEW §25]` avec liste des commits + appel à `/review-copilot`. Utilise un flag session-scoped (`/tmp/...-checked-${SESSION_HASH}`) pour ne pas spammer.
+- **Checkpoint cross-session** (`/tmp/claude-atelier-last-reviewed-commit`) : stocke le HEAD au moment du dernier trigger review. `routing-check.sh` compare à ce checkpoint à chaque démarrage de session.
+- **`guard-review-auto.sh`** : écrit le checkpoint quand il fire (VOLUME ≥ 100, FEATURE_DONE, COMMITS ≥ 10) — les deux couches restent synchronisées.
+
+---
+
 ## [0.3.8] — 2026-04-13
 
 ### Horodatage machine + modèle en tête de réponse
