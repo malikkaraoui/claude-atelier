@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.3] — 2026-04-13
+
+### Fix critique — CLAUDE.md non écrasé lors des mises à jour
+
+#### Fixed
+
+- **`bin/init.js`** : `CLAUDE.md` existant n'est plus jamais écrasé lors d'un `init` ou d'une mise à jour. Message `[SKIP]` affiché. Les fichiers satellites (`autonomy/`, `security/`…) sont toujours mis à jour normalement.
+
+---
+
 ## [0.4.2] — 2026-04-13
 
 ### Night-mode — autonomie complète + watchdog CAS F

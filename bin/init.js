@@ -48,6 +48,12 @@ function copyDirRecursive(src, dest, dryRun, copied) {
       }
       copyDirRecursive(srcPath, destPath, dryRun, copied);
     } else {
+      // CLAUDE.md is user-customized (§0, project context) — never overwrite
+      const isClaude = entry.name === 'CLAUDE.md';
+      if (isClaude && existsSync(destPath)) {
+        console.log(`${YELLOW}[SKIP]${NC} ${destPath} (already customized — not overwritten)`);
+        continue;
+      }
       if (dryRun) {
         copied.push(destPath);
       } else {
