@@ -8,7 +8,7 @@
 | --- | --- |
 | Projet courant | — |
 | Phase | — |
-| Stack | React/Vite · Firebase · Python · Java · Docker · Ollama |
+| Stack | — |
 | Repo | — |
 | Conventions | — |
 | Endpoints actifs | — |

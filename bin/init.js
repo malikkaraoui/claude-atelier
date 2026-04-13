@@ -104,7 +104,7 @@ function mergeSettings(existingPath, templatePath) {
   return merged;
 }
 
-export function runInit(argv) {
+export async function runInit(argv) {
   const { global: isGlobal, dryRun, lang } = parseArgs(argv);
 
   // Validate lang — must have a CLAUDE.md to be considered ready
@@ -218,29 +218,17 @@ export function runInit(argv) {
   }
 
   if (!dryRun) {
-    console.log(`\n${GREEN}Done.${NC} Run ${CYAN}claude-atelier doctor${NC} to verify.\n`);
+    console.log(`\n${GREEN}Done.${NC} Run ${CYAN}claude-atelier doctor${NC} to verify.`);
+
+    // §0 + QMD interactive wizard
+    if (!isGlobal) {
+      const claudeMd = join(target, 'CLAUDE.md');
+      const { setupS0 } = await import('./setup-s0.js');
+      await setupS0(claudeMd, process.cwd());
+    }
 
     // Post-install recommendations
     const recommendations = [];
-
-    // QMD : count .md files in project
-    if (!isGlobal) {
-      try {
-        let mdCount = 0;
-        const countMd = (dir) => {
-          for (const entry of readdirSync(dir, { withFileTypes: true })) {
-            if (entry.name === '.git' || entry.name === 'node_modules') continue;
-            const full = join(dir, entry.name);
-            if (entry.isDirectory()) countMd(full);
-            else if (entry.name.endsWith('.md')) mdCount++;
-          }
-        };
-        countMd(process.cwd());
-        if (mdCount >= 5) {
-          recommendations.push(`${YELLOW}[QMD]${NC}  ${mdCount} fichiers .md détectés — indexer avec QMD pour retrouver du contexte rapidement.\n       Dans Claude Code : tape ${CYAN}/qmd-init${NC}`);
-        }
-      } catch (_) {}
-    }
 
     // Check for newer version on npm
     try {
