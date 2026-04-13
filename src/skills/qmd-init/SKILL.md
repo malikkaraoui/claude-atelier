@@ -80,3 +80,15 @@ Guide complet : docs/qmd-user-guide.md"
 - Guide complet → `docs/qmd-user-guide.md` (déjà dans le repo)
 - Voir aussi `src/fr/ecosystem/qmd-integration.md` pour les règles
   d'utilisation par Claude
+
+## Après l'installation
+
+L'indexation peut prendre 30-60 secondes et faire tourner le ventilateur
+(téléchargement et calcul des embeddings localement).
+
+**Important :** le MCP QMD est chargé au démarrage de Claude Code.
+**Redémarre la session** (ferme et rouvre Claude Code) pour que le
+MCP soit actif et que les requêtes `qmd query` soient disponibles
+sans passer par Bash.
+
+"QMD installé. Redémarre la session Claude Code pour activer le MCP."

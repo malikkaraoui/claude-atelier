@@ -218,6 +218,35 @@ export function runInit(argv) {
 
   if (!dryRun) {
     console.log(`\n${GREEN}Done.${NC} Run ${CYAN}claude-atelier doctor${NC} to verify.\n`);
+
+    // Post-install recommendations
+    const recommendations = [];
+
+    // QMD : count .md files in project
+    if (!isGlobal) {
+      try {
+        let mdCount = 0;
+        const countMd = (dir) => {
+          for (const entry of readdirSync(dir, { withFileTypes: true })) {
+            if (entry.name === '.git' || entry.name === 'node_modules') continue;
+            const full = join(dir, entry.name);
+            if (entry.isDirectory()) countMd(full);
+            else if (entry.name.endsWith('.md')) mdCount++;
+          }
+        };
+        countMd(process.cwd());
+        if (mdCount >= 5) {
+          recommendations.push(`${YELLOW}[QMD]${NC}  ${mdCount} fichiers .md détectés — indexer avec QMD pour retrouver du contexte rapidement.\n       Dans Claude Code : tape ${CYAN}/qmd-init${NC}`);
+        }
+      } catch (_) {}
+    }
+
+    if (recommendations.length > 0) {
+      console.log(`${CYAN}Recommandations post-install :${NC}\n`);
+      for (const r of recommendations) {
+        console.log(`  ${r}\n`);
+      }
+    }
   } else {
     console.log(`\n${YELLOW}DRY RUN complete.${NC} Remove --dry-run to install for real.\n`);
   }

@@ -1,17 +1,29 @@
 #!/bin/bash
-# Hook UserPromptSubmit — Model Routing + Diagnostic périodique
-# Routing : à chaque message
-# Diagnostic : toutes les 30 minutes (throttle via timestamp)
+# Hook UserPromptSubmit — Model Routing + Détection stack + Diagnostic périodique
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 THROTTLE_FILE="/tmp/claude-atelier-diagnostic-last"
 THROTTLE_SECONDS=1800  # 30 minutes
 
+# Lire le message utilisateur (JSON stdin)
+INPUT=$(cat)
+PROMPT=$(echo "$INPUT" | grep -o '"prompt"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/"prompt"[[:space:]]*:[[:space:]]*"//;s/"$//' 2>/dev/null || echo "")
+
 # ===== ROUTING (chaque message) =====
 MODEL="${CLAUDE_MODEL:-inconnu}"
 echo "[ROUTING] modèle: $MODEL | Opus→archi | Sonnet→dev | Haiku→exploration"
 
-# ===== DIAGNOSTIC (throttled) =====
+# ===== DÉTECTION STACK (chaque message) =====
+# iOS / Xcode
+if echo "$PROMPT" | grep -qiE "xcode|ios|tvos|swiftui|swift|simctl|xcodebuild|iphone|ipad|app store|testflight|make run|make tvrun"; then
+  STACK_FILE="$REPO_ROOT/src/stacks/ios-xcode.md"
+  if [ -f "$STACK_FILE" ]; then
+    echo "[STACK iOS] Contexte Xcode/iOS détecté — satellite chargé :"
+    cat "$STACK_FILE"
+  fi
+fi
+
+# ===== DIAGNOSTIC (throttled toutes les 30 min) =====
 RUN_DIAGNOSTIC=false
 if [ ! -f "$THROTTLE_FILE" ]; then
   RUN_DIAGNOSTIC=true
@@ -67,7 +79,6 @@ if [ "$RUN_DIAGNOSTIC" = true ]; then
     ISSUES="${ISSUES}\n⚠️  pre-push-gate.sh manquant"
   fi
 
-  # Affichage
   if [ -n "$ISSUES" ]; then
     echo -e "[DIAGNOSTIC]$ISSUES"
   fi
