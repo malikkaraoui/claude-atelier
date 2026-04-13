@@ -174,6 +174,18 @@ CAS D — VSCode non visible / app fermee :
 Envoie un iMessage a <TON_NUMERO> : "ALERTE: VSCode ne semble pas
 ouvert. Claude Code ne peut pas tourner. Verifie ta machine."
 
+CAS E — Panneau "session limit" / "quota" / "resets at" visible :
+C'est normal. NE PAS alerter l'utilisateur.
+Note l'heure de reset si visible sur l'ecran (ex: "resets at 4pm").
+Termine silencieusement.
+A la PROCHAINE execution planifiee (1h plus tard) :
+  1. Prends un screenshot
+  2. Si Claude Code est disponible (champ de saisie visible, pas de panneau quota) :
+     - Clique dans le champ de message de Claude Code
+     - Tape exactement : REPRISE suite a la limite de quota
+     - Appuie sur Entree
+  3. Si le panneau quota est toujours visible : termine silencieusement, reessaie a la prochaine execution
+
 Ne modifie aucun fichier du projet. Ne committe rien.
 ```
 
@@ -197,6 +209,7 @@ Ne modifie aucun fichier du projet. Ne committe rien.
 | Spinner actif | Termine silencieusement | Faux positif évité |
 | Session crashée | iMessage alerte | Intervention humaine requise |
 | VSCode fermé | iMessage alerte | Intervention humaine requise |
+| Quota limit atteint | Silence → attend 1h → tape "REPRISE" | Session relancée sans alerte |
 
 ### 3 méthodes de scheduling comparées
 
@@ -250,6 +263,18 @@ Les scripts bash watchdog (`night-watchdog.sh`, `night-launch.sh`) ont été
 retirés du repo. La tâche planifiée Cowork les remplace entièrement :
 processus indépendant, notification iMessage/Dispatch, pas de script à
 maintenir.
+
+## Protocole REPRISE (relance après quota)
+
+Quand Claude Code reçoit le message `REPRISE suite à la limite de quota` :
+
+1. **Ne pas demander d'explication** — la cause est connue (token limit)
+2. **Lire le TodoWrite** pour identifier les tâches pending `[ ]` ou en cours `[→]`
+3. **Lire `git log -5`** pour voir le dernier commit et comprendre le contexte
+4. **Reprendre** la tâche en cours exactement là où elle était
+5. **Signaler** : `[REPRISE] Relancé après quota. Reprise depuis : <dernière tâche>`
+
+Si aucun TodoWrite ni tâche identifiable : répondre `[REPRISE] Aucune tâche en cours identifiée. Qu'est-ce que je reprends ?`
 
 ## Cas où ce mode est une mauvaise idée
 
