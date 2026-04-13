@@ -86,7 +86,22 @@
           {
             "type": "command",
             "command": "bash \"/Users/malik/Documents/claude-atelier/Claude instructions/hooks/guard-tests-before-push.sh\"",
-            "if": "Bash(*npm test*:*jest*:*vitest*:*pytest*:*mvn test*)"
+            "if": "Bash(*npm test*)"
+          },
+          {
+            "type": "command",
+            "command": "bash \"/Users/malik/Documents/claude-atelier/Claude instructions/hooks/guard-tests-before-push.sh\"",
+            "if": "Bash(*jest*)"
+          },
+          {
+            "type": "command",
+            "command": "bash \"/Users/malik/Documents/claude-atelier/Claude instructions/hooks/guard-tests-before-push.sh\"",
+            "if": "Bash(*vitest*)"
+          },
+          {
+            "type": "command",
+            "command": "bash \"/Users/malik/Documents/claude-atelier/Claude instructions/hooks/guard-tests-before-push.sh\"",
+            "if": "Bash(*pytest*)"
           }
         ]
       }
