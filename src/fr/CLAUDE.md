@@ -91,6 +91,8 @@ Stateless, idempotent, secrets externalisés, IaC, fail fast, tests locaux avant
 
 Input : ne pas relire un fichier déjà lu dans la session sauf si modifié. Settings consolidé (env + permissions + budget). Routing : Haiku exploration / Sonnet standard / Opus architecture. **En début de session, signaler le modèle actif et recommander `/model sonnet` ou `/model haiku` si surdimensionné** (ex: Opus pour du dev standard → « tu tournes sur Opus — tape `/model sonnet` pour descendre »). Compaction : `/compact` après explore, après feature, avant switch.
 
+**QMD-first** : pour tout fichier `.md` du projet, utiliser `mcp__qmd__get` ou `mcp__qmd__query` avant `Read`. `Read` sur un `.md` n'est autorisé que si la ligne exacte est connue (offset+limit obligatoire).
+
 ## §16 Orchestration → `./orchestration/`
 
 Fork · Teammate · Worktree. Refactor > 3 fichiers → `isolation: worktree`. Détails : `modes.md` · `subagents.md` · `parallelization.md` · `spawn-rules.md` · `models-routing.md`.

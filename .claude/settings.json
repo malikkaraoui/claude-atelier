@@ -41,6 +41,15 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"/Users/malik/Documents/claude-atelier/Claude instructions/hooks/guard-qmd-first.sh\""
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
