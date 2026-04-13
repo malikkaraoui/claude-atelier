@@ -17,6 +17,29 @@ except: pass
 
 # ===== ROUTING (chaque message) =====
 MODEL_FILE="/tmp/claude-atelier-current-model"
+
+# Détecter un changement de modèle dans le transcript (commande /model)
+TRANSCRIPT=$(echo "$_RAW_INPUT" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    print(d.get('transcript_path', ''))
+except: pass
+" 2>/dev/null)
+
+if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
+  # Chercher le dernier "Set model to" dans le transcript
+  LAST_MODEL_CHANGE=$(grep -o 'Set model to [a-z0-9_\.\[\]-]*' "$TRANSCRIPT" 2>/dev/null | tail -1 | sed 's/Set model to //')
+  if [ -n "$LAST_MODEL_CHANGE" ]; then
+    # Nettoyer le suffixe [1m] si présent
+    CLEAN_MODEL=$(echo "$LAST_MODEL_CHANGE" | sed 's/\[.*$//')
+    CURRENT=$(cat "$MODEL_FILE" 2>/dev/null || echo "")
+    if [ "$CLEAN_MODEL" != "$CURRENT" ]; then
+      echo "$CLEAN_MODEL" > "$MODEL_FILE"
+    fi
+  fi
+fi
+
 MODEL=$(cat "$MODEL_FILE" 2>/dev/null || echo "inconnu")
 
 TIER=""
