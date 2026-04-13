@@ -49,6 +49,10 @@ Claude doit proposer :
 
 Si l'utilisateur dit oui → ajouter la règle dans `permissions.allow`.
 
+**Important :** après modification de `settings.json`, il faut **fermer et
+rouvrir VS Code** pour que les nouvelles permissions soient chargées.
+`Cmd+Shift+P → Claude Code: Restart` peut ne pas suffire pour les permissions.
+
 ### 3. Ce qui reste bloqué — toujours
 
 Certaines actions restent interdites, peu importe le niveau de confiance.

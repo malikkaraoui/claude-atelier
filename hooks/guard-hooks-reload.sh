@@ -35,9 +35,10 @@ fi
 if [ "$NEEDS_RELOAD" = true ]; then
   echo ""
   echo "⚠️  RECHARGEMENT REQUIS — $WHAT modifié"
-  echo "Les hooks et MCP sont chargés au démarrage du processus Claude Code."
-  echo "Ce changement ne sera PAS effectif tant que tu n'auras pas redémarré :"
-  echo "  → Cmd+Shift+P → Claude Code: Restart"
-  echo "  → Ou fermer/rouvrir VS Code"
+  echo "Les hooks, permissions et MCP sont chargés au démarrage du processus."
+  echo "Ce changement ne sera PAS effectif dans cette session."
+  echo ""
+  echo "  → Fermer et rouvrir VS Code complètement"
+  echo "    (Cmd+Shift+P → Claude Code: Restart peut ne pas suffire pour les permissions)"
   echo ""
 fi
