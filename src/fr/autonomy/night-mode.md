@@ -30,8 +30,8 @@ pendant que l'utilisateur est absent. Il repose sur :
 - `settings.json` chargé avec `defaultMode: acceptEdits` + allow/deny
   (cf. `../../templates/settings.json`)
 - `maxBudgetUsd` **toujours défini**
-- `git push` **toujours** en `deny`
 - `sudo` et `rm -rf` **toujours** en `deny`
+- `git push --force` **toujours** en `deny`
 
 ## Procédure
 
@@ -66,7 +66,6 @@ claude --permission-mode acceptEdits \
   "Implementer selon /docs/specs.md. \
    Ecrire les tests. \
    Committer chaque etape de facon atomique. \
-   Ne pas pusher. \
    Mettre a jour §0 de CLAUDE.md si necessaire."
 ```
 
@@ -92,8 +91,8 @@ git push
   ne voulait pas. Toujours inclure un « Hors scope ».
 - **Pas de `maxBudgetUsd`** : boucle infinie possible → portefeuille vidé.
   Ne jamais oublier.
-- **`git push` autorisé** : du code non relu arrive en prod pendant la
-  nuit. Jamais.
+- **Gate non passée avant push** : toujours lancer `bash scripts/pre-push-gate.sh`
+  avant le push — si la gate échoue, committer et alerter, ne pas pusher.
 - **Tests manquants** : sans tests, aucune garantie de non-régression.
   Inclure « écrire les tests » dans le prompt de lancement.
 - **Review expéditive le matin** : lire vraiment le diff, pas juste
@@ -174,6 +173,18 @@ CAS D — VSCode non visible / app fermee :
 Envoie un iMessage a <TON_NUMERO> : "ALERTE: VSCode ne semble pas
 ouvert. Claude Code ne peut pas tourner. Verifie ta machine."
 
+CAS F — Erreur API Anthropic visible ("API Error", "500", "Internal server error", "overloaded_error") :
+C'est une panne temporaire Anthropic, pas un crash de ta machine.
+  1. Attends 2 minutes (la panne est souvent courte)
+  2. Identifie le champ de saisie Claude Code sur le screenshot
+  3. Clique dessus
+  4. Tape : relance suite a une erreur API Anthropic
+  5. Appuie sur Return
+  6. Envoie un iMessage a <TON_NUMERO> : "Watchdog: Erreur API Anthropic 500 detentee
+     sur <NOM_PROJET>. J'ai tape 'relance'. Claude Code devrait reprendre."
+Si l'erreur persiste a la prochaine execution : envoie un iMessage d'alerte et
+ne retente pas (evite la boucle infinie).
+
 CAS E — Panneau "session limit" / "quota" / "resets at" / "You've hit your limit" visible :
 C'est normal. NE PAS alerter l'utilisateur. NE PAS envoyer d'iMessage.
 Note l'heure de reset si visible sur l'ecran.
@@ -212,6 +223,7 @@ Ne modifie aucun fichier du projet. Ne committe rien.
 | Session crashée | iMessage alerte | Intervention humaine requise |
 | VSCode fermé | iMessage alerte | Intervention humaine requise |
 | Quota limit atteint | Silence → attend 1h → clic + type + Return | Session relancée sans alerte |
+| Erreur API 500 Anthropic | Attente 2 min → type "relance" → iMessage | Session relancée, utilisateur informé |
 
 ### 3 méthodes de scheduling comparées
 
@@ -249,14 +261,15 @@ vim docs/specs.md
 
 # 3. Lancer Claude Code
 claude --permission-mode acceptEdits \
-  "Implementer selon docs/specs.md. Committer chaque etape. Ne pas pusher."
+  "Implementer selon docs/specs.md. Committer chaque etape atomique. \
+   Lancer bash scripts/pre-push-gate.sh apres chaque commit. \
+   Si la gate est verte : git push. Si elle echoue : stopper et noter dans todo."
 
 # 4. Aller dormir — le watchdog surveille
 
-# 5. Matin — review
+# 5. Matin — review rapide
 git log --oneline
-bash scripts/pre-push-gate.sh
-git push
+git diff origin/main..HEAD
 ```
 
 ### Note
@@ -266,17 +279,23 @@ retirés du repo. La tâche planifiée Cowork les remplace entièrement :
 processus indépendant, notification iMessage/Dispatch, pas de script à
 maintenir.
 
-## Protocole REPRISE (relance après quota)
+## Protocole REPRISE (relance après quota ou erreur API)
 
-Quand Claude Code reçoit le message `REPRISE suite à la limite de quota` :
+Déclencheurs reconnus (le watchdog ou l'utilisateur peuvent envoyer l'un ou l'autre) :
 
-1. **Ne pas demander d'explication** — la cause est connue (token limit)
+- `REPRISE suite à la limite de quota`
+- `relance suite a une erreur API Anthropic`
+- `relance` (mot seul, sans autre contexte)
+
+Comportement identique dans tous les cas :
+
+1. **Ne pas demander d'explication** — la cause est connue
 2. **Lire le TodoWrite** pour identifier les tâches pending `[ ]` ou en cours `[→]`
 3. **Lire `git log -5`** pour voir le dernier commit et comprendre le contexte
 4. **Reprendre** la tâche en cours exactement là où elle était
-5. **Signaler** : `[REPRISE] Relancé après quota. Reprise depuis : <dernière tâche>`
+5. **Signaler** : `[REPRISE] Relancé après <quota|erreur API>. Reprise depuis : <dernière tâche>`
 
-Si aucun TodoWrite ni tâche identifiable : répondre `[REPRISE] Aucune tâche en cours identifiée. Qu'est-ce que je reprends ?`
+Si aucun TodoWrite ni tâche identifiable : `[REPRISE] Aucune tâche en cours identifiée. Qu'est-ce que je reprends ?`
 
 ## Cas où ce mode est une mauvaise idée
 
