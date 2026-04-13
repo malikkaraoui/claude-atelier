@@ -1,0 +1,81 @@
+---
+id: intro
+slug: /
+title: claude-atelier
+sidebar_label: Introduction
+---
+
+<div align="center">
+
+# 🛠️
+
+### Framework de travail pour Claude Code
+
+[![npm version](https://img.shields.io/npm/v/claude-atelier.svg)](https://www.npmjs.com/package/claude-atelier)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/malikkaraoui/claude-atelier/blob/main/LICENSE)
+
+</div>
+
+---
+
+## Démarrage rapide
+
+```bash
+npx claude-atelier init
+```
+
+C'est tout. Claude Code est configuré avec 14 rails d'enforcement.
+
+---
+
+## Ce que ça fait
+
+`claude-atelier` installe dans `.claude/` :
+
+- **14 hooks bash** — s'exécutent automatiquement (commit, push, session)
+- **13 slash commands** — `/review-copilot`, `/night-launch`, `/angle-mort`…
+- **Satellites de stack** — JS, Python, iOS, Docker… chargés selon le projet
+- **Mode nuit** — Claude travaille seul, watchdog surveille, vous dormez
+- **Gate pré-push** — 5 vérifications avant chaque `git push`
+
+---
+
+## Philosophie
+
+> Rules in CLAUDE.md → intentions. Hooks → guarantees.
+
+`claude-atelier` ne documente pas les bonnes pratiques — il les **enforce**.
+Chaque règle critique est un script bash qui se déclenche automatiquement.
+Pas de texte. Des rails.
+
+---
+
+## Structure installée
+
+```
+.claude/
+├── CLAUDE.md              ← Runtime core (§0–§25)
+├── settings.json          ← Permissions, hooks, budget
+├── hooks/                 ← 14 scripts d'enforcement
+├── autonomy/              ← Mode nuit, watchdog, loop
+├── orchestration/         ← Fork, Teammate, Worktree
+├── runtime/               ← Todo, extended thinking
+├── security/              ← Gate, secrets, emergency
+├── ecosystem/             ← Hooks, skills, agents
+└── skills/                ← 13 slash commands
+scripts/
+└── pre-push-gate.sh       ← Gate pré-push 5 étapes
+```
+
+---
+
+## Navigation
+
+- [Installation](./installation) — mise en place complète
+- [Hooks d'enforcement](./hooks) — les 14 rails
+- [Agents nommés](./agents) — Steve, Isaac, Mohamed, Amine
+- [Mode Nuit](./mode-nuit) — autonomie supervisée + watchdog
+- [Skills](./skills) — 13 slash commands
+- [Satellites par stack](./stacks) — iOS, JS, Python…
+- [Sécurité](./securite) — gate, secrets, permissions
+- [Contribuer](./contribuer) — ajouter un hook, un satellite
