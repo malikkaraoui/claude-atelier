@@ -1,31 +1,18 @@
 #!/bin/bash
 # PostToolUse guard — Système Challenger
-# Détecte les moments où un coéquipier (Copilot/GPT) devrait intervenir :
-#   - Review code : 100+ lignes modifiées sans review
-#   - Angle mort : feature/refactor terminé sans challenge
-#   - Bug help : 3+ tentatives échouées sur le même problème
-#   - README : feature ajoutée sans mise à jour vitrine
-#   - Architecture : nouveau fichier structurant créé sans validation
+# 5 triggers : volume, feature, endurance, architecture, bug bloquant
+
+source "$(dirname "$0")/_parse-input.sh"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LINES_FILE="/tmp/claude-atelier-lines-since-review"
 COMMITS_FILE="/tmp/claude-atelier-commits-since-anglemort"
 FAIL_FILE="/tmp/claude-atelier-fix-attempts"
 
-INPUT=$(cat)
+# ===== TRIGGER 1-4 : git commit =====
+if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
 
-# Parse tool_input.command (PostToolUse Bash)
-COMMAND=$(echo "$INPUT" | sed -n 's/.*"tool_input"[[:space:]]*:[[:space:]]*{[^}]*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
-if [ -z "$COMMAND" ]; then
-  COMMAND=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/"command"[[:space:]]*:[[:space:]]*"//;s/"$//')
-fi
-
-# ===================================================================
-# TRIGGER 1 : git commit détecté
-# ===================================================================
-if echo "$COMMAND" | grep -qi "git commit"; then
-
-  # --- Compteur de lignes → /review-copilot ---
+  # --- Volume : compteur de lignes → /review-copilot ---
   LINES=$(cd "$REPO_ROOT" && git diff --shortstat HEAD~1 HEAD 2>/dev/null | grep -oE '[0-9]+ insertion|[0-9]+ deletion' | grep -oE '[0-9]+' | paste -sd+ - | bc 2>/dev/null || echo 0)
   PREV=$(cat "$LINES_FILE" 2>/dev/null || echo 0)
   TOTAL=$((PREV + LINES))
@@ -41,7 +28,7 @@ if echo "$COMMAND" | grep -qi "git commit"; then
     echo "0" > "$LINES_FILE"
   fi
 
-  # --- Détection feature/refactor → /angle-mort ---
+  # --- Feature/Refactor : /angle-mort ---
   COMMIT_MSG=$(cd "$REPO_ROOT" && git log -1 --pretty=%s 2>/dev/null || echo "")
   FEATURE_DONE=false
 
@@ -72,7 +59,7 @@ if echo "$COMMAND" | grep -qi "git commit"; then
     echo "0" > "$COMMITS_FILE"
   fi
 
-  # --- Détection architecture : nouveaux fichiers structurants ---
+  # --- Architecture : fichiers structurants ---
   NEW_FILES=$(cd "$REPO_ROOT" && git diff --name-only --diff-filter=A HEAD~1 HEAD 2>/dev/null || echo "")
   ARCHI_FILES=""
   for f in $NEW_FILES; do
@@ -92,18 +79,9 @@ if echo "$COMMAND" | grep -qi "git commit"; then
   fi
 fi
 
-# ===================================================================
-# TRIGGER 2 : échec répété → proposer aide externe
-# ===================================================================
-# Récupérer le code de sortie
-EXIT_CODE=$(echo "$INPUT" | grep -o '"exitCode"[[:space:]]*:[[:space:]]*[0-9]*' | grep -oE '[0-9]+$' || echo "")
-if [ -z "$EXIT_CODE" ]; then
-  EXIT_CODE=$(echo "$INPUT" | grep -o '"exit_code"[[:space:]]*:[[:space:]]*[0-9]*' | grep -oE '[0-9]+$' || echo "0")
-fi
-
-if [ "$EXIT_CODE" != "0" ] && [ -n "$COMMAND" ]; then
-  # Hash de la commande pour tracker les tentatives
-  CMD_HASH=$(echo "$COMMAND" | tr -s ' ' | md5 -q 2>/dev/null || echo "$COMMAND" | tr -s ' ' | md5sum 2>/dev/null | cut -d' ' -f1)
+# ===== TRIGGER 5 : échec répété =====
+if [ "$HOOK_EXIT_CODE" != "0" ] && [ -n "$HOOK_COMMAND" ]; then
+  CMD_HASH=$(echo "$HOOK_COMMAND" | tr -s ' ' | md5 -q 2>/dev/null || echo "$HOOK_COMMAND" | tr -s ' ' | md5sum 2>/dev/null | cut -d' ' -f1)
 
   PREV_HASH=$(head -1 "$FAIL_FILE" 2>/dev/null || echo "")
   PREV_COUNT=$(tail -1 "$FAIL_FILE" 2>/dev/null || echo 0)
@@ -121,14 +99,12 @@ if [ "$EXIT_CODE" != "0" ] && [ -n "$COMMAND" ]; then
     echo ""
     echo "🚨 [CHALLENGER] $COUNT tentatives échouées sur la même commande."
     echo "   STOP. Tu tournes en rond."
-    echo "   → /review-copilot avec le contexte d'erreur — un autre LLM verra peut-être ce que tu rates"
+    echo "   → /review-copilot avec le contexte d'erreur"
     echo "   → Changer d'approche complètement"
-    echo "   → Décomposer le problème en sous-problèmes"
     echo ""
     echo "" > "$FAIL_FILE"
   fi
 else
-  # Commande réussie → reset compteur d'échecs
   if [ -f "$FAIL_FILE" ]; then
     echo "" > "$FAIL_FILE"
   fi

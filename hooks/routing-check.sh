@@ -5,17 +5,21 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 THROTTLE_FILE="/tmp/claude-atelier-diagnostic-last"
 THROTTLE_SECONDS=1800  # 30 minutes
 
-# Lire le message utilisateur (JSON stdin)
-INPUT=$(cat)
-PROMPT=$(echo "$INPUT" | grep -o '"prompt"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/"prompt"[[:space:]]*:[[:space:]]*"//;s/"$//' 2>/dev/null || echo "")
+# Lire le message utilisateur (JSON stdin) avec python3 pour un parsing fiable
+_RAW_INPUT=$(cat)
+PROMPT=$(echo "$_RAW_INPUT" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    print(d.get('prompt', ''))
+except: pass
+" 2>/dev/null)
 
 # ===== ROUTING (chaque message) =====
 MODEL_FILE="/tmp/claude-atelier-current-model"
 MODEL=$(cat "$MODEL_FILE" 2>/dev/null || echo "inconnu")
 
-# Détecter le tier pour recommander un switch
 TIER=""
-ALERT=""
 case "$MODEL" in
   *opus*) TIER="Opus (archi)" ;;
   *sonnet*) TIER="Sonnet (dev)" ;;
@@ -26,16 +30,16 @@ esac
 echo "[ROUTING] modèle actif: $MODEL ($TIER)"
 echo "  Opus→archi/décision | Sonnet→dev quotidien | Haiku→exploration/lint"
 
-# Alerte si Opus sur tâche courante (heuristique: message court = tâche simple)
+# Alerte si Opus sur tâche courante (message court = tâche simple)
 PROMPT_LEN=${#PROMPT}
 if echo "$MODEL" | grep -qi "opus"; then
-  if [ "$PROMPT_LEN" -lt 100 ]; then
+  if [ "$PROMPT_LEN" -gt 0 ] && [ "$PROMPT_LEN" -lt 100 ]; then
     echo "  ⚠️  Tu es sur Opus pour un message court. Sonnet suffirait → /model sonnet"
   fi
 fi
 
 # ===== DÉTECTION STACK (chaque message) =====
-# iOS / Xcode
+# iOS / Xcode → Steve
 if echo "$PROMPT" | grep -qiE "xcode|ios|tvos|ipados|swiftui|swift|simctl|xcodebuild|iphone|ipad|app store|testflight|make run|make tvrun"; then
   STACK_FILE="$REPO_ROOT/src/stacks/ios-xcode.md"
   if [ -f "$STACK_FILE" ]; then
@@ -44,11 +48,11 @@ if echo "$PROMPT" | grep -qiE "xcode|ios|tvos|ipados|swiftui|swift|simctl|xcodeb
   fi
 fi
 
-# NPM Publish
+# NPM Publish → Isaac
 if echo "$PROMPT" | grep -qiE "npm publish|npm version|npmjs|npm token|npm tag|registry|package\.json version|npm pack"; then
   STACK_FILE="$REPO_ROOT/src/stacks/npm-publish.md"
   if [ -f "$STACK_FILE" ]; then
-    echo "[MARCEL] 📦 Livraison npm détectée. Isaac prend le relais — satellite chargé."
+    echo "[ISAAC] 📦 Livraison npm détectée. Isaac prend le relais — satellite chargé."
     cat "$STACK_FILE"
   fi
 fi
