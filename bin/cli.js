@@ -41,8 +41,7 @@ Options:
   --lang <fr|en>    Language (default: fr)
 
 Status:
-  Available now: init, lint, doctor
-  Still stubbed: update
+  Available: init, update, lint, doctor
   Repo: ${pkg.homepage}
 `;
 
@@ -109,6 +108,11 @@ async function main(argv) {
   if (command === 'init') {
     const { runInit } = await import('./init.js');
     return runInit(process.argv);
+  }
+
+  if (command === 'update') {
+    const { runUpdate } = await import('./update.js');
+    return runUpdate(process.argv);
   }
 
   process.stderr.write(
