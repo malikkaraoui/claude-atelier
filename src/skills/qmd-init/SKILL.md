@@ -84,11 +84,22 @@ Guide complet : docs/qmd-user-guide.md"
 ## Après l'installation
 
 L'indexation peut prendre 30-60 secondes et faire tourner le ventilateur
-(téléchargement et calcul des embeddings localement).
+(téléchargement et calcul des embeddings localement). C'est normal —
+les embeddings sont calculés localement.
 
-**Important :** le MCP QMD est chargé au démarrage de Claude Code.
-**Redémarre la session** (ferme et rouvre Claude Code) pour que le
-MCP soit actif et que les requêtes `qmd query` soient disponibles
-sans passer par Bash.
+**Important — redémarrage obligatoire :**
 
-"QMD installé. Redémarre la session Claude Code pour activer le MCP."
+Redémarrer le chat dans VS Code **ne suffit pas**. Le MCP est chargé
+au démarrage du **processus Claude Code**, pas du chat.
+
+Pour forcer le rechargement des MCP servers :
+
+- **Option A (VS Code)** : `Cmd+Shift+P` → `Claude Code: Restart`
+  (ou `Claude Code: Restart Server`) → tue et relance le processus
+- **Option B** : fermer et rouvrir VS Code complètement
+
+QMD via Bash (`qmd query "..."`) fonctionne immédiatement sans redémarrage.
+C'est le MCP natif (outil intégré directement dans Claude) qui nécessite
+le redémarrage.
+
+"QMD installé. ⚠️ Redémarre le processus Claude Code (Cmd+Shift+P → Claude Code: Restart) pour activer le MCP. En attendant, `qmd query` via Bash fonctionne déjà."
