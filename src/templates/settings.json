@@ -31,11 +31,10 @@
       "Bash(git log:*)"
     ],
 
-    "_comment_deny": "Liste noire absolue. Jamais autorisee, peu importe le mode.",
+    "_comment_deny": "Liste noire absolue. Jamais autorisee, peu importe le mode. git push absent ici : interdit en night-mode via settings projet, pas globalement.",
     "deny": [
       "Bash(rm -rf:*)",
       "Bash(sudo:*)",
-      "Bash(git push:*)",
       "Bash(git push --force:*)",
       "Bash(git reset --hard:*)",
       "Bash(git filter-branch:*)",

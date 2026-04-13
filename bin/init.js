@@ -89,10 +89,13 @@ function mergeSettings(existingPath, templatePath) {
       ])];
     }
     if (template.permissions?.deny || existing.permissions?.deny) {
-      merged.permissions.deny = [...new Set([
-        ...(template.permissions?.deny || []),
-        ...(existing.permissions?.deny || []),
-      ])];
+      // deny: existing wins — never re-add entries the user explicitly removed.
+      // Only add template entries if no existing deny list at all (fresh install).
+      if (existing.permissions?.deny) {
+        merged.permissions.deny = existing.permissions.deny;
+      } else {
+        merged.permissions.deny = template.permissions?.deny || [];
+      }
     }
   }
 
