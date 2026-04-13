@@ -23,6 +23,15 @@ if echo "$PROMPT" | grep -qiE "xcode|ios|tvos|ipados|swiftui|swift|simctl|xcodeb
   fi
 fi
 
+# NPM Publish
+if echo "$PROMPT" | grep -qiE "npm publish|npm version|npmjs|npm token|npm tag|registry|package\.json version|npm pack"; then
+  STACK_FILE="$REPO_ROOT/src/stacks/npm-publish.md"
+  if [ -f "$STACK_FILE" ]; then
+    echo "[MARCEL] 📦 Livraison npm détectée. Isaac prend le relais — satellite chargé."
+    cat "$STACK_FILE"
+  fi
+fi
+
 # ===== DIAGNOSTIC (throttled toutes les 30 min) =====
 RUN_DIAGNOSTIC=false
 if [ ! -f "$THROTTLE_FILE" ]; then

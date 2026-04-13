@@ -96,8 +96,10 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 | Agent | Domaine | Déclencheur | Ce qu'il apporte |
 | --- | --- | --- | --- |
 | **Steve** 🍎 | iOS / tvOS / iPadOS + Xcode | `swift`, `xcode`, `ios`, `simctl`... | Workflow V4 complet : Makefile, FFI Rust→Swift, troubleshooting, `Cmd+Shift+B` |
+| **Isaac** 📦 | NPM Publish / Registry | `npm publish`, `npm version`, `registry`... | Pipeline CI/CD, versionning sémantique, tokens, troubleshooting |
 
-*« Stay hungry, stay foolish — mais build depuis le Makefile. »*
+*« Stay hungry, stay foolish — mais build depuis le Makefile. »* — Steve
+*« npm install — deux mots qui doivent toujours marcher. »* — Isaac
 
 L'agent est injecté via le hook `routing-check.sh` — aucune config manuelle. Tu mentionnes Xcode, Steve arrive avec tout le contexte.
 
@@ -198,6 +200,7 @@ Chargés conditionnellement selon le projet actif. Certains activent un agent no
 | Stack | Fichier | Agent |
 | --- | --- | --- |
 | iOS / tvOS / iPadOS | `stacks/ios-xcode.md` | **Steve** 🍎 |
+| NPM Publish / Registry | `stacks/npm-publish.md` | **Isaac** 📦 |
 | JavaScript/TypeScript | `stacks/javascript.md` | — |
 | Python | `stacks/python.md` | — |
 | Java | `stacks/java.md` | — |
@@ -348,8 +351,10 @@ When a specific domain is detected in your message, the atelier automatically lo
 | Agent | Domain | Trigger | What it brings |
 | --- | --- | --- | --- |
 | **Steve** 🍎 | iOS / tvOS / iPadOS + Xcode | `swift`, `xcode`, `ios`, `simctl`... | Full V4 workflow: Makefile, Rust→Swift FFI, troubleshooting, `Cmd+Shift+B` |
+| **Isaac** 📦 | NPM Publish / Registry | `npm publish`, `npm version`, `registry`... | CI/CD pipeline, semantic versioning, tokens, troubleshooting |
 
-*"Stay hungry, stay foolish — but build from the Makefile."*
+*"Stay hungry, stay foolish — but build from the Makefile."* — Steve
+*"npm install — two words that must always work."* — Isaac
 
 The agent is injected via the `routing-check.sh` hook — no manual config. Mention Xcode, Steve shows up with full context.
 
@@ -423,6 +428,7 @@ Loaded conditionally based on the active project. Some activate a named agent.
 | Stack | File | Agent |
 | --- | --- | --- |
 | iOS / tvOS / iPadOS | `stacks/ios-xcode.md` | **Steve** 🍎 |
+| NPM Publish / Registry | `stacks/npm-publish.md` | **Isaac** 📦 |
 | JavaScript/TypeScript | `stacks/javascript.md` | — |
 | Python | `stacks/python.md` | — |
 | Java | `stacks/java.md` | — |
