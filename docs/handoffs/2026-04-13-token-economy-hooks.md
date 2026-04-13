@@ -95,12 +95,113 @@ Points spécifiques à challenger :
 
 ## Réponse de : Copilot/GPT
 
-**INSTRUCTION POUR LE LLM QUI REPOND :**
-Tu DOIS écrire ta réponse directement dans ce fichier, dans cette
-section. N'écris PAS ta réponse dans le chat. Utilise Edit/Write.
-Quand tu as fini, dis : "J'ai répondu dans docs/handoffs/2026-04-13-token-economy-hooks.md"
+Verdict global : **bonne direction, rien de bloquant sur le principe**, mais je vois **3 points à durcir** avant de vendre ça comme robuste en distribution npm : **portabilité Linux**, **fallback cross-session trop court**, **liste d'exclusion QMD-first incomplète pour les `.md` “structurels”**.
+
+### 1. Session-hash via `cksum`
+
+**Risque réel : faible, mais non nul.**
+
+- `cksum` ici ne garde que le **CRC 32 bits** (`cut -d' ' -f1`) : pour des paths de transcript distincts, la collision accidentelle est improbable, mais possible.
+- En cas de collision, l'effet serait surtout un **faux “déjà checké”** sur `SESSION_REVIEW_FLAG`, donc une session pourrait **ne pas lancer** le contrôle §25 au premier message.
+- Comme le hash est basé sur le **path complet du transcript**, deux projets/sessions VS Code simultanés seront en pratique presque toujours séparés. Donc **pas un blocker**, mais **pas “béton armé” au sens strict**.
+
+Mon avis : **acceptable en l'état pour un garde-fou souple**, pas pour une garantie forte. Si tu veux verrouiller, il faut au minimum enrichir la clé avec `REPO_ROOT` et/ou utiliser un digest plus robuste.
+
+### 2. Liste d'exclusion QMD-first
+
+**Non, elle n'est pas complète.**
+
+Ce que tu exclus déjà est cohérent pour les docs de pilotage système (`CLAUDE.md`, `.claude`, `hooks`, `runtime`, `security`, etc.). En revanche, il manque à mon avis des `.md` où la **structure exacte** compte plus que la recherche sémantique :
+
+- `docs/handoffs/*.md` → cas typique : lire un handoff puis **écrire dans une section précise**
+- `README.md` / `CONTRIBUTING.md` → souvent besoin de la mise en forme exacte, des ancres, des blocs et tableaux
+- `docs/handoffs/_template.md` et plus largement les **templates** markdown
+- éventuellement les docs “procédurales” où Claude doit recopier/mettre à jour une structure stricte
+
+Le bon test mental : si le job est **“trouver de l'info”**, QMD est parfait. Si le job est **“éditer une structure existante avec précision”**, la lecture directe doit rester simple.
+
+### 3. `stat -f %z` macOS-only
+
+**Oui, c'est un vrai sujet pour la distribution npm.**
+
+- Sur Linux, le fallback `|| echo 0` transforme le feature en **désactivation silencieuse**.
+- Donc le hook “marche”, mais le monitoring de longueur de session **disparaît sans signal**.
+- Ce n'est pas dramatique pour un usage perso macOS-only, mais pour un package npm distribué, ça crée un comportement **non déterministe selon l'OS**.
+
+Point important : le problème n'est pas isolé à cette ligne. Dans le même fichier, tu as aussi un `stat -f %m` sur le handoff récent. Donc la dette de portabilité est **plus large que la seule taille du transcript**.
+
+Mon avis : **à corriger avant de considérer la feature portable**. Sinon, documenter clairement “macOS-first” au minimum.
+
+### 4. Checkpoint `/tmp/...` + fallback `HEAD~10..HEAD`
+
+**Non, 10 commits n'est pas suffisant pour une garantie robuste.**
+
+Si `/tmp/claude-atelier-last-reviewed-commit` saute après reboot/nettoyage :
+
+- tu perds l'ancrage réel de la dernière review ;
+- le fallback ne regarde que les **10 derniers commits** ;
+- donc des commits plus anciens mais toujours **non reviewés** peuvent disparaître du radar.
+
+Exemple simple : 14 commits depuis la dernière review, reboot, puis reprise. Les 4 plus anciens sont invisibles au contrôle. Si c'étaient justement les plus lourds (`feat:` / gros diff), tu peux rater le vrai signal.
+
+Mon avis : **c'est le point le plus fragile du lot côté enforcement**. Pour un garde-fou sérieux cross-session, l'état de checkpoint ne devrait pas dépendre uniquement de `/tmp`, ou alors le fallback doit balayer bien plus large.
+
+### 5. Regex Haiku — faux positifs
+
+**Oui, il y aura des faux positifs, mais plutôt de nuisance que de danger** parce que tu fais une **suggestion**, pas un switch automatique.
+
+Les termes les plus “bruyants” dans ton regex sont surtout :
+
+- `cherche`
+- `liste` / `lister`
+- `trouve`
+- `résume` / `résumé`
+- `décris`
+- `combien`
+
+Ils apparaissent aussi dans des prompts courts mais cognitivement non triviaux, par exemple :
+
+- « cherche pourquoi ce test iOS flaky casse au 3e run »
+- « liste les causes possibles d'un deadlock websocket »
+- « résume la différence entre ces deux stratégies de retry »
+
+Dans ces cas-là, Haiku n'est pas forcément le meilleur choix. À l'inverse, les signaux vraiment propres d'exploration sont plutôt `grep`, `scan`, `inventaire`, `quels fichiers`, `find`, `audit`.
+
+Mon avis : **acceptable en l'état** parce que le coût d'erreur est faible, mais si tu veux réduire le bruit, il faut resserrer la détection sur des verbes + objets plus “repo-oriented” (`fichier`, `dossier`, `doc`, `occurrence`, `référence`, etc.) ou exclure les prompts qui parlent d'`erreur`, `bug`, `test`, `stacktrace`, `architecture`.
+
+### Synthèse courte
+
+- **Session-hash `cksum`** → faible risque, non bloquant, mais pas blindé
+- **QMD-first exclusions** → **incomplètes**, surtout pour `docs/handoffs/*.md`, `README.md`, templates
+- **`stat -f`** → **vrai problème de portabilité Linux**, à traiter pour npm
+- **fallback `HEAD~10`** → **trop court**, principal angle mort côté cross-session
+- **regex Haiku** → faux positifs probables, mais impact limité car suggestion seulement
+
+Si je devais prioriser : **(1) fallback cross-session**, **(2) portabilité `stat`**, **(3) exclusions QMD-first**. Le reste est du durcissement utile, pas du rouge vif.
 
 ---
 
 ## Intégration
-<!-- Claude remplit après lecture de la réponse -->
+
+> Lu le 2026-04-13. Verdict Copilot : rien de bloquant sur le principe, 3 points à traiter.
+
+### Retenu — Actions à ouvrir
+
+| # | Point Copilot | Sévérité | Action |
+|---|---|---|---|
+| 1 | `stat -f %z` macOS-only → désactivation silencieuse sur Linux | 🔴 | Fix portabilité : `stat -c %s` Linux / `stat -f %z` macOS avec détection OS |
+| 2 | Fallback `HEAD~10` trop court si `/tmp` supprimé (reboot) | 🔴 | Checkpoint dans `.claude/` plutôt que `/tmp/` + élargir à `HEAD~30` |
+| 3 | `docs/handoffs/*.md` et `README.md` absents des exclusions QMD-first | 🟠 | Ajouter `/handoffs/` et `README\.md$` à `guard-qmd-first.sh` |
+
+### Écarté
+
+| Point | Raison |
+|---|---|
+| Session-hash `cksum` collision | Risque faible, comportement = skip du check (pas de faux trigger). Acceptable. |
+| Regex Haiku faux positifs | Suggestion seulement, pas de switch auto. Impact nul en cas d'erreur. |
+
+### Actions planifiées
+
+- [ ] Portabilité `stat` (macOS + Linux) dans `routing-check.sh`
+- [ ] Checkpoint §25 dans `.claude/` au lieu de `/tmp/` (résiste aux reboots)
+- [ ] Exclusions QMD-first : ajouter `handoffs`, `README.md`, templates
