@@ -17,6 +17,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.11] — 2026-04-13
+
+### Fix robustesse — 5 points review Copilot (tous traités)
+
+#### Fixed
+
+- **Fix 1 — Portabilité `stat` macOS → Linux** (`routing-check.sh`) : `stat -f %z` (macOS) suivi de `|| stat -c %s` (Linux) — monitoring de session actif sur les deux OS. Même fix pour `stat -f %m` (handoff date) → `|| stat -c %Y`
+- **Fix 2 — Checkpoint §25 dans `.git/`** (`routing-check.sh` + `guard-review-auto.sh`) : `LAST_REVIEW_FILE` déplacé de `/tmp/` vers `$REPO_ROOT/.git/claude-atelier-last-reviewed-commit` — résiste aux reboots, reste par-repo
+- **Fix 2 (suite) — Fallback `HEAD~30`** : plage élargie de 10 à 30 commits si le checkpoint est absent/invalide
+- **Fix 3 — Exclusions QMD-first** (`guard-qmd-first.sh`) : ajout de `README\.md$`, `/handoffs/`, `/templates/` — Claude peut lire directement les fichiers à structure exacte (handoffs, templates, README)
+- **Fix 4 — Session hash anti-collision** (`routing-check.sh`) : clé enrichie avec `REPO_ROOT` → `echo "TRANSCRIPT|REPO_ROOT" | cksum` — deux projets ouverts simultanément ne peuvent plus partager le même flag de session
+- **Fix 5 — Haiku regex : garde négatif** (`routing-check.sh`) : ajout d'un `grep -qiE "(erreur|bug|debug|crash|fail|broken|pourquoi|why|cause|fix|résoudre|bloquant|deadlock|stacktrace|flaky|architecture)"` — si le prompt contient un signal de complexité, Haiku n'est pas suggéré même si un mot d'exploration est présent
+
+---
+
 ## [0.3.10] — 2026-04-13
 
 ### Mohamed 📋 — Agent review inter-LLM + narration silencieuse

@@ -47,7 +47,7 @@ echo "[HORODATAGE] $(date '+%Y-%m-%d %H:%M:%S') | $MODEL"
 
 # ===== LONGUEUR DE SESSION =====
 if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
-  SESSION_SIZE=$(stat -f %z "$TRANSCRIPT" 2>/dev/null || echo 0)
+  SESSION_SIZE=$(stat -f %z "$TRANSCRIPT" 2>/dev/null || stat -c %s "$TRANSCRIPT" 2>/dev/null || echo 0)
   if [ "$SESSION_SIZE" -ge 600000 ]; then
     echo ""
     echo "🔴 [SESSION] Contexte très long ($(( SESSION_SIZE / 1024 ))KB) — chaque message brûle beaucoup de tokens."
@@ -91,10 +91,13 @@ else
   fi
 
   # Suggestion Haiku pour tâches légères / exploration
+  # Fix 5 : garde négatif pour éviter les faux positifs sur tâches complexes
   if ! echo "$MODEL" | grep -qi "haiku"; then
     if [ "$PROMPT_LEN" -gt 0 ] && [ "$PROMPT_LEN" -lt 200 ]; then
-      if echo "$PROMPT" | grep -qiE "(explore|cherche|liste|lister|trouve|find|montre|résumé|résume|décris|combien|grep|lint|audit|scan|parcours|inventaire|recherche|affiche|quels? fichiers|quels? sont|qu.est.ce que)"; then
-        echo "  💡 Exploration détectée → /model haiku (10x moins cher qu'Opus)"
+      if echo "$PROMPT" | grep -qiE "(explore|cherche|liste|lister|trouve|find|résumé|résume|grep|lint|audit|scan|parcours|inventaire|recherche|quels? fichiers|quels? sont)"; then
+        if ! echo "$PROMPT" | grep -qiE "(erreur|bug|debug|crash|fail|broken|pourquoi|why|cause|fix|résoudre|bloquant|deadlock|stacktrace|flaky|architecture)"; then
+          echo "  💡 Exploration détectée → /model haiku (10x moins cher)"
+        fi
       fi
     fi
   fi
@@ -102,8 +105,10 @@ fi
 
 # ===== REVIEW CHECK §25 (béton armé — cross-session) =====
 # Fire au premier message de chaque session. Indépendant des commits in-session.
-LAST_REVIEW_FILE="/tmp/claude-atelier-last-reviewed-commit"
-SESSION_HASH=$(echo "${TRANSCRIPT:-no-transcript}" | cksum | cut -d' ' -f1 2>/dev/null || echo "default")
+# Fix 2 : checkpoint dans .git/ (persiste après reboot, par repo)
+LAST_REVIEW_FILE="$REPO_ROOT/.git/claude-atelier-last-reviewed-commit"
+# Fix 4 : hash enrichi avec REPO_ROOT pour éviter collisions multi-projets
+SESSION_HASH=$(echo "${TRANSCRIPT:-no-transcript}|${REPO_ROOT}" | cksum | cut -d' ' -f1 2>/dev/null || echo "default")
 SESSION_REVIEW_FLAG="/tmp/claude-atelier-review-checked-${SESSION_HASH}"
 
 if [ ! -f "$SESSION_REVIEW_FLAG" ] && [ -d "$REPO_ROOT/.git" ]; then
@@ -116,7 +121,7 @@ if [ ! -f "$SESSION_REVIEW_FLAG" ] && [ -d "$REPO_ROOT/.git" ]; then
     if [ -n "$STORED_HEAD" ] && git -C "$REPO_ROOT" cat-file -e "${STORED_HEAD}^{commit}" 2>/dev/null; then
       REVIEW_RANGE="${STORED_HEAD}..HEAD"
     else
-      REVIEW_RANGE="HEAD~10..HEAD"
+      REVIEW_RANGE="HEAD~30..HEAD"
     fi
 
     FEAT_COUNT=$(git -C "$REPO_ROOT" log $REVIEW_RANGE --oneline 2>/dev/null | grep -cE " (feat|refactor):" || echo 0)
@@ -200,7 +205,8 @@ if [ "$RUN_DIAGNOSTIC" = true ]; then
   if [ -d "$HANDOFF_DIR" ]; then
     LATEST_HANDOFF=$(find "$HANDOFF_DIR" -name "202*.md" -not -name "_template*" 2>/dev/null | sort -r | head -1)
     if [ -n "$LATEST_HANDOFF" ]; then
-      DAYS_SINCE=$(( ($(date +%s) - $(stat -f %m "$LATEST_HANDOFF" 2>/dev/null || echo $(date +%s))) / 86400 ))
+      FILE_MTIME=$(stat -f %m "$LATEST_HANDOFF" 2>/dev/null || stat -c %Y "$LATEST_HANDOFF" 2>/dev/null || date +%s)
+      DAYS_SINCE=$(( ($(date +%s) - FILE_MTIME) / 86400 ))
       if [ "$DAYS_SINCE" -ge 7 ]; then
         ISSUES="${ISSUES}\n⚠️  Dernier handoff il y a $DAYS_SINCE jours → /review-copilot"
       fi

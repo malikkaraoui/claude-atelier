@@ -12,7 +12,7 @@ if ! echo "$FILE_PATH" | grep -qE "\.md$"; then
 fi
 
 # Ignorer les fichiers de guidage / système (Claude en a besoin pour être guidé)
-if echo "$FILE_PATH" | grep -qE "(CLAUDE\.md$|MEMORY\.md$|/\.claude/|/memory/|/tmp/|CHANGELOG\.md$|LICENSE|/hooks/|/rules/|/runtime/|/orchestration/|/autonomy/|/security/)"; then
+if echo "$FILE_PATH" | grep -qE "(CLAUDE\.md$|MEMORY\.md$|README\.md$|/\.claude/|/memory/|/tmp/|CHANGELOG\.md$|LICENSE|/hooks/|/rules/|/runtime/|/orchestration/|/autonomy/|/security/|/handoffs/|/templates/)"; then
   exit 0
 fi
 

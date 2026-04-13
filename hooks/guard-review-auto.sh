@@ -26,7 +26,7 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
     echo "   → /angle-mort — auto-review anti-complaisance"
     echo ""
     echo "0" > "$LINES_FILE"
-    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > /tmp/claude-atelier-last-reviewed-commit || true
+    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > "$REPO_ROOT/.git/claude-atelier-last-reviewed-commit" || true
   fi
 
   # --- Feature/Refactor : /angle-mort ---
@@ -51,7 +51,7 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
     echo "   README : cette feature est-elle reflétée dans README.md (FR + EN) ?"
     echo ""
     echo "0" > "$COMMITS_FILE"
-    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > /tmp/claude-atelier-last-reviewed-commit || true
+    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > "$REPO_ROOT/.git/claude-atelier-last-reviewed-commit" || true
   elif [ "$COMMITS" -ge 10 ]; then
     echo ""
     echo "📋 [MOHAMED] $COMMITS commits sans review externe."
@@ -59,7 +59,7 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
     echo "   → /review-copilot ou /angle-mort"
     echo ""
     echo "0" > "$COMMITS_FILE"
-    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > /tmp/claude-atelier-last-reviewed-commit || true
+    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > "$REPO_ROOT/.git/claude-atelier-last-reviewed-commit" || true
   fi
 
   # --- Architecture : fichiers structurants ---
