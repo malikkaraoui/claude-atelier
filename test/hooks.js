@@ -253,6 +253,30 @@ test('routing-check alerte fort si aucun modèle n’est disponible', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// guard-tests-before-push.sh — §11/§24 : tests avant push
+// ─────────────────────────────────────────────────────────────
+console.log('\n── guard-tests-before-push.sh ──');
+
+test('marque qu\'un test runner a tourné (npm test)', () => {
+  try { rmSync('/tmp/claude-atelier-tests-ran', { force: true }); } catch {}
+  const r = hook('guard-tests-before-push.sh', { tool_input: { command: 'npm test' } });
+  ok(r.status === 0, 'exit 0 (marquage silencieux)');
+  ok(readFileSync('/tmp/claude-atelier-tests-ran', 'utf8').trim().length > 0, 'fichier marqueur créé');
+});
+
+test('laisse passer git push si des tests ont tourné récemment', () => {
+  writeFileSync('/tmp/claude-atelier-tests-ran', `${Math.floor(Date.now() / 1000)}\n`);
+  const r = hook('guard-tests-before-push.sh', { tool_input: { command: 'git push origin main' } });
+  ok(r.status === 0, 'exit 0 — tests détectés');
+});
+
+test('silencieux sur commande non liée (ls, cd)', () => {
+  const r = hook('guard-tests-before-push.sh', { tool_input: { command: 'ls -la' } });
+  ok(r.status === 0, 'exit 0 — no-op');
+  ok(r.stdout.trim() === '', 'aucune sortie');
+});
+
+// ─────────────────────────────────────────────────────────────
 // Bilan
 // ─────────────────────────────────────────────────────────────
 const total = pass + fail;
