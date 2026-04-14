@@ -1,10 +1,11 @@
 #!/bin/bash
 # SessionStart hook — capture le modèle actif dans un fichier tmp
-# Le modèle est disponible UNIQUEMENT au démarrage de session
 
-INPUT=$(cat)
-MODEL=$(echo "$INPUT" | grep -o '"model"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/"model"[[:space:]]*:[[:space:]]*"//;s/"$//')
+set -eu
 
-if [ -n "$MODEL" ]; then
-  echo "$MODEL" > /tmp/claude-atelier-current-model
+# shellcheck source=/dev/null
+source "$(dirname "$0")/_parse-input.sh"
+
+if [ -n "${HOOK_MODEL:-}" ]; then
+  printf '%s\n' "$HOOK_MODEL" > /tmp/claude-atelier-current-model
 fi

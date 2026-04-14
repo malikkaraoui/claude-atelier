@@ -26,7 +26,7 @@
       "inputs": ["model (from session JSON)"],
       "outputs": ["writes /tmp/claude-atelier-current-model"],
       "rule": "§1 Horodatage + Modèle",
-      "test": null,
+      "test": "test/hooks.js → session-model.sh (1 test)",
       "exitCodes": {
         "0": "always (silent capture)"
       }
@@ -37,10 +37,10 @@
       "type": "UserPromptSubmit",
       "trigger": "every user prompt",
       "purpose": "Injecte [HORODATAGE] + [ROUTING] dans le contexte. Détecte la stack du projet. Diagnostic périodique (30 min throttle).",
-      "inputs": ["prompt", "current-model from /tmp"],
-      "outputs": ["additionalContext: [HORODATAGE] + [ROUTING] + warnings éventuels"],
+      "inputs": ["prompt", "model (if available in hook JSON)", "transcript_path", "current-model from /tmp"],
+      "outputs": ["additionalContext: [HORODATAGE] + [ROUTING] + source modèle + warnings éventuels"],
       "rule": "§1 + §15 + §10",
-      "test": null,
+      "test": "test/hooks.js → routing-check.sh (3 tests)",
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       }

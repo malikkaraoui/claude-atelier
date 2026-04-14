@@ -10,6 +10,8 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -42,6 +44,13 @@ function hook(name, stdinObj = {}) {
     cwd: ROOT,
     env: { ...process.env }
   });
+}
+
+function resetRoutingEnv() {
+  try {
+    rmSync('/tmp/claude-atelier-current-model');
+  } catch {}
+  writeFileSync('/tmp/claude-atelier-diagnostic-last', `${Math.floor(Date.now() / 1000)}`);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -176,6 +185,50 @@ test('silencieux sur commande non-commit', () => {
   const r = hook('guard-commit-french.sh', { tool_input: { command: 'git push origin main' } });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.trim() === '', 'aucun output');
+});
+
+// ─────────────────────────────────────────────────────────────
+// session-model.sh + routing-check.sh
+// Règle §1 : modèle live > transcript > cache
+// ─────────────────────────────────────────────────────────────
+console.log('\n── session-model.sh + routing-check.sh ──');
+
+test('session-model capture le modèle depuis le JSON du hook', () => {
+  resetRoutingEnv();
+  const r = hook('session-model.sh', { model: 'claude-sonnet-4-6' });
+  ok(r.status === 0, 'exit 0');
+  ok(readFileSync('/tmp/claude-atelier-current-model', 'utf8').trim() === 'claude-sonnet-4-6', 'modèle capturé');
+});
+
+test('routing-check préfère le modèle live au cache stale', () => {
+  resetRoutingEnv();
+  writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');
+  const r = hook('routing-check.sh', { prompt: 'audit rapide', model: 'claude-opus-4-6[1m]' });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('[ROUTING] modèle actif: claude-opus-4-6 (Opus (archi))'), 'le modèle live doit gagner');
+  ok(r.stdout.includes('[ROUTING] source modèle: live'), 'la source doit être live');
+  ok(readFileSync('/tmp/claude-atelier-current-model', 'utf8').trim() === 'claude-opus-4-6', 'cache mis à jour');
+});
+
+test('routing-check bascule sur le transcript si le modèle live est absent', () => {
+  resetRoutingEnv();
+  const dir = mkdtempSync(resolve(tmpdir(), 'claude-routing-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  writeFileSync(transcript, '...\nSet model to claude-haiku-4-5\n...\n');
+  const r = hook('routing-check.sh', { prompt: 'liste les fichiers', transcript_path: transcript });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('[ROUTING] modèle actif: claude-haiku-4-5 (Haiku (exploration))'), 'fallback transcript attendu');
+  ok(r.stdout.includes('[ROUTING] source modèle: transcript'), 'source transcript attendue');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('routing-check signale quand il ne lui reste que le cache', () => {
+  resetRoutingEnv();
+  writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');
+  const r = hook('routing-check.sh', { prompt: 'bonjour' });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('[ROUTING] source modèle: cache'), 'source cache attendue');
+  ok(r.stdout.includes('modèle issu du cache session-start'), 'warning cache attendu');
 });
 
 // ─────────────────────────────────────────────────────────────

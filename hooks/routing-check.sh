@@ -15,8 +15,21 @@ try:
 except: pass
 " 2>/dev/null)
 
+LIVE_MODEL=$(echo "$_RAW_INPUT" | python3 -c "
+import sys, json
+try:
+  d = json.load(sys.stdin)
+  print(d.get('model', ''))
+except: pass
+" 2>/dev/null)
+
 # ===== ROUTING (chaque message) =====
 MODEL_FILE="/tmp/claude-atelier-current-model"
+MODEL_SOURCE="inconnu"
+
+normalize_model() {
+  printf '%s' "$1" | sed 's/\[.*$//' | tr -d '\r\n'
+}
 
 # Détecter un changement de modèle dans le transcript (commande /model)
 TRANSCRIPT=$(echo "$_RAW_INPUT" | python3 -c "
@@ -29,7 +42,7 @@ except: pass
 
 if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
   # Chercher le dernier "Set model to" dans le transcript
-  LAST_MODEL_CHANGE=$(grep -o 'Set model to [a-z0-9_\.\[\]-]*' "$TRANSCRIPT" 2>/dev/null | tail -1 | sed 's/Set model to //')
+  LAST_MODEL_CHANGE=$(grep -Eo 'Set model to [^[:space:]]+' "$TRANSCRIPT" 2>/dev/null | tail -1 | sed 's/Set model to //')
   if [ -n "$LAST_MODEL_CHANGE" ]; then
     # Nettoyer le suffixe [1m] si présent
     CLEAN_MODEL=$(echo "$LAST_MODEL_CHANGE" | sed 's/\[.*$//')
@@ -40,7 +53,31 @@ if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
   fi
 fi
 
-MODEL=$(cat "$MODEL_FILE" 2>/dev/null || echo "inconnu")
+MODEL=""
+
+if [ -n "$LIVE_MODEL" ]; then
+  MODEL=$(normalize_model "$LIVE_MODEL")
+  MODEL_SOURCE="live"
+  printf '%s\n' "$MODEL" > "$MODEL_FILE"
+fi
+
+if [ -z "$MODEL" ] && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
+  LAST_MODEL_CHANGE=$(grep -Eo 'Set model to [^[:space:]]+' "$TRANSCRIPT" 2>/dev/null | tail -1 | sed 's/Set model to //')
+  if [ -n "$LAST_MODEL_CHANGE" ]; then
+    MODEL=$(normalize_model "$LAST_MODEL_CHANGE")
+    MODEL_SOURCE="transcript"
+    printf '%s\n' "$MODEL" > "$MODEL_FILE"
+  fi
+fi
+
+if [ -z "$MODEL" ]; then
+  MODEL=$(cat "$MODEL_FILE" 2>/dev/null || echo "")
+  if [ -n "$MODEL" ]; then
+    MODEL_SOURCE="cache"
+  else
+    MODEL="inconnu"
+  fi
+fi
 
 # ===== HORODATAGE + MODÈLE (toujours en premier — machine time) =====
 echo "[HORODATAGE] $(date '+%Y-%m-%d %H:%M:%S') | $MODEL"
@@ -97,7 +134,12 @@ if [ "$MODEL" = "inconnu" ] || [ "$TIER" = "inconnu" ]; then
   echo ""
 else
   echo "[ROUTING] modèle actif: $MODEL ($TIER)"
+  echo "[ROUTING] source modèle: $MODEL_SOURCE"
   echo "  Opus→archi/décision | Sonnet→dev quotidien | Haiku→exploration/lint"
+
+  if [ "$MODEL_SOURCE" = "cache" ]; then
+    echo "  ⚠️  modèle issu du cache session-start — fiable seulement si aucun /model n'a eu lieu entre-temps"
+  fi
 
   # Alerte si Opus sur tâche courante (message court = tâche simple)
   PROMPT_LEN=${#PROMPT}
