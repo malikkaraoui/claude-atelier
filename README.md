@@ -346,13 +346,17 @@ src/
 │   ├── runtime/       Flow, format, extended thinking, todo-session
 │   └── ecosystem/     Skills, plugins, hooks, memory, QMD, Hookify
 ├── stacks/            Satellites par stack (iOS, JS, Python, Java…)
-├── skills/            13 slash commands SKILL.md
+├── skills/            14 slash commands SKILL.md
 └── templates/         .gitignore, .claudeignore, settings.json
 
-hooks/                 7 hooks d'enforcement prêts à l'emploi
+.claude/hooks-manifest.json  Manifeste typé de tous les hooks (10 entrées)
+hooks/                 10 hooks d'enforcement prêts à l'emploi
 scripts/               pre-push-gate.sh (5 checks : secrets→lint→build→tests)
+                       update-security.js (sync auto SECURITY.md depuis package.json)
 bin/cli.js             CLI (init, doctor, lint, update)
-.github/workflows/     CI/CD : tests + npm publish automatique sur tag
+.github/workflows/     CI (matrice Node 18/20/22) + npm publish sur tag
+test/                  lint-refs.js, lint-length.js, lint-hooks-manifest.js,
+                       doctor.js (26 checks · mode --json), hooks.js (20 tests)
 ```
 
 ---
@@ -597,6 +601,29 @@ never pushes                  Screenshot VSCode → diagnosis
 
 ---
 
+### Parallelization — 3 power patterns
+
+**Parallel Audit Storm** — 4 Haiku agents in a single message (secrets + lint + refs + tests). Full audit in 3 min instead of 15.
+
+**Background Copilot Review** — Background agent writes the handoff while you keep coding. Zero flow interruption.
+
+**Multi-Session CLI** — 2-3 independent Claude terminals (dev + continuous tests + lint watcher). Real-time local CI.
+
+---
+
+### Inter-LLM Review — Claude ↔ Copilot
+
+A single LLM cannot see its own blind spots.
+
+```text
+/review-copilot → handoff .md → Copilot replies
+→ /integrate-review → sort (kept / to keep / discarded) → actions
+```
+
+Auto-triggered via hook: feature completed, 100+ lines modified, 3+ failed attempts.
+
+---
+
 ### Satellites per stack
 
 Loaded conditionally based on the active project. Some activate a named agent.
@@ -626,6 +653,49 @@ git tag v0.3.0 && git push --tags
 ```
 
 The npm token is stored in GitHub secrets (`NPM_TOKEN`). No more manual `npm publish`.
+
+A separate `CI` workflow runs `npm test` (lint + doctor + 20 hook tests) on every PR and push to main, on Node **18 / 20 / 22**, with `shellcheck --severity=warning` on all `hooks/*.sh` and `scripts/*.sh`. Doctor JSON output is uploaded as an artifact for debugging.
+
+---
+
+### Structure (EN)
+
+```text
+src/
+├── fr/ · en/          Bilingual runtime rules (FR is source of truth)
+│   ├── CLAUDE.md      Core ≤ 150 lines, reloaded on every message
+│   ├── orchestration/ Fork/Teammate/Worktree, subagents, MCP, routing
+│   ├── autonomy/      Permission modes, night-mode, loop-watchers
+│   ├── security/      Secrets, pre-push gate, emergency procedure
+│   ├── runtime/       Flow, format, extended thinking, todo-session
+│   └── ecosystem/     Skills, plugins, hooks, memory, QMD, Hookify
+├── stacks/            Per-stack satellites (iOS, JS, Python, Java…)
+├── skills/            14 SKILL.md slash commands
+└── templates/         .gitignore, .claudeignore, settings.json
+
+.claude/hooks-manifest.json  Typed manifest of all hooks (10 entries)
+hooks/                 10 enforcement hooks ready to use
+scripts/               pre-push-gate.sh (5 checks: secrets→lint→build→tests)
+                       update-security.js (auto-syncs SECURITY.md from package.json)
+bin/cli.js             CLI (init, doctor, lint, update)
+.github/workflows/     CI (Node 18/20/22 matrix) + npm publish on tag
+test/                  lint-refs.js, lint-length.js, lint-hooks-manifest.js,
+                       doctor.js (26 checks · --json mode), hooks.js (20 tests)
+```
+
+---
+
+### Security (EN)
+
+| Layer | Protection |
+| --- | --- |
+| `.gitignore` | Sensitive files excluded |
+| `.claudeignore` | Invisible to Claude |
+| `settings.json` deny list | Destructive commands blocked |
+| `pre-push-gate.sh` | 5 steps before every push |
+| Regex patterns | Secret detection (sk-, AKIA, ghp_, AIza…) |
+| PreToolUse hooks | Blocking before execution (exit 2) |
+| `SECURITY.md` | Vulnerability reporting policy (auto-synced version) |
 
 ---
 

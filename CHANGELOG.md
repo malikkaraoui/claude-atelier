@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.14.0] — 2026-04-14
+
+### Added — README EN complet (parité avec FR)
+
+- **README** : 4 sections EN ajoutées (Parallelization, Inter-LLM Review, Structure, Security) — l'EN était amputé de ces sections.
+- **README** : section CI/CD EN enrichie (mention Node matrix, shellcheck, doctor artifact).
+- **README FR** : Structure mise à jour (10 hooks au lieu de 7, 14 skills au lieu de 13, mention `hooks-manifest.json`, `update-security.js`, `test/*` enrichi, doctor 26 checks).
+
+---
+
 ## [0.13.0] — 2026-04-14
 
 ### Changed — CI GitHub Actions enrichi
