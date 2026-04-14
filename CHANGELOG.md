@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.0] — 2026-04-14
+
+### Added — `.claude/hooks-manifest.json` typé
+
+- **`.claude/hooks-manifest.json`** : manifeste typé de tous les hooks (10 entrées). Chaque hook documenté avec : type (PreToolUse, PostToolUse, SessionStart, UserPromptSubmit), trigger, inputs, outputs, exit codes, règle CLAUDE.md référencée, test associé. Inspiré du modèle `PluginHooks` typé de claw-code.
+- **`test/lint-hooks-manifest.js`** : vérifie la cohérence manifest ↔ filesystem (chaque hook listé existe physiquement et inversement, stats.total cohérent). Ajouté à `npm run lint`.
+- **`CLAUDE.md` §11** : règle "tout hook → MAJ `test/hooks.js` + `.claude/hooks-manifest.json`".
+
+---
+
 ## [0.9.0] — 2026-04-14
 
 ### Added — `PARITY.md` racine
