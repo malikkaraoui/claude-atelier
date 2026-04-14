@@ -7,8 +7,8 @@ Only the latest minor version receives security updates.
 <!-- AUTO-GENERATED — do not edit manually. Run: node scripts/update-security.js -->
 | Version  | Supported          |
 | -------- | ------------------ |
-| 0.7.x    | :white_check_mark: |
-| < 0.7    | :x:                |
+| 0.16.x   | :white_check_mark: |
+| < 0.16   | :x:                |
 <!-- END AUTO-GENERATED -->
 
 ## Reporting a Vulnerability

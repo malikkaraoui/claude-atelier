@@ -217,9 +217,26 @@ esac
 step 6 "Handoff debt §25..."
 
 HANDOFF_DEBT_SCRIPT="$(cd "$(dirname "$0")" && pwd)/handoff-debt.sh"
+VALIDATE_HANDOFF="$(cd "$(dirname "$0")/.." && pwd)/test/validate-handoff.js"
+
 if [[ -f "$HANDOFF_DEBT_SCRIPT" ]]; then
+    # 6a : check dette depuis git
     if bash "$HANDOFF_DEBT_SCRIPT" --check 2>/dev/null; then
-        pass "Dette de review sous seuil"
+        # 6b : validation structurelle du dernier handoff intégré (anti-triche)
+        if [[ -f "$VALIDATE_HANDOFF" ]]; then
+            LATEST=$(ls -t "$(cd "$(dirname "$0")/.." && pwd)/docs/handoffs"/202*.md 2>/dev/null | grep -v "_template" | head -1 || echo "")
+            if [[ -n "$LATEST" ]] && node "$VALIDATE_HANDOFF" "$LATEST" >/dev/null 2>&1; then
+                pass "Dette sous seuil + handoff récent valide structurellement"
+            elif [[ -n "$LATEST" ]]; then
+                echo ""
+                node "$VALIDATE_HANDOFF" "$LATEST"
+                fail "Dernier handoff $(basename "$LATEST") invalide structurellement"
+            else
+                pass "Dette sous seuil (aucun handoff à valider)"
+            fi
+        else
+            pass "Dette sous seuil"
+        fi
     else
         echo ""
         bash "$HANDOFF_DEBT_SCRIPT"

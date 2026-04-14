@@ -17,6 +17,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.17.0] — 2026-04-14
+
+### Added — Lot 2 + Lot 3 HANDOFF-ENFORCEMENT §25 (enforcement physique)
+
+**Référence** : `docs/HANDOFF-ENFORCEMENT.md` sections 9.2-9.4 (corrections anti-triche Copilot v2+v3).
+
+**Lot 2 — Visibilité permanente** :
+
+- **`hooks/routing-check.sh`** : bandeau `[HANDOFF DEBT §25]` injecté après l'horodatage à chaque message utilisateur si dette dépassée. Source : `handoff-debt.sh --json`.
+
+**Lot 3 — Contrainte dure (triple gate anti-bypass)** :
+
+- **`test/validate-handoff.js`** : validation **structurelle** d'un handoff (5 critères, aucun par nombre de mots). Sections obligatoires, texte réel non-template, bloc de fichiers à lire. `npm run validate:handoffs`.
+- **`scripts/version-gate.js`** : bloque `npm version` si dette dépassée. Ajouté en `preversion` dans `package.json`.
+- **`scripts/install-git-hooks.sh`** : installe `.git/hooks/pre-push` physique qui appelle `pre-push-gate.sh` en direct (impossible à bypass par composition shell — seul `--no-verify` passerait, interdit par §13+§22).
+- **`scripts/pre-push-gate.sh` étape 6 enrichie** : en plus du check de dette, valide structurellement le dernier handoff via `validate-handoff.js`.
+
+**Bootstrap note** : le git hook physique n'est pas installé par ce commit — il doit être lancé manuellement via `bash scripts/install-git-hooks.sh` après ce push. Les pushes suivants seront alors bloqués par git directement, pas par ma composition shell.
+
+**Handoff associé** : `docs/handoffs/2026-04-14-lot1-a-3-enforcement-25.md` (intégration remplie avec les 3 rounds Copilot précédents).
+
+---
+
 ## [0.16.0] — 2026-04-14
 
 ### Fixed — Lot 1 HANDOFF-ENFORCEMENT : arrêter le mensonge système §25

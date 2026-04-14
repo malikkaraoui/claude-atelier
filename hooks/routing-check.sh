@@ -45,6 +45,23 @@ MODEL=$(cat "$MODEL_FILE" 2>/dev/null || echo "inconnu")
 # ===== HORODATAGE + MODÈLE (toujours en premier — machine time) =====
 echo "[HORODATAGE] $(date '+%Y-%m-%d %H:%M:%S') | $MODEL"
 
+# ===== HANDOFF DEBT BANNER §25 (calculé depuis git, jamais JSON) =====
+DEBT_SCRIPT="$REPO_ROOT/scripts/handoff-debt.sh"
+if [ -f "$DEBT_SCRIPT" ] && [ -d "$REPO_ROOT/.git" ]; then
+  DEBT_JSON=$(bash "$DEBT_SCRIPT" --json 2>/dev/null || echo "")
+  if [ -n "$DEBT_JSON" ]; then
+    EXCEEDS=$(echo "$DEBT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('exceedsThreshold', False))" 2>/dev/null)
+    if [ "$EXCEEDS" = "True" ]; then
+      LINES=$(echo "$DEBT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['currentDebt']['linesAdded'])" 2>/dev/null)
+      COMMITS=$(echo "$DEBT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['currentDebt']['commitsSince'])" 2>/dev/null)
+      DAYS=$(echo "$DEBT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['currentDebt']['daysSince'])" 2>/dev/null)
+      echo ""
+      echo "🔴 [HANDOFF DEBT §25] ${COMMITS} commits · +${LINES} lignes · ${DAYS}j — handoff Copilot DÛ"
+      echo "   → /review-copilot pour générer · push bloqué tant que dette > seuil"
+    fi
+  fi
+fi
+
 # ===== LONGUEUR DE SESSION =====
 if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
   SESSION_SIZE=$(stat -f %z "$TRANSCRIPT" 2>/dev/null || stat -c %s "$TRANSCRIPT" 2>/dev/null || echo 0)
