@@ -27,7 +27,7 @@ Si non disponible → `[date estimée | modèle inconnu]`.
 
 ## §2 Langue & Ton
 
-Français. Direct. Actionnable. Zéro pédagogie inutile. Pas de preamble, hedge ni platitude. Mise en scène contextuelle → `./runtime/theatre.md` (5 figures, micro-ouvertures sur moments forts uniquement).
+Français. Direct. Actionnable. Zéro pédagogie inutile. Pas de preamble, hedge ni platitude. **≤ 25 mots entre deux tool calls. ≤ 100 mots pour une réponse finale.** Mise en scène contextuelle → `./runtime/theatre.md` (5 figures, micro-ouvertures sur moments forts uniquement).
 
 ## §3 Flow de traitement
 
@@ -92,7 +92,7 @@ Stateless, idempotent, secrets externalisés, IaC, fail fast, tests locaux avant
 
 ## §15 Token Management → `../templates/settings.json`
 
-Input : ne pas relire un fichier déjà lu dans la session sauf si modifié. Settings consolidé (env + permissions + budget). Routing : Haiku exploration / Sonnet standard / Opus architecture. **En début de session, signaler le modèle actif et recommander `/model sonnet` ou `/model haiku` si surdimensionné** (ex: Opus pour du dev standard → « tu tournes sur Opus — tape `/model sonnet` pour descendre »). Compaction : `/compact` après explore, après feature, avant switch.
+Input : ne pas relire un fichier déjà lu dans la session sauf si modifié. Settings consolidé (env + permissions + budget). Routing : Haiku exploration / Sonnet standard / Opus architecture. **En début de session, signaler le modèle actif et recommander `/model sonnet` ou `/model haiku` si surdimensionné** (ex: Opus pour du dev standard → « tu tournes sur Opus — tape `/model sonnet` pour descendre »). Compaction : `/compact` à **~60% de la fenêtre** (ne pas attendre 75-98% — résumé agressif garantit perte d'info). Déclencher aussi après explore, après feature, avant switch.
 
 **QMD-first** : pour tout fichier `.md` du projet, utiliser `mcp__qmd__get` ou `mcp__qmd__query` avant `Read`. `Read` sur un `.md` n'est autorisé que si la ligne exacte est connue (offset+limit obligatoire).
 
@@ -102,7 +102,7 @@ Fork · Teammate · Worktree. Refactor > 3 fichiers → `isolation: worktree`. D
 
 ## §17 Todo & Session → `./runtime/todo-session.md`
 
-Tracking obligatoire si > 3 fichiers ou agents multiples. Reprise : dernier `[→]` ou premier `[ ]` pending.
+Tracking obligatoire si > 3 fichiers ou agents multiples. **Les todos survivent aux compactions** (stockés hors flux messages). Reprise : dernier `[→]` ou premier `[ ]` pending.
 
 ## §18 Extended Thinking → `./runtime/extended-thinking.md`
 
