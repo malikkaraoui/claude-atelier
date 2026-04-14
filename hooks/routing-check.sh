@@ -34,7 +34,7 @@ normalize_model() {
 # Pattern strict : uniquement des vrais noms de modèles Claude (évite d'empoisonner
 # via le texte "Set model to ..." cité dans un message utilisateur du transcript).
 # Match claude-{opus|sonnet|haiku}-X.Y[...] — pas de slashes, pas de ponctuation.
-MODEL_PATTERN='Set model to claude-(opus|sonnet|haiku)-[0-9]+-[0-9]+(\[[0-9a-zA-Z-]+\])?'
+MODEL_PATTERN='Set model to claude-(opus|sonnet|haiku)-[0-9][0-9A-Za-z-]*(\[[0-9A-Za-z-]+\])?'
 
 TRANSCRIPT=$(echo "$_RAW_INPUT" | python3 -c "
 import sys, json

@@ -222,6 +222,18 @@ test('routing-check bascule sur le transcript si le modèle live est absent', ()
   rmSync(dir, { recursive: true, force: true });
 });
 
+test('routing-check accepte le format date claude-haiku-20240307 depuis le transcript', () => {
+  resetRoutingEnv();
+  const dir = mkdtempSync(resolve(tmpdir(), 'claude-routing-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  writeFileSync(transcript, '...\nSet model to claude-haiku-20240307\n...\n');
+  const r = hook('routing-check.sh', { prompt: 'bonjour', transcript_path: transcript });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('[ROUTING] modèle actif: claude-haiku-20240307 (Haiku (exploration))'), 'format date accepté');
+  ok(r.stdout.includes('[ROUTING] source modèle: transcript'), 'source transcript attendue');
+  rmSync(dir, { recursive: true, force: true });
+});
+
 test('routing-check signale quand il ne lui reste que le cache', () => {
   resetRoutingEnv();
   writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');

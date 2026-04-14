@@ -52,6 +52,7 @@ STATS=$(git -C "$REPO_ROOT" diff --shortstat "$RANGE" 2>/dev/null || echo "")
 # reviewedRange doit reprendre le range exact, déjà résolu en SHAs stables.
 REVIEWED_RANGE="$RANGE"
 
+# Note: backticks dans le heredoc sont échappés (\`) pour éviter l'interprétation shell
 cat > "$FILE" <<EOF
 # Handoff — ${SLUG}
 
@@ -96,8 +97,8 @@ ${FILES_CHANGED}
 ## Réponse de : Copilot/GPT
 
 **INSTRUCTION POUR LE LLM QUI REPOND :**
-Tu DOIS écrire ta réponse **directement dans CE MÊME FICHIER `.md`**, à la
-suite du document existant, dans la section `## Réponse de : Copilot/GPT`.
+Tu DOIS écrire ta réponse **directement dans CE MÊME FICHIER \`.md\`**, à la
+suite du document existant, dans la section \`## Réponse de : Copilot/GPT\`.
 **Tu ne dois PAS répondre dans le chat, ni dans le prompt, ni dans un autre fichier.**
 Ce document est le **vase communicant** entre GPT et Claude : la réponse utile
 doit vivre ici, pas ailleurs. Utilise ton outil d'édition de fichier
