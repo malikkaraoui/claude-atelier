@@ -7,14 +7,8 @@ triggers: freebox, freebox-init, fbx, app_token, mafreebox, freebox token
 
 # Freebox Init
 
-> Xavier a redessiné le marché télécoms français depuis un garage.
-> Il a mis internet dans chaque foyer, une Freebox sous chaque TV,
-> et un bouton LCD que personne ne regardait jamais.
->
-> Ce bouton, c'est le tien maintenant.
-> Tu vas appuyer dessus. Une seule fois.
-> Et la box t'obéira pour toujours.
->
+> Un bouton LCD. Une seule pression. Un token permanent.
+> Xavier appelle ça de la confiance. Toi, tu appelleras ça de l'auth.
 > *— HMAC-SHA1 is the new handshake.*
 
 Bootstrap complet de l'autorisation Freebox pour un nouveau projet ou token révoqué.
