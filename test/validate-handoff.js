@@ -20,7 +20,7 @@
  */
 
 import { readFileSync, readdirSync, existsSync } from 'fs';
-import { resolve, dirname, join, basename } from 'path';
+import { resolve, dirname, join, basename, relative } from 'path';
 import { fileURLToPath } from 'url';
 import { createHash } from 'crypto';
 import { spawnSync } from 'child_process';
@@ -65,6 +65,44 @@ function stripTemplateContent(text) {
   return cleaned.trim();
 }
 
+function gitOk(args) {
+  const r = spawnSync('git', args, { cwd: ROOT, stdio: 'pipe' });
+  return r.status === 0;
+}
+
+function gitStdout(args) {
+  const r = spawnSync('git', args, { cwd: ROOT, stdio: 'pipe' });
+  if (r.status !== 0) return '';
+  return r.stdout.toString('utf8');
+}
+
+function gitRevParse(rev) {
+  return gitStdout(['rev-parse', rev]).trim();
+}
+
+function extractReviewedRange(content) {
+  return content.match(/^>\s*reviewedRange\s*:\s*([a-f0-9]{7,40})\.\.([a-f0-9]{7,40})\s*$/m);
+}
+
+function findFirstIntegratedCommit(filePath) {
+  const relPath = relative(ROOT, filePath);
+  const history = gitStdout(['log', '--format=%H', '--reverse', '--follow', '--', relPath])
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  for (const sha of history) {
+    const fileAtCommit = gitStdout(['show', `${sha}:${relPath}`]);
+    if (!fileAtCommit) continue;
+
+    const integration = extractSection(fileAtCommit, 'Intégration');
+    const integrationClean = stripTemplateContent(integration);
+    if (integrationClean.length >= 100) return sha;
+  }
+
+  return '';
+}
+
 function validate(filePath) {
   const errors = [];
   if (!existsSync(filePath)) {
@@ -76,17 +114,24 @@ function validate(filePath) {
   if (!/^>\s*Type\s*:/m.test(content)) errors.push('Frontmatter "> Type :" manquant');
 
   // reviewedRange : format <sha>..<sha>, les 2 shas doivent exister dans git
-  const rangeMatch = content.match(/^>\s*reviewedRange\s*:\s*([a-f0-9]{7,40})\.\.([a-f0-9]{7,40})\s*$/m);
+  const rangeMatch = extractReviewedRange(content);
   if (!rangeMatch) {
     errors.push('Frontmatter "> reviewedRange: <sha>..<sha>" manquant ou malformé');
   } else {
     const [, fromSha, toSha] = rangeMatch;
-    const checkSha = (sha) => {
-      const r = spawnSync('git', ['cat-file', '-e', `${sha}^{commit}`], { cwd: ROOT, stdio: 'pipe' });
-      return r.status === 0;
-    };
-    if (!checkSha(fromSha)) errors.push(`reviewedRange from-sha ${fromSha} introuvable dans git`);
-    if (!checkSha(toSha)) errors.push(`reviewedRange to-sha ${toSha} introuvable dans git`);
+    if (!gitOk(['cat-file', '-e', `${fromSha}^{commit}`])) errors.push(`reviewedRange from-sha ${fromSha} introuvable dans git`);
+    if (!gitOk(['cat-file', '-e', `${toSha}^{commit}`])) errors.push(`reviewedRange to-sha ${toSha} introuvable dans git`);
+    if (!gitOk(['merge-base', '--is-ancestor', fromSha, toSha])) {
+      errors.push(`reviewedRange invalide : ${fromSha} n'est pas un ancêtre de ${toSha}`);
+    }
+
+    const firstIntegratedCommit = findFirstIntegratedCommit(filePath);
+    const resolvedToSha = gitRevParse(toSha);
+    if (!firstIntegratedCommit) {
+      errors.push('Impossible de déterminer le premier commit d’intégration réel de ce handoff');
+    } else if (firstIntegratedCommit !== resolvedToSha) {
+      errors.push(`reviewedRange to-sha ${toSha} doit être ancré au premier commit d’intégration réel ${firstIntegratedCommit}`);
+    }
   }
 
   const deSection = extractSection(content, 'De :');

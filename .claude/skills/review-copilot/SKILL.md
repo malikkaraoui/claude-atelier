@@ -46,6 +46,7 @@ le format suivant :
 > Date : [date]
 > Type : review
 > Priorité : [haute si bug fix critique, moyenne sinon]
+> reviewedRange: [sha-from]..[sha-to]
 
 ---
 

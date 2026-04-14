@@ -13,9 +13,9 @@
 #   1. Fichier dans docs/handoffs/*.md (exclus _template)
 #   2. Contient section "## Intégration" avec > 100 caractères de texte
 #      différent du contenu template (commentaire HTML initial)
-#   3. Le sha "reviewedTo" = dernier commit qui a modifié ce fichier handoff
+#   3. Passe le validateur test/validate-handoff.js
 #
-# Dette = git log <reviewedTo>..HEAD --shortstat (recalcul live)
+# Dette = git log <reviewedRange.to>..HEAD --shortstat (recalcul live)
 
 set -eu
 
@@ -46,18 +46,18 @@ if [[ -d "$HANDOFF_DIR" ]]; then
     CONTENT_LEN=${#REAL_CONTENT}
 
     if [[ $CONTENT_LEN -gt 100 ]]; then
+      if ! node "$REPO_ROOT/test/validate-handoff.js" "$f" >/dev/null 2>&1; then
+        continue
+      fi
+
       # Extraire reviewedRange du frontmatter (format: "> reviewedRange: sha..sha")
       REVIEWED_RANGE=$(grep -E "^>[[:space:]]*reviewedRange[[:space:]]*:" "$f" 2>/dev/null | head -1 | sed -E 's/^>[[:space:]]*reviewedRange[[:space:]]*:[[:space:]]*//; s/[[:space:]]+$//' || echo "")
-      # Vérifier format sha..sha et que les deux shas existent dans git
+      # Le validateur a déjà vérifié format, existence et sincérité du range.
       if [[ "$REVIEWED_RANGE" =~ ^[a-f0-9]{7,40}\.\.[a-f0-9]{7,40}$ ]]; then
-        FROM_SHA="${REVIEWED_RANGE%%..*}"
         TO_SHA="${REVIEWED_RANGE##*..}"
-        if git -C "$REPO_ROOT" cat-file -e "${FROM_SHA}^{commit}" 2>/dev/null && \
-           git -C "$REPO_ROOT" cat-file -e "${TO_SHA}^{commit}" 2>/dev/null; then
-          LATEST_INTEGRATED="$f"
-          LATEST_SHA="$TO_SHA"
-          break
-        fi
+        LATEST_INTEGRATED="$f"
+        LATEST_SHA="$TO_SHA"
+        break
       fi
       # reviewedRange manquant/invalide → on ne retient PAS ce handoff (anti-triche)
     fi

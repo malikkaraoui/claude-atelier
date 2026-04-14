@@ -17,6 +17,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.20.0] — 2026-04-14
+
+### Fixed — Détection modèle + durcissement `reviewedRange` (Copilot v5)
+
+**Référence** : commit `e1b2a20` (Malik) + durcissement `validate-handoff.js` + `handoff-draft.sh`.
+
+- **`hooks/routing-check.sh`** : priorité `live` (model depuis le JSON du hook) > `transcript` (`Set model to`) > `cache` (`/tmp/claude-atelier-current-model`). Affiche `[ROUTING] source modèle: live|transcript|cache`. Avertissement explicite si source = cache (stale possible). **Ferme le bug** : je prétendais `claude-sonnet-4-6` dans mon horodatage alors que la session avait basculé sur Opus 4.6[1m] via `/model default`.
+- **`test/validate-handoff.js`** : nouveau critère anti-triche — `reviewedRange.to` DOIT correspondre au **premier commit d'intégration réel** du fichier (détecté via `git log --follow` + inspection du contenu à ce sha). Ferme la faille "bourrer la section Intégration d'un vieux handoff pour truquer le to-sha".
+- **`scripts/handoff-draft.sh`** : résout `reviewedRange` en SHAs stables via `git rev-parse` à la génération (plus robuste face aux alias git).
+- **`scripts/handoff-debt.sh`** : avant d'accepter un handoff comme "intégré", passe par `node test/validate-handoff.js` — si invalide, skip. Verrouille la cohérence runtime/validator.
+- **Manifest hooks** mis à jour (inputs `routing-check` incluent maintenant `model` depuis le JSON du hook).
+
+### Note release npm
+
+Première release après la séance §25 HANDOFF-ENFORCEMENT (0.15.0 → 0.20.0). Le registry npm était sur 0.5.0 — saut de 15 versions. Les entrées 0.6.x → 0.15.0 sont documentées dans les tags git (pas dans npm pour cause de non-publication).
+
+---
+
 ## [0.19.0] — 2026-04-14
 
 ### Fixed — Durcissement §25 `reviewedRange` (bug structurel Copilot v4)
