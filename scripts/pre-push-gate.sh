@@ -18,6 +18,11 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m'
 
+# ─── Auto-sync SECURITY.md ────────────────────────────────────────────────────
+if [[ -f "scripts/update-security.js" ]] && [[ -f "package.json" ]]; then
+    node scripts/update-security.js 2>/dev/null || true
+fi
+
 pass()  { echo -e "${GREEN}[PASS]${NC} $1"; }
 fail()  { echo -e "${RED}[FAIL]${NC} $1"; exit 1; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }

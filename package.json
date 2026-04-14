@@ -41,6 +41,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
+    "update-security": "node scripts/update-security.js",
     "lint": "node test/lint-refs.js && node test/lint-length.js",
     "lint:refs": "node test/lint-refs.js",
     "lint:length": "node test/lint-length.js",
