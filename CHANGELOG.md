@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.15.0] — 2026-04-14
+
+### Fixed — §1 horodatage non négociable + actionlint
+
+- **`CLAUDE.md` §1 réécrit** : règle impérative ("Ta réponse DOIT commencer par cette ligne, AVANT tout texte ou tool call") au lieu d'un "ouvrir chaque réponse" ambigu. **Cause racine identifiée** : le hook `routing-check.sh` injecte déjà l'horodatage dans le contexte → biais "c'est déjà fait, pas ma responsabilité". Le fix lève l'ambiguïté.
+- **`test/doctor.js`** : nouveau check `ci/actionlint` qui valide tous les `.github/workflows/*.yml` (warn si actionlint absent — `brew install actionlint`). Doctor passe à **27 checks sur 9 catégories**.
+- **`.github/workflows/ci.yml`** : nouveau job `actionlint` via `docker://rhysd/actionlint:latest` — **ferme l'angle mort qui a causé le fail CI précédent** (workflow YAML jamais validé localement avant push).
+
+---
+
 ## [0.14.0] — 2026-04-14
 
 ### Added — README EN complet (parité avec FR)

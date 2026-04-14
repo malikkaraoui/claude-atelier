@@ -213,6 +213,26 @@ for (const f of docFiles) {
   else warn('docs', f.toLowerCase(), `${f} absent (recommandé)`);
 }
 
+// ─── CI — actionlint sur les workflows GitHub ───────────────────────────────
+
+const workflowsDir = isInstalledProject ? null : join(ROOT, '.github', 'workflows');
+if (workflowsDir && existsSync(workflowsDir)) {
+  const workflows = readdirSync(workflowsDir).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'));
+  if (workflows.length > 0) {
+    const al = spawnSync('actionlint', ['--version'], { stdio: 'pipe' });
+    if (al.status === 0) {
+      const lint = spawnSync('actionlint', workflows.map((f) => join(workflowsDir, f)), { stdio: 'pipe' });
+      if (lint.status === 0) pass('ci', 'actionlint', `actionlint OK sur ${workflows.length} workflows`);
+      else {
+        const firstIssue = lint.stdout.toString().split('\n').slice(0, 4).join(' | ').slice(0, 200);
+        fail('ci', 'actionlint', `actionlint a détecté des problèmes : ${firstIssue}…`);
+      }
+    } else {
+      warn('ci', 'actionlint', 'actionlint non installé — `brew install actionlint` (valide les workflows YAML avant push)');
+    }
+  }
+}
+
 // ─── REFS — lint-refs (markdown links) ──────────────────────────────────────
 
 const lintRefs = spawnSync(process.execPath, [join(__dirname, 'lint-refs.js')], { stdio: 'pipe' });
