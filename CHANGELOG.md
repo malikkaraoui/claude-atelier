@@ -17,6 +17,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.0] — 2026-04-14
+
+### Added — `PHILOSOPHY.md` racine
+
+- **`PHILOSOPHY.md`** : document 1 page qui pose les 5 partis pris de l'atelier (markdown source de vérité, FR-first, sécurité non négociable, théâtre mémorisable, token-conscient). Inspiré du `PHILOSOPHY.md` de [claw-code](https://github.com/ultraworkers/claw-code) — vision adaptée à un package de configs (pas un client custom).
+- **README** : lien `📜 Philosophy` ajouté dans la barre de liens du hero.
+
+---
+
+## [0.7.0] — 2026-04-14
+
+### Added — Théâtre stack complet (11 figures nommées)
+
+- **7 nouveaux agents nommés** sur les stacks JS/TS, Python, Java, React+Vite, Firebase, Docker, Ollama : Nael, Anthonio, Marcel, Nicolas & Fazia, Camille, Pascal, Jeffrey. Chaque stack `.md` ouvre par une mise en scène avec voix et personnalité.
+- **`SECURITY.md`** : politique réelle (versions supportées auto-syncées depuis `package.json`), guide de signalement via GitHub Issues.
+- **`scripts/update-security.js`** : sync automatique du tableau des versions, appelé par `pre-push-gate.sh` à chaque push.
+- **`CLAUDE.md` §2** : limite stricte ≤ 25 mots entre tool calls, ≤ 100 mots pour réponse finale.
+- **`CLAUDE.md` §15** : compaction à ~60% (pas attendre 75-98%).
+- **`CLAUDE.md` §17** : todos persistants hors flux messages (survivent aux compactions).
+
+---
+
 ## [0.4.3] — 2026-04-13
 
 ### Fix critique — CLAUDE.md non écrasé lors des mises à jour
