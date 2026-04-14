@@ -122,7 +122,6 @@ Ce fichier évolue sur instruction explicite. Immuables sans validation : §5, �
 | Nouvel endpoint | §0 |
 | Décision archi | §9 + note §0 |
 | MCP ajouté | §0 + §19 |
-
 ## §21 Hiérarchie des règles
 
 ```text
