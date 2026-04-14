@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.12.0] — 2026-04-14
+
+### Added — shellcheck dans le doctor
+
+- **`test/doctor.js`** : nouveau check `hooks/shellcheck` qui run `shellcheck --severity=warning` sur tous les `hooks/*.sh` + `scripts/*.sh`. Si shellcheck pas installé → warn (`brew install shellcheck`).
+- **`hooks/_parse-input.sh`** : annotation `# shellcheck disable=SC2034` (les variables sont consommées par les scripts qui sourcent — shellcheck ne peut pas le détecter).
+- Doctor passe maintenant à **26 checks**, tous verts sur le repo source.
+
+---
+
 ## [0.11.0] — 2026-04-14
 
 ### Added — `npm run doctor` enrichi (25 checks structurés)

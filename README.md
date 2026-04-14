@@ -103,7 +103,7 @@ npx claude-atelier init --global
 # Choisir la langue (défaut: fr)
 npx claude-atelier init --lang en
 
-# Diagnostic santé (25 checks · 8 catégories · --json pour CI)
+# Diagnostic santé (26 checks · 8 catégories · shellcheck inclus · --json)
 npx claude-atelier doctor
 npx claude-atelier doctor --json   # output structuré CI-friendly
 

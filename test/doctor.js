@@ -182,6 +182,23 @@ if (existsSync(hooksDir)) {
   } else if (!isInstalledProject) {
     fail('hooks', 'manifest', 'hooks-manifest.json absent (.claude/hooks-manifest.json)');
   }
+
+  const sc = spawnSync('shellcheck', ['--version'], { stdio: 'pipe' });
+  if (sc.status === 0) {
+    const targets = hookFiles.map((f) => join(hooksDir, f));
+    const scriptsExist = existsSync(scriptsDir);
+    if (scriptsExist) {
+      for (const f of readdirSync(scriptsDir)) if (f.endsWith('.sh')) targets.push(join(scriptsDir, f));
+    }
+    const lint = spawnSync('shellcheck', ['--severity=warning', ...targets], { stdio: 'pipe' });
+    if (lint.status === 0) pass('hooks', 'shellcheck', `shellcheck OK sur ${targets.length} scripts shell (severity ≥ warning)`);
+    else {
+      const firstIssue = lint.stdout.toString().split('\n').slice(0, 4).join(' | ').slice(0, 200);
+      fail('hooks', 'shellcheck', `shellcheck a détecté des problèmes : ${firstIssue}…`);
+    }
+  } else {
+    warn('hooks', 'shellcheck', 'shellcheck non installé — `brew install shellcheck` (recommandé pour valider les hooks shell)');
+  }
 } else {
   warn('hooks', 'directory', 'hooks/ absent (optionnel selon installation)');
 }

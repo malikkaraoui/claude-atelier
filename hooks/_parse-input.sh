@@ -2,6 +2,8 @@
 # Helper partagé — parse le JSON stdin des hooks Claude Code
 # Usage: source "$(dirname "$0")/_parse-input.sh"
 # Fournit: $HOOK_COMMAND, $HOOK_EXIT_CODE, $HOOK_FILE_PATH, $HOOK_MODEL, $HOOK_PROMPT
+# shellcheck disable=SC2034
+# (variables consumées par les scripts qui sourcent — shellcheck ne les voit pas)
 
 _HOOK_INPUT=$(cat)
 
