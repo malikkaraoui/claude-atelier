@@ -1,16 +1,15 @@
 ---
 name: freebox-init
 description: "Bootstrap l'autorisation d'une app Freebox : app_token acquisition (1x), persistance sécurisée, vérification de session. Déclenché pour tout nouveau projet Freebox ou token révoqué."
-figure: Technicien réseau
+figure: Xavier
 triggers: freebox, freebox-init, fbx, app_token, mafreebox, freebox token
 ---
 
 # Freebox Init
 
-> Un nouveau projet veut parler à la Freebox.
-> Avant la première requête API, il y a un rituel obligatoire :
-> convaincre la box, appuyer sur le LCD, sauvegarder le sésame.
-> Ce skill guide ce rituel, une fois pour toutes.
+> Xavier connaît la box mieux que quiconque.
+> Pas de fioritures — juste le protocole exact, dans l'ordre exact.
+> Discovery, LCD, token 0600. Simple. Définitif.
 
 Bootstrap complet de l'autorisation Freebox pour un nouveau projet ou token révoqué.
 
