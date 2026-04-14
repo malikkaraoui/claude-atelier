@@ -137,7 +137,7 @@ if [ ! -f "$SESSION_REVIEW_FLAG" ] && [ -d "$REPO_ROOT/.git" ]; then
       echo "   → ${REVIEW_TOTAL} lignes · ${FEAT_COUNT} feat/refactor"
       echo "   → Mohamed instruit le dossier : /review-copilot"
       echo ""
-      echo "$CURRENT_HEAD" > "$LAST_REVIEW_FILE"
+      # §25 anti-triche : AUCUN reset. Dette = git, reset = /integrate-review seul.
     fi
   fi
 fi

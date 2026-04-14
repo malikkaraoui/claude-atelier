@@ -17,6 +17,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.16.0] — 2026-04-14
+
+### Fixed — Lot 1 HANDOFF-ENFORCEMENT : arrêter le mensonge système §25
+
+**Minimum non négociable demandé par Copilot v3** (implémentation, pas spécification) :
+
+- **`hooks/routing-check.sh`** : retiré le `echo "$CURRENT_HEAD" > "$LAST_REVIEW_FILE"` (ligne 140) qui acquittait automatiquement §25 à l'affichage du rappel.
+- **`hooks/guard-review-auto.sh`** : retirés les 3 resets `rev-parse HEAD > last-reviewed-commit` + resets des compteurs `LINES_FILE`/`COMMITS_FILE`. Le hook affiche le rappel, **mais n'acquitte plus jamais la dette**.
+- **`scripts/handoff-debt.sh`** (nouveau) : calcule la dette §25 **depuis git** (jamais depuis un JSON éditable). Source de vérité = dernier handoff `docs/handoffs/*.md` avec section `## Intégration` > 100 caractères + sha du commit qui l'a intégré + `git log <sha>..HEAD --shortstat`.
+- **`scripts/pre-push-gate.sh` étape 6/6** : ajoute un check `handoff debt` qui bloque le push si dépassement de seuils (100 lignes / 3 commits feat+fix / 7 jours).
+- **`test/doctor.js`** : nouvelle catégorie `handoffs` avec check `handoffs/debt` live depuis `handoff-debt.sh --json`. Doctor passe à **28 checks sur 10 catégories**.
+- **Reset de la dette = `/integrate-review` uniquement** (via remplissage `## Intégration` du handoff). Aucun autre chemin ne reset la dette.
+
+**Reste à faire** (Lots 2-4 du doc `HANDOFF-ENFORCEMENT.md`) : bandeau visible dans hook, doctor warn freshness, validation qualité handoff, pre-commit, `/integrate-review` formalisé, ergonomie.
+
+---
+
 ## [0.15.0] — 2026-04-14
 
 ### Fixed — §1 horodatage non négociable + actionlint

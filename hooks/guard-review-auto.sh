@@ -25,8 +25,7 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
     echo "   → /review-copilot — Mohamed prépare le handoff"
     echo "   → /angle-mort — auto-review anti-complaisance"
     echo ""
-    echo "0" > "$LINES_FILE"
-    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > "$REPO_ROOT/.git/claude-atelier-last-reviewed-commit" || true
+    # §25 anti-triche : AUCUN reset. Dette = git via handoff-debt.sh, reset = /integrate-review seul.
   fi
 
   # --- Feature/Refactor : /angle-mort ---
@@ -58,16 +57,14 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
     echo ""
     echo "   README : cette feature est-elle reflétée dans README.md (FR + EN) ?"
     echo ""
-    echo "0" > "$COMMITS_FILE"
-    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > "$REPO_ROOT/.git/claude-atelier-last-reviewed-commit" || true
+    # §25 anti-triche : AUCUN reset compteur ni checkpoint.
   elif [ "$COMMITS" -ge 10 ]; then
     echo ""
     echo "📋 [MOHAMED] $COMMITS commits sans review externe."
     echo "   Trop longtemps seul. Mohamed attend — les angles morts s'accumulent."
     echo "   → /review-copilot ou /angle-mort"
     echo ""
-    echo "0" > "$COMMITS_FILE"
-    git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null > "$REPO_ROOT/.git/claude-atelier-last-reviewed-commit" || true
+    # §25 anti-triche : AUCUN reset compteur ni checkpoint.
   fi
 
   # --- Architecture : fichiers structurants ---

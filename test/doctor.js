@@ -233,6 +233,29 @@ if (workflowsDir && existsSync(workflowsDir)) {
   }
 }
 
+// ─── HANDOFFS — dette §25 calculée depuis git ───────────────────────────────
+
+const handoffDebtScript = isInstalledProject
+  ? join(process.cwd(), 'scripts', 'handoff-debt.sh')
+  : join(ROOT, 'scripts', 'handoff-debt.sh');
+if (existsSync(handoffDebtScript)) {
+  const debt = spawnSync('bash', [handoffDebtScript, '--json'], { stdio: 'pipe' });
+  try {
+    const data = JSON.parse(debt.stdout.toString());
+    const d = data.currentDebt;
+    const msg = `dette: ${d.commitsSince} commits · +${d.linesAdded}/-${d.linesDeleted} lignes · ${d.daysSince}j depuis dernier handoff intégré`;
+    if (data.exceedsThreshold) {
+      fail('handoffs', 'debt', `§25 dépassée — ${msg} · ${data.reasons}`);
+    } else {
+      pass('handoffs', 'debt', `§25 sous seuil — ${msg}`);
+    }
+  } catch {
+    warn('handoffs', 'debt', 'handoff-debt.sh erreur JSON — check manuel requis');
+  }
+} else if (!isInstalledProject) {
+  fail('handoffs', 'debt', 'scripts/handoff-debt.sh absent — §25 non enforcé');
+}
+
 // ─── REFS — lint-refs (markdown links) ──────────────────────────────────────
 
 const lintRefs = spawnSync(process.execPath, [join(__dirname, 'lint-refs.js')], { stdio: 'pipe' });

@@ -26,7 +26,7 @@ fi
 pass()  { echo -e "${GREEN}[PASS]${NC} $1"; }
 fail()  { echo -e "${RED}[FAIL]${NC} $1"; exit 1; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
-step()  { echo -e "\n${YELLOW}[$1/5]${NC} $2"; }
+step()  { echo -e "\n${YELLOW}[$1/6]${NC} $2"; }
 
 QUICK=false
 [[ "${1:-}" == "--quick" ]] && QUICK=true
@@ -211,6 +211,30 @@ case "$STACK" in
         warn "Stack non reconnue. Tests skippes."
         ;;
 esac
+
+# ─── 6/6 Handoff debt §25 (calculé depuis git, pas JSON) ─────────────────────
+
+step 6 "Handoff debt §25..."
+
+HANDOFF_DEBT_SCRIPT="$(cd "$(dirname "$0")" && pwd)/handoff-debt.sh"
+if [[ -f "$HANDOFF_DEBT_SCRIPT" ]]; then
+    if bash "$HANDOFF_DEBT_SCRIPT" --check 2>/dev/null; then
+        pass "Dette de review sous seuil"
+    else
+        echo ""
+        bash "$HANDOFF_DEBT_SCRIPT"
+        echo ""
+        echo "  Pour debloquer (aucun bypass possible via --no-verify, §13+§22) :"
+        echo "    1. Lance /review-copilot pour generer un handoff"
+        echo "    2. Donne-le a Copilot/GPT"
+        echo "    3. Copie sa reponse dans la section \"## Reponse de :\" du fichier"
+        echo "    4. Remplis la section \"## Integration\" avec ce que tu retiens"
+        echo "    5. Commit le handoff — le prochain push verra la dette = 0"
+        fail "Dette §25 depassee. Handoff Copilot requis avant push."
+    fi
+else
+    warn "scripts/handoff-debt.sh absent — check §25 skippé"
+fi
 
 # ─── Done ──────────────────────────────────────────────────────────────────────
 
