@@ -224,7 +224,8 @@ if [[ -f "$HANDOFF_DEBT_SCRIPT" ]]; then
     if bash "$HANDOFF_DEBT_SCRIPT" --check 2>/dev/null; then
         # 6b : validation structurelle du dernier handoff intégré (anti-triche)
         if [[ -f "$VALIDATE_HANDOFF" ]]; then
-            LATEST=$(ls -t "$(cd "$(dirname "$0")/.." && pwd)/docs/handoffs"/202*.md 2>/dev/null | grep -v "_template" | head -1 || echo "")
+            HANDOFF_DIR_6B="$(cd "$(dirname "$0")/.." && pwd)/docs/handoffs"
+            LATEST=$(find "$HANDOFF_DIR_6B" -maxdepth 1 -name "202*.md" -not -name "_template*" -print0 2>/dev/null | xargs -0 ls -t 2>/dev/null | head -1 || echo "")
             if [[ -n "$LATEST" ]] && node "$VALIDATE_HANDOFF" "$LATEST" >/dev/null 2>&1; then
                 pass "Dette sous seuil + handoff récent valide structurellement"
             elif [[ -n "$LATEST" ]]; then
