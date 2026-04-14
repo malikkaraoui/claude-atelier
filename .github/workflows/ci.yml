@@ -7,18 +7,50 @@ on:
     branches: [main]
 
 jobs:
-  lint:
-    name: Lint & validate
+  test:
+    name: Test (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['18', '20', '22']
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
 
-      - name: Lint markdown refs + CLAUDE.md length
-        run: npm run lint
+      - name: Install dependencies
+        run: npm ci || npm install
 
-      - name: Shellcheck pre-push-gate
-        run: shellcheck scripts/pre-push-gate.sh
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run full test suite (lint + doctor + hooks)
+        run: npm test
+
+      - name: Doctor JSON output (artifact for debug)
+        if: always()
+        run: node test/doctor.js --json > doctor-${{ matrix.node }}.json || true
+
+      - name: Upload doctor report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-report-node-${{ matrix.node }}
+          path: doctor-${{ matrix.node }}.json
+          retention-days: 7
+
+  shellcheck:
+    name: Shellcheck (all hooks + scripts)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Lint all shell scripts
+        run: shellcheck --severity=warning hooks/*.sh scripts/*.sh

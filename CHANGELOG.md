@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.13.0] — 2026-04-14
+
+### Changed — CI GitHub Actions enrichi
+
+- **`.github/workflows/ci.yml`** : `npm test` complet (lint + doctor + hooks) au lieu de `npm run lint` seul. Matrice **Node 18 / 20 / 22** (couvre `engines.node: >=18`). Cache npm activé.
+- **Job `shellcheck`** dédié : lint `hooks/*.sh` + `scripts/*.sh` avec `--severity=warning` (au lieu de `pre-push-gate.sh` seul).
+- **Artifact** : output JSON du doctor uploadé par version Node (rétention 7j) — utile pour debug d'un fail CI.
+
+---
+
 ## [0.12.0] — 2026-04-14
 
 ### Added — shellcheck dans le doctor
