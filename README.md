@@ -148,12 +148,26 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 | **Mohamed** 📋 | Review inter-LLM | `feat:` commit, 100+ lignes, 10 commits, session restart | Instruit le dossier review : commits, diff, question précise, handoff Copilot/GPT |
 | **Amine** 🧪 | Tests hooks | `feat:` commit sans fichier `test/` modifié | Alerte feat sans tests, 20 tests unitaires hooks, `npm run test:hooks` |
 | **Xavier** 📡 | Freebox API | `freebox`, `fbx`, `app_token`, `mafreebox`... | Auth LCD complète : discovery → app_token → HMAC-SHA1 session → NAT |
+| **Pascal** 🐳 | Docker | `Dockerfile`, `docker-compose`, `.dockerignore`... | Multi-stage, non-root, layer cache, healthchecks, BuildKit secrets |
+| **Anthonio** 🐍 | Python | `*.py`, `pyproject.toml`, `requirements*.txt`... | PEP 8, typage strict, uv + ruff + pyright, gestion d'erreurs frontière |
+| **Marcel** ☕ | Java | `*.java`, `pom.xml`, `build.gradle`... | Optional, Records, Maven/Gradle, JUnit 5, package-by-feature |
+| **Nicolas & Fazia** ⚡ | React + Vite | `vite.config.*`, `*.jsx`, `*.tsx`... | Hooks, Zustand, Vitest, code splitting, perf first |
+| **Camille** 🔥 | Firebase | `firebase.json`, `firestore.rules`, `functions/**`... | Règles Firestore, Auth providers, Emulator Suite, Secret Manager |
+| **Jeffrey** 🦙 | Ollama | `Modelfile`, `**/ollama*`... | Local first, quantization Q4/Q5/Q8, embeddings, API OpenAI-compat |
+| **Nael** 🔷 | JavaScript / TypeScript | `*.js`, `*.ts`, `*.tsx`, `*.mjs`... | Zéro `any`, zéro `var`, erreurs typées, Vitest/Playwright |
 
 *« Stay hungry, stay foolish — mais build depuis le Makefile. »* — Steve
 *« npm install — deux mots qui doivent toujours marcher. »* — Isaac
 *« Un code non challengé n'est pas fini. C'est une bombe à retardement. »* — Mohamed
 *« Pas de test, pas de feat. C'est pas négociable. »* — Amine
 *« Un bouton LCD. Une seule pression. Un token permanent. »* — Xavier
+*« Sur les docks, on soulève pas des idées. On soulève des volumes. »* — Pascal
+*« Sans moi, ton modèle tourne sur quoi ? Du PowerPoint ? »* — Anthonio
+*« Depuis 1995. J'ai tout vu. J'ai tout survécu. »* — Marcel
+*« 0.3s de hot reload — t'as pas connu avant, tu peux pas comprendre. »* — Nicolas & Fazia
+*« Auth Google ? Un switch. Storage ? Un switch. Elle a pas le temps. »* — Camille
+*« Local first. Always. »* — Jeffrey
+*« Le compilateur ne pardonne pas. Moi non plus. »* — Nael
 
 Steve et Isaac sont injectés via `routing-check.sh` sur détection de stack. Mohamed arrive via les hooks Challenger (`guard-review-auto.sh`) et le cross-session check. Amine vérifie que chaque feat commit inclut des tests — automatiquement, sans que tu aies à y penser.
 
@@ -296,13 +310,13 @@ Chargés conditionnellement selon le projet actif. Certains activent un agent no
 | iOS / tvOS / iPadOS | `stacks/ios-xcode.md` | **Steve** 🍎 |
 | NPM Publish / Registry | `stacks/npm-publish.md` | **Isaac** 📦 |
 | Freebox API | `stacks/freebox.md` | **Xavier** 📡 |
-| JavaScript/TypeScript | `stacks/javascript.md` | — |
-| Python | `stacks/python.md` | — |
-| Java | `stacks/java.md` | — |
-| React + Vite | `stacks/react-vite.md` | — |
-| Firebase | `stacks/firebase.md` | — |
-| Docker | `stacks/docker.md` | — |
-| Ollama | `stacks/ollama.md` | — |
+| JavaScript/TypeScript | `stacks/javascript.md` | **Nael** 🔷 |
+| Python | `stacks/python.md` | **Anthonio** 🐍 |
+| Java | `stacks/java.md` | **Marcel** ☕ |
+| React + Vite | `stacks/react-vite.md` | **Nicolas & Fazia** ⚡ |
+| Firebase | `stacks/firebase.md` | **Camille** 🔥 |
+| Docker | `stacks/docker.md` | **Pascal** 🐳 |
+| Ollama | `stacks/ollama.md` | **Jeffrey** 🦙 |
 
 ---
 
@@ -456,12 +470,26 @@ When a specific domain is detected in your message, the atelier automatically lo
 | **Mohamed** 📋 | Inter-LLM Review | `feat:` commit, 100+ lines, 10 commits, session restart | Prepares review dossier: commits, diff, precise question, Copilot/GPT handoff |
 | **Amine** 🧪 | Hook Tests | `feat:` commit without `test/` changes | Alerts feat without tests, 20 hook unit tests, `npm run test:hooks` |
 | **Xavier** 📡 | Freebox API | `freebox`, `fbx`, `app_token`, `mafreebox`... | Full LCD auth: discovery → app_token → HMAC-SHA1 session → NAT |
+| **Pascal** 🐳 | Docker | `Dockerfile`, `docker-compose`, `.dockerignore`... | Multi-stage, non-root, layer cache, healthchecks, BuildKit secrets |
+| **Anthonio** 🐍 | Python | `*.py`, `pyproject.toml`, `requirements*.txt`... | PEP 8, strict typing, uv + ruff + pyright, boundary error handling |
+| **Marcel** ☕ | Java | `*.java`, `pom.xml`, `build.gradle`... | Optional, Records, Maven/Gradle, JUnit 5, package-by-feature |
+| **Nicolas & Fazia** ⚡ | React + Vite | `vite.config.*`, `*.jsx`, `*.tsx`... | Hooks, Zustand, Vitest, code splitting, perf first |
+| **Camille** 🔥 | Firebase | `firebase.json`, `firestore.rules`, `functions/**`... | Firestore rules, Auth providers, Emulator Suite, Secret Manager |
+| **Jeffrey** 🦙 | Ollama | `Modelfile`, `**/ollama*`... | Local first, Q4/Q5/Q8 quantization, embeddings, OpenAI-compat API |
+| **Nael** 🔷 | JavaScript / TypeScript | `*.js`, `*.ts`, `*.tsx`, `*.mjs`... | Zero `any`, zero `var`, typed errors, Vitest/Playwright |
 
 *"Stay hungry, stay foolish — but build from the Makefile."* — Steve
 *"npm install — two words that must always work."* — Isaac
 *"Unchallenged code isn't done. It's a time bomb."* — Mohamed
 *"No test, no feat. Not negotiable."* — Amine
 *"One LCD button. One press. One permanent token."* — Xavier
+*"On the docks, we don't lift ideas. We lift volumes."* — Pascal
+*"Without me, what does your model run on? PowerPoint?"* — Anthonio
+*"Since 1995. Seen it all. Survived it all."* — Marcel
+*"0.3s hot reload — you can't understand unless you've known the rest."* — Nicolas & Fazia
+*"Auth Google? One switch. Storage? One switch. She doesn't have time."* — Camille
+*"Local first. Always."* — Jeffrey
+*"The compiler doesn't forgive. Neither do I."* — Nael
 
 Steve and Isaac are injected via `routing-check.sh` on stack detection. Mohamed arrives via the Challenger hooks (`guard-review-auto.sh`) and the cross-session check. Amine verifies that every feat commit includes tests — automatically, no manual trigger.
 
@@ -577,13 +605,13 @@ Loaded conditionally based on the active project. Some activate a named agent.
 | iOS / tvOS / iPadOS | `stacks/ios-xcode.md` | **Steve** 🍎 |
 | NPM Publish / Registry | `stacks/npm-publish.md` | **Isaac** 📦 |
 | Freebox API | `stacks/freebox.md` | **Xavier** 📡 |
-| JavaScript/TypeScript | `stacks/javascript.md` | — |
-| Python | `stacks/python.md` | — |
-| Java | `stacks/java.md` | — |
-| React + Vite | `stacks/react-vite.md` | — |
-| Firebase | `stacks/firebase.md` | — |
-| Docker | `stacks/docker.md` | — |
-| Ollama | `stacks/ollama.md` | — |
+| JavaScript/TypeScript | `stacks/javascript.md` | **Nael** 🔷 |
+| Python | `stacks/python.md` | **Anthonio** 🐍 |
+| Java | `stacks/java.md` | **Marcel** ☕ |
+| React + Vite | `stacks/react-vite.md` | **Nicolas & Fazia** ⚡ |
+| Firebase | `stacks/firebase.md` | **Camille** 🔥 |
+| Docker | `stacks/docker.md` | **Pascal** 🐳 |
+| Ollama | `stacks/ollama.md` | **Jeffrey** 🦙 |
 
 ---
 
