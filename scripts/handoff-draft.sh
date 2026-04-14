@@ -44,12 +44,23 @@ FILES_CHANGED=$(git -C "$REPO_ROOT" diff --name-only "$RANGE" 2>/dev/null | head
 # Stats
 STATS=$(git -C "$REPO_ROOT" diff --shortstat "$RANGE" 2>/dev/null || echo "")
 
+# Calcule reviewedRange au moment de la génération (avant intégration)
+# from = to du dernier handoff intégré (ou HEAD~30 si aucun)
+# to   = HEAD au moment de la génération du draft
+PREV_TO=$(bash "$REPO_ROOT/scripts/handoff-debt.sh" --json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin)['lastIntegratedHandoff']['sha'])" 2>/dev/null || echo "")
+if [[ -z "$PREV_TO" ]]; then
+  PREV_TO=$(git -C "$REPO_ROOT" rev-parse HEAD~30 2>/dev/null || git -C "$REPO_ROOT" rev-list --max-parents=0 HEAD 2>/dev/null | head -1)
+fi
+CURRENT_HEAD=$(git -C "$REPO_ROOT" rev-parse HEAD)
+REVIEWED_RANGE="${PREV_TO}..${CURRENT_HEAD}"
+
 cat > "$FILE" <<EOF
 # Handoff — ${SLUG}
 
 > Date : ${DATE}
 > Type : review
 > Priorité : moyenne
+> reviewedRange: ${REVIEWED_RANGE}
 
 ---
 

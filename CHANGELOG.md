@@ -17,6 +17,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.19.0] — 2026-04-14
+
+### Fixed — Durcissement §25 `reviewedRange` (bug structurel Copilot v4)
+
+**Référence** : review Copilot dans `docs/handoffs/2026-04-14-lot4-enforcement-ergonomie.md` section "## Réponse de :".
+
+**Bug fermé** : *« Si je prends un vieux handoff, que je lui ajoute aujourd'hui 120 caractères d'intégration creuse, puis que je committe, ce fichier devient le dernier handoff intégré, son SHA devient mon commit actuel, et la dette est recalculée depuis ce commit de handoff, pas depuis le vrai range reviewé. »* → **conformité documentaire fictive** possible avant ce fix.
+
+**Fix livré** :
+
+- **`docs/handoffs/_template.md`** : nouveau champ frontmatter `reviewedRange: <sha-from>..<sha-to>` obligatoire.
+- **`scripts/handoff-debt.sh`** : la dette se calcule désormais depuis `reviewedRange.to` du handoff (plus depuis le sha du commit qui a touché le fichier). Si `reviewedRange` absent ou shas invalides → le handoff est **rejeté** (pas de conformité par défaut).
+- **`test/validate-handoff.js`** : exige `reviewedRange` au format `sha..sha` avec les 2 shas réellement présents dans `git cat-file`.
+- **`scripts/handoff-draft.sh`** : auto-remplit `reviewedRange: <last-integrated-sha>..HEAD-now` à la génération du draft.
+- **Handoffs récents patchés rétroactivement** : `lot1-a-3-enforcement-25.md` (`5822f0e..090d96d`), `lot4-enforcement-ergonomie.md` (`090d96d..e5f050e`).
+
+**Fix secondaire (rappel §25 ciblé)** :
+
+- **`hooks/guard-commit-french.sh`** : le rappel `§25 : commit sans tag` ne s'affiche plus à chaque `feat:`/`fix:` — désormais **uniquement si** (a) diff staged > 50 lignes OU (b) dette déjà dépassée. Évite l'usure du signal (Copilot v4 : « trop fréquent, va s'user »).
+
+**Angle encore ouvert** (identifié par Copilot, reporté à 0.20.0) :
+
+- Le validateur ne vérifie pas encore que les fichiers listés dans `### Fichiers à lire` existent au sha `reviewedRange.to`. À durcir.
+- Pas de check de similarité entre handoffs (détection de bourrage par copier-coller d'un handoff ancien).
+
+---
+
 ## [0.18.0] — 2026-04-14
 
 ### Added — Lot 4 HANDOFF-ENFORCEMENT (ergonomie de sortie)

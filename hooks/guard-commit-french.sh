@@ -17,12 +17,21 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
       exit 2
     fi
 
-    # §25 — rappel doux (pas bloquant) si feat:/fix:/refactor: sans tag review
+    # §25 — rappel doux ciblé (Copilot v4 : éviter l'usure du signal)
+    # S'affiche UNIQUEMENT si : (a) diff staged > 50 lignes OU (b) dette déjà dépassée
     if echo "$MSG" | grep -qiE "^(feat|fix|refactor):"; then
       if ! echo "$MSG" | grep -qiE "\[(needs-review|no-review-needed:[^]]+)\]"; then
-        PREFIX=$(echo "$MSG" | awk -F: '{print $1}')
-        echo "§25 : commit ${PREFIX}: sans tag [needs-review] ou [no-review-needed: raison]."
-        echo "      → /handoff-debt pour voir la dette et générer un draft."
+        REPO_ROOT_25="$(cd "$(dirname "$0")/.." && pwd)"
+        STAGED_LINES=$(cd "$REPO_ROOT_25" && git diff --cached --shortstat 2>/dev/null | grep -oE "[0-9]+ insertion" | grep -oE "^[0-9]+" || echo 0)
+        DEBT_EXCEEDS=false
+        if [ -f "$REPO_ROOT_25/scripts/handoff-debt.sh" ]; then
+          bash "$REPO_ROOT_25/scripts/handoff-debt.sh" --check >/dev/null 2>&1 || DEBT_EXCEEDS=true
+        fi
+        if [ "${STAGED_LINES:-0}" -gt 50 ] || [ "$DEBT_EXCEEDS" = true ]; then
+          PREFIX=$(echo "$MSG" | awk -F: '{print $1}')
+          echo "§25 : commit ${PREFIX}: (staged ${STAGED_LINES} lignes, debt_exceeds=${DEBT_EXCEEDS}) — envisage [needs-review] ou [no-review-needed: raison]."
+          echo "      → /handoff-debt pour voir la dette et générer un draft."
+        fi
       fi
     fi
   fi

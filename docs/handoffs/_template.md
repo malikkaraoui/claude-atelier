@@ -3,6 +3,8 @@
 > Date : [YYYY-MM-DD]
 > Type : review | debug | architecture | exploration
 > Priorité : haute | moyenne | basse
+> reviewedRange: [sha-from]..[sha-to]    <!-- from = base de review, to = HEAD à l'intégration. Auto-rempli par handoff-draft.sh. -->
+
 
 ---
 

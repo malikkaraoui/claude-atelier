@@ -38,20 +38,28 @@ LATEST_INTEGRATED=""
 LATEST_SHA=""
 
 if [[ -d "$HANDOFF_DIR" ]]; then
-  # Lister les handoffs par date de modif (plus récents en premier), null-séparés pour gérer les espaces
+  # Lister les handoffs par date de modif (plus récents en premier), null-séparés
   while IFS= read -r -d '' f; do
     # Extraire tout le contenu après la ligne "## Intégration"
     INTEGRATION=$(awk '/^## Intégration/{flag=1; next} flag' "$f" 2>/dev/null || echo "")
-
-    # Retirer le template HTML comment et compter le texte réel
     REAL_CONTENT=$(echo "$INTEGRATION" | sed 's/<!--.*-->//g' | grep -v "^##\|^$" | tr -d '[:space:]' || echo "")
     CONTENT_LEN=${#REAL_CONTENT}
 
     if [[ $CONTENT_LEN -gt 100 ]]; then
-      LATEST_INTEGRATED="$f"
-      # Sha du dernier commit qui a modifié ce fichier
-      LATEST_SHA=$(git -C "$REPO_ROOT" log -1 --format=%H -- "$f" 2>/dev/null || echo "")
-      break
+      # Extraire reviewedRange du frontmatter (format: "> reviewedRange: sha..sha")
+      REVIEWED_RANGE=$(grep -E "^>[[:space:]]*reviewedRange[[:space:]]*:" "$f" 2>/dev/null | head -1 | sed -E 's/^>[[:space:]]*reviewedRange[[:space:]]*:[[:space:]]*//; s/[[:space:]]+$//' || echo "")
+      # Vérifier format sha..sha et que les deux shas existent dans git
+      if [[ "$REVIEWED_RANGE" =~ ^[a-f0-9]{7,40}\.\.[a-f0-9]{7,40}$ ]]; then
+        FROM_SHA="${REVIEWED_RANGE%%..*}"
+        TO_SHA="${REVIEWED_RANGE##*..}"
+        if git -C "$REPO_ROOT" cat-file -e "${FROM_SHA}^{commit}" 2>/dev/null && \
+           git -C "$REPO_ROOT" cat-file -e "${TO_SHA}^{commit}" 2>/dev/null; then
+          LATEST_INTEGRATED="$f"
+          LATEST_SHA="$TO_SHA"
+          break
+        fi
+      fi
+      # reviewedRange manquant/invalide → on ne retient PAS ce handoff (anti-triche)
     fi
   done < <(find "$HANDOFF_DIR" -maxdepth 1 -name "202*.md" -not -name "_template*" -print0 2>/dev/null | xargs -0 ls -t 2>/dev/null | tr '\n' '\0')
 fi

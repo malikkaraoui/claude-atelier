@@ -23,6 +23,7 @@ import { readFileSync, readdirSync, existsSync } from 'fs';
 import { resolve, dirname, join, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { createHash } from 'crypto';
+import { spawnSync } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -73,6 +74,20 @@ function validate(filePath) {
 
   if (!/^>\s*Date\s*:/m.test(content)) errors.push('Frontmatter "> Date :" manquant');
   if (!/^>\s*Type\s*:/m.test(content)) errors.push('Frontmatter "> Type :" manquant');
+
+  // reviewedRange : format <sha>..<sha>, les 2 shas doivent exister dans git
+  const rangeMatch = content.match(/^>\s*reviewedRange\s*:\s*([a-f0-9]{7,40})\.\.([a-f0-9]{7,40})\s*$/m);
+  if (!rangeMatch) {
+    errors.push('Frontmatter "> reviewedRange: <sha>..<sha>" manquant ou malformé');
+  } else {
+    const [, fromSha, toSha] = rangeMatch;
+    const checkSha = (sha) => {
+      const r = spawnSync('git', ['cat-file', '-e', `${sha}^{commit}`], { cwd: ROOT, stdio: 'pipe' });
+      return r.status === 0;
+    };
+    if (!checkSha(fromSha)) errors.push(`reviewedRange from-sha ${fromSha} introuvable dans git`);
+    if (!checkSha(toSha)) errors.push(`reviewedRange to-sha ${toSha} introuvable dans git`);
+  }
 
   const deSection = extractSection(content, 'De :');
   if (!deSection) errors.push('Section "## De :" manquante');
