@@ -31,7 +31,11 @@ normalize_model() {
   printf '%s' "$1" | sed 's/\[.*$//' | tr -d '\r\n'
 }
 
-# Détecter un changement de modèle dans le transcript (commande /model)
+# Pattern strict : uniquement des vrais noms de modèles Claude (évite d'empoisonner
+# via le texte "Set model to ..." cité dans un message utilisateur du transcript).
+# Match claude-{opus|sonnet|haiku}-X.Y[...] — pas de slashes, pas de ponctuation.
+MODEL_PATTERN='Set model to claude-(opus|sonnet|haiku)-[0-9]+-[0-9]+(\[[0-9a-zA-Z-]+\])?'
+
 TRANSCRIPT=$(echo "$_RAW_INPUT" | python3 -c "
 import sys, json
 try:
@@ -39,19 +43,6 @@ try:
     print(d.get('transcript_path', ''))
 except: pass
 " 2>/dev/null)
-
-if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
-  # Chercher le dernier "Set model to" dans le transcript
-  LAST_MODEL_CHANGE=$(grep -Eo 'Set model to [^[:space:]]+' "$TRANSCRIPT" 2>/dev/null | tail -1 | sed 's/Set model to //')
-  if [ -n "$LAST_MODEL_CHANGE" ]; then
-    # Nettoyer le suffixe [1m] si présent
-    CLEAN_MODEL=$(echo "$LAST_MODEL_CHANGE" | sed 's/\[.*$//')
-    CURRENT=$(cat "$MODEL_FILE" 2>/dev/null || echo "")
-    if [ "$CLEAN_MODEL" != "$CURRENT" ]; then
-      echo "$CLEAN_MODEL" > "$MODEL_FILE"
-    fi
-  fi
-fi
 
 MODEL=""
 
@@ -62,7 +53,7 @@ if [ -n "$LIVE_MODEL" ]; then
 fi
 
 if [ -z "$MODEL" ] && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
-  LAST_MODEL_CHANGE=$(grep -Eo 'Set model to [^[:space:]]+' "$TRANSCRIPT" 2>/dev/null | tail -1 | sed 's/Set model to //')
+  LAST_MODEL_CHANGE=$(grep -Eo "$MODEL_PATTERN" "$TRANSCRIPT" 2>/dev/null | tail -1 | sed 's/^Set model to //')
   if [ -n "$LAST_MODEL_CHANGE" ]; then
     MODEL=$(normalize_model "$LAST_MODEL_CHANGE")
     MODEL_SOURCE="transcript"
