@@ -1,18 +1,14 @@
 #!/usr/bin/env node
 /**
- * claude-atelier doctor — Verify installation integrity
+ * claude-atelier doctor — Diagnostic santé de l'installation
  *
- * Checks:
- * 1. CLAUDE.md exists and is ≤ 150 lines
- * 2. All satellite directories exist with expected files
- * 3. settings.json exists
- * 4. .gitignore and .claudeignore exist
- * 5. scripts/pre-push-gate.sh exists and is executable
- * 6. No broken markdown references
- * 7. No _legacy.md files remaining
- * 8. Git hooks installed (optional warning)
+ * Usage:
+ *   node test/doctor.js          # output texte coloré
+ *   node test/doctor.js --json   # output JSON structuré (CI-friendly)
  *
- * Exit codes: 0 = healthy, 1 = issues found
+ * Exit codes: 0 = sain, 1 = problèmes détectés
+ *
+ * Inspiré du `claw doctor` (claw-code) — checks structurés par catégorie.
  */
 
 import { existsSync, statSync, readFileSync, readdirSync } from 'node:fs';
@@ -26,50 +22,74 @@ const ROOT = resolve(__dirname, '..');
 const RED = '\x1b[0;31m';
 const GREEN = '\x1b[0;32m';
 const YELLOW = '\x1b[0;33m';
+const DIM = '\x1b[2m';
 const NC = '\x1b[0m';
 
-let errors = 0;
-let warnings = 0;
+const args = process.argv.slice(2);
+const JSON_MODE = args.includes('--json');
 
-function pass(msg) { console.log(`${GREEN}[OK]${NC}   ${msg}`); }
-function fail(msg) { console.log(`${RED}[FAIL]${NC} ${msg}`); errors++; }
-function warn(msg) { console.log(`${YELLOW}[WARN]${NC} ${msg}`); warnings++; }
+const results = [];
 
-// ─── Detect target: installed project (.claude/) or source repo (src/) ──────
+function check(category, name, status, message) {
+  results.push({ category, name, status, message });
+  if (JSON_MODE) return;
+  const tag = status === 'pass' ? `${GREEN}[OK]${NC}  ` : status === 'fail' ? `${RED}[FAIL]${NC}` : `${YELLOW}[WARN]${NC}`;
+  console.log(`${tag} ${DIM}[${category}]${NC} ${message}`);
+}
 
-const isInstalledProject = existsSync(join(process.cwd(), '.claude', 'CLAUDE.md'));
-const srcDir = isInstalledProject
-  ? join(process.cwd(), '.claude')
-  : join(ROOT, 'src', 'fr');
+function pass(category, name, msg) { check(category, name, 'pass', msg); }
+function fail(category, name, msg) { check(category, name, 'fail', msg); }
+function warn(category, name, msg) { check(category, name, 'warn', msg); }
 
-const templatesDir = isInstalledProject
-  ? join(process.cwd(), '.claude')
-  : join(ROOT, 'src', 'templates');
+// ─── Détection cible ────────────────────────────────────────────────────────
 
-const scriptsDir = isInstalledProject
-  ? join(process.cwd(), 'scripts')
-  : join(ROOT, 'scripts');
+let isSelfRepo = false;
+try {
+  const pkgCwd = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
+  isSelfRepo = pkgCwd.name === 'claude-atelier';
+} catch {}
+const isInstalledProject = !isSelfRepo && existsSync(join(process.cwd(), '.claude', 'CLAUDE.md'));
+const srcDir = isInstalledProject ? join(process.cwd(), '.claude') : join(ROOT, 'src', 'fr');
+const templatesDir = isInstalledProject ? join(process.cwd(), '.claude') : join(ROOT, 'src', 'templates');
+const scriptsDir = isInstalledProject ? join(process.cwd(), 'scripts') : join(ROOT, 'scripts');
+const hooksDir = isInstalledProject ? join(process.cwd(), 'hooks') : join(ROOT, 'hooks');
 
 const mode = isInstalledProject ? 'installed project' : 'source repo';
-console.log(`\nclaude-atelier doctor (${mode})\n`);
+if (!JSON_MODE) console.log(`\nclaude-atelier doctor (${mode})\n`);
 
-// ─── 1. CLAUDE.md exists and length ─────────────────────────────────────────
+// ─── ENV — environnement système ────────────────────────────────────────────
+
+const nodeVersion = process.versions.node;
+const nodeMajor = parseInt(nodeVersion.split('.')[0], 10);
+if (nodeMajor >= 18) pass('env', 'node-version', `Node.js ${nodeVersion} (≥ 18 requis)`);
+else fail('env', 'node-version', `Node.js ${nodeVersion} — requis ≥ 18`);
+
+const gitCheck = spawnSync('git', ['--version'], { stdio: 'pipe' });
+if (gitCheck.status === 0) pass('env', 'git', `git installé (${gitCheck.stdout.toString().trim()})`);
+else fail('env', 'git', 'git non disponible dans le PATH');
+
+if (!isInstalledProject) {
+  try {
+    const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+    pass('env', 'package-json', `package.json valide (claude-atelier@${pkg.version})`);
+  } catch {
+    fail('env', 'package-json', 'package.json invalide ou manquant');
+  }
+}
+
+// ─── CORE — CLAUDE.md ───────────────────────────────────────────────────────
 
 const claudePath = join(srcDir, 'CLAUDE.md');
 if (existsSync(claudePath)) {
   const lines = readFileSync(claudePath, 'utf8').split('\n').length;
-  if (lines <= 150) {
-    pass(`CLAUDE.md exists (${lines} lines, ≤ 150)`);
-  } else {
-    fail(`CLAUDE.md exceeds 150 lines (${lines} lines)`);
-  }
+  if (lines <= 150) pass('core', 'claude-md', `CLAUDE.md ${lines}/150 lignes`);
+  else fail('core', 'claude-md', `CLAUDE.md ${lines} lignes (> 150)`);
 } else {
-  fail(`CLAUDE.md not found at ${claudePath}`);
+  fail('core', 'claude-md', `CLAUDE.md absent (${claudePath})`);
 }
 
-// ─── 2. Satellite directories ───────────────────────────────────────────────
+// ─── SATELLITES — répertoires + fichiers attendus ───────────────────────────
 
-const expectedDirs = ['runtime', 'orchestration', 'autonomy', 'security', 'ecosystem'];
 const expectedFiles = {
   runtime: ['code-review.md', 'todo-session.md', 'extended-thinking.md'],
   orchestration: ['modes.md', 'subagents.md', 'parallelization.md', 'models-routing.md', 'spawn-rules.md', 'mcp-lifecycle.md'],
@@ -78,125 +98,152 @@ const expectedFiles = {
   ecosystem: ['skills.md', 'plugins.md', 'hooks.md', 'memory-system.md', 'qmd-integration.md'],
 };
 
-for (const dir of expectedDirs) {
+for (const [dir, files] of Object.entries(expectedFiles)) {
   const dirPath = join(srcDir, dir);
   if (!existsSync(dirPath)) {
-    fail(`Missing directory: ${dir}/`);
+    fail('satellites', dir, `répertoire absent : ${dir}/`);
     continue;
   }
-
-  const files = expectedFiles[dir] || [];
-  for (const file of files) {
-    const filePath = join(dirPath, file);
-    if (existsSync(filePath)) {
-      pass(`${dir}/${file}`);
-    } else {
-      fail(`Missing file: ${dir}/${file}`);
-    }
-  }
+  const missing = files.filter((f) => !existsSync(join(dirPath, f)));
+  if (missing.length === 0) pass('satellites', dir, `${dir}/ — ${files.length} fichiers`);
+  else fail('satellites', dir, `${dir}/ — manque : ${missing.join(', ')}`);
 }
 
-// ─── 3. Settings / templates ────────────────────────────────────────────────
+// ─── CONFIG — settings, ignores ─────────────────────────────────────────────
 
 const settingsPath = join(templatesDir, 'settings.json');
 if (existsSync(settingsPath)) {
   try {
     JSON.parse(readFileSync(settingsPath, 'utf8'));
-    pass('settings.json exists and is valid JSON');
+    pass('config', 'settings-json', 'settings.json valide');
   } catch {
-    fail('settings.json exists but is invalid JSON');
+    fail('config', 'settings-json', 'settings.json présent mais JSON invalide');
   }
 } else {
-  fail(`settings.json not found at ${settingsPath}`);
+  fail('config', 'settings-json', `settings.json absent (${settingsPath})`);
 }
-
-// ─── 4. .gitignore and .claudeignore ────────────────────────────────────────
 
 for (const name of ['.gitignore', '.claudeignore']) {
-  // Check in templates (source repo) or project root (installed)
-  const checkPath = isInstalledProject
-    ? join(process.cwd(), name)
-    : join(ROOT, 'src', 'templates', name);
-
-  if (existsSync(checkPath)) {
-    pass(`${name} exists`);
-  } else {
-    fail(`${name} not found`);
-  }
+  const p = isInstalledProject ? join(process.cwd(), name) : join(ROOT, 'src', 'templates', name);
+  if (existsSync(p)) pass('config', name, `${name} présent`);
+  else fail('config', name, `${name} absent`);
 }
 
-// ─── 5. pre-push-gate.sh ───────────────────────────────────────────────────
+// ─── SECURITY — gate, no legacy ─────────────────────────────────────────────
 
 const gatePath = join(scriptsDir, 'pre-push-gate.sh');
 if (existsSync(gatePath)) {
-  const stat = statSync(gatePath);
-  const isExecutable = (stat.mode & 0o111) !== 0;
-  if (isExecutable) {
-    pass('scripts/pre-push-gate.sh exists and is executable');
-  } else {
-    warn('scripts/pre-push-gate.sh exists but is NOT executable (chmod +x)');
-  }
+  const isExec = (statSync(gatePath).mode & 0o111) !== 0;
+  if (isExec) pass('security', 'pre-push-gate', 'pre-push-gate.sh exécutable');
+  else warn('security', 'pre-push-gate', 'pre-push-gate.sh présent mais non exécutable (chmod +x)');
 } else {
-  fail('scripts/pre-push-gate.sh not found');
+  fail('security', 'pre-push-gate', 'pre-push-gate.sh absent');
 }
-
-// ─── 6. Broken refs (reuse lint-refs) ───────────────────────────────────────
-
-const lintRefsResult = spawnSync(process.execPath, [join(__dirname, 'lint-refs.js')], {
-  stdio: 'pipe'
-});
-
-if (lintRefsResult.status === 0) {
-  pass('All markdown references resolve');
-} else {
-  fail('Broken markdown references detected (run `npm run lint:refs` for details)');
-}
-
-// ─── 7. No _legacy.md files ────────────────────────────────────────────────
 
 function findLegacyFiles(dir) {
-  const results = [];
-  if (!existsSync(dir)) return results;
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...findLegacyFiles(fullPath));
-    } else if (entry.name.includes('_legacy')) {
-      results.push(fullPath);
+  const out = [];
+  if (!existsSync(dir)) return out;
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) out.push(...findLegacyFiles(p));
+    else if (e.name.includes('_legacy')) out.push(p);
+  }
+  return out;
+}
+const legacy = findLegacyFiles(srcDir);
+if (legacy.length === 0) pass('security', 'no-legacy', 'aucun fichier _legacy.md résiduel');
+else fail('security', 'no-legacy', `${legacy.length} fichiers _legacy.md présents`);
+
+// ─── HOOKS — répertoire, manifest, exécutables ──────────────────────────────
+
+if (existsSync(hooksDir)) {
+  const hookFiles = readdirSync(hooksDir).filter((f) => f.endsWith('.sh'));
+  pass('hooks', 'directory', `hooks/ — ${hookFiles.length} scripts`);
+
+  const nonExec = hookFiles
+    .filter((f) => !f.startsWith('_'))
+    .filter((f) => (statSync(join(hooksDir, f)).mode & 0o111) === 0);
+  if (nonExec.length === 0) pass('hooks', 'executable', 'tous les hooks actifs sont exécutables (helpers _*.sh ignorés)');
+  else warn('hooks', 'executable', `${nonExec.length} hooks non exécutables : ${nonExec.join(', ')}`);
+
+  const manifestPath = isInstalledProject
+    ? join(process.cwd(), '.claude', 'hooks-manifest.json')
+    : join(ROOT, '.claude', 'hooks-manifest.json');
+  if (existsSync(manifestPath)) {
+    try {
+      const m = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      pass('hooks', 'manifest', `hooks-manifest.json valide (${m.hooks?.length || 0} entrées)`);
+      const lint = spawnSync(process.execPath, [join(__dirname, 'lint-hooks-manifest.js')], { stdio: 'pipe' });
+      if (lint.status === 0) pass('hooks', 'manifest-lint', 'manifest cohérent avec hooks/');
+      else fail('hooks', 'manifest-lint', 'manifest incohérent (npm run lint:hooks-manifest)');
+    } catch {
+      fail('hooks', 'manifest', 'hooks-manifest.json présent mais JSON invalide');
     }
+  } else if (!isInstalledProject) {
+    fail('hooks', 'manifest', 'hooks-manifest.json absent (.claude/hooks-manifest.json)');
   }
-  return results;
-}
-
-const legacyFiles = findLegacyFiles(srcDir);
-if (legacyFiles.length === 0) {
-  pass('No _legacy.md files remaining');
 } else {
-  for (const f of legacyFiles) {
-    fail(`Legacy file still present: ${f}`);
-  }
+  warn('hooks', 'directory', 'hooks/ absent (optionnel selon installation)');
 }
 
-// ─── 8. Git hooks (optional) ───────────────────────────────────────────────
+// ─── DOCS — fichiers racine ─────────────────────────────────────────────────
+
+const docFiles = ['README.md', 'CHANGELOG.md', 'PHILOSOPHY.md', 'PARITY.md', 'SECURITY.md', 'LICENSE'];
+for (const f of docFiles) {
+  const p = isInstalledProject ? null : join(ROOT, f);
+  if (!p) continue;
+  if (existsSync(p)) pass('docs', f.toLowerCase(), `${f} présent`);
+  else warn('docs', f.toLowerCase(), `${f} absent (recommandé)`);
+}
+
+// ─── REFS — lint-refs (markdown links) ──────────────────────────────────────
+
+const lintRefs = spawnSync(process.execPath, [join(__dirname, 'lint-refs.js')], { stdio: 'pipe' });
+if (lintRefs.status === 0) pass('refs', 'markdown-links', 'références markdown OK');
+else fail('refs', 'markdown-links', 'références cassées (npm run lint:refs pour détails)');
+
+// ─── GIT — hook pre-push installé (optionnel) ───────────────────────────────
 
 if (isInstalledProject) {
   const hookPath = join(process.cwd(), '.git', 'hooks', 'pre-push');
-  if (existsSync(hookPath)) {
-    pass('Git pre-push hook installed');
+  if (existsSync(hookPath)) pass('git', 'pre-push-hook', 'git pre-push hook installé');
+  else warn('git', 'pre-push-hook', 'git pre-push hook non installé (optionnel)');
+}
+
+// ─── Output final ───────────────────────────────────────────────────────────
+
+const byStatus = {
+  pass: results.filter((r) => r.status === 'pass').length,
+  fail: results.filter((r) => r.status === 'fail').length,
+  warn: results.filter((r) => r.status === 'warn').length,
+};
+const byCategory = results.reduce((acc, r) => {
+  acc[r.category] = (acc[r.category] || 0) + 1;
+  return acc;
+}, {});
+const healthy = byStatus.fail === 0;
+
+if (JSON_MODE) {
+  console.log(JSON.stringify({
+    healthy,
+    total: results.length,
+    byStatus,
+    byCategory,
+    results,
+    mode,
+    timestamp: new Date().toISOString(),
+  }, null, 2));
+} else {
+  console.log('');
+  const cats = Object.keys(byCategory).sort();
+  console.log(`Total : ${results.length} checks sur ${cats.length} catégories (${cats.join(', ')})`);
+  if (byStatus.fail === 0 && byStatus.warn === 0) {
+    console.log(`${GREEN}SAIN${NC} — ${byStatus.pass} checks réussis`);
+  } else if (byStatus.fail === 0) {
+    console.log(`${YELLOW}OK avec ${byStatus.warn} avertissement(s)${NC} — ${byStatus.pass} réussis`);
   } else {
-    warn('Git pre-push hook not installed (optional but recommended)');
+    console.log(`${RED}MALADE${NC} — ${byStatus.fail} échec(s), ${byStatus.warn} avertissement(s), ${byStatus.pass} réussis`);
   }
 }
 
-// ─── Summary ───────────────────────────────────────────────────────────────
-
-console.log('');
-if (errors === 0 && warnings === 0) {
-  console.log(`${GREEN}HEALTHY${NC} — all checks passed`);
-} else if (errors === 0) {
-  console.log(`${YELLOW}OK with ${warnings} warning(s)${NC}`);
-} else {
-  console.log(`${RED}UNHEALTHY${NC} — ${errors} error(s), ${warnings} warning(s)`);
-}
-
-process.exit(errors > 0 ? 1 : 0);
+process.exit(healthy ? 0 : 1);

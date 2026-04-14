@@ -17,6 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.11.0] — 2026-04-14
+
+### Added — `npm run doctor` enrichi (25 checks structurés)
+
+- **`test/doctor.js` réécrit** : 25 checks sur 8 catégories (`env`, `core`, `satellites`, `config`, `security`, `hooks`, `docs`, `refs`, `git`). Inspiré du `claw doctor` (claw-code).
+- **Mode `--json`** : `node test/doctor.js --json` → output JSON structuré (`{healthy, total, byStatus, byCategory, results, mode, timestamp}`) — exploitable en CI.
+- **Nouveaux checks** : version Node ≥ 18, git installé, `package.json` valide, hooks exécutables (helpers `_*.sh` ignorés), `hooks-manifest.json` valide + cohérent, `PHILOSOPHY.md`, `PARITY.md`, `SECURITY.md`, `LICENSE` présents.
+- **Détection self-repo** : le doctor distingue le repo `claude-atelier` lui-même d'un projet utilisateur installé.
+
+---
+
 ## [0.10.0] — 2026-04-14
 
 ### Added — `.claude/hooks-manifest.json` typé
