@@ -17,6 +17,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.18.0] — 2026-04-14
+
+### Added — Lot 4 HANDOFF-ENFORCEMENT (ergonomie de sortie)
+
+- **Skill `/handoff-debt`** (`.claude/skills/handoff-debt/SKILL.md`) : affiche la dette §25 live depuis git, liste les commits non reviewés, génère un draft via `handoff-draft.sh`.
+- **`scripts/handoff-draft.sh`** : génère un handoff pré-rempli dans `docs/handoffs/YYYY-MM-DD-<slug>.md` — contexte + commits + fichiers à lire extraits du range git. Les sections `Question précise` et `Intégration` restent à remplir par Claude/user.
+- **`hooks/guard-commit-french.sh`** : rappel doux (pas bloquant) si commit `feat:`/`fix:`/`refactor:` sans tag `[needs-review]` ou `[no-review-needed: <raison>]`. Point d'entrée visible pour la convention accountability.
+- **`scripts/pre-push-gate.sh`** : étape 6b valide désormais le handoff **intégré** (obtenu via `handoff-debt.sh --json`) plutôt que le plus récent sur disque — évite qu'un draft local non-commité bloque la gate.
+
+### Anti-pattern retenu
+
+- Pas de hook bloquant sur l'absence de tag `[needs-review]` : Copilot a noté "conditionnel" — la friction doit venir du push, pas du commit. Le hook se contente de rappeler.
+
+---
+
 ## [0.17.0] — 2026-04-14
 
 ### Added — Lot 2 + Lot 3 HANDOFF-ENFORCEMENT §25 (enforcement physique)

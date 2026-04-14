@@ -222,18 +222,18 @@ VALIDATE_HANDOFF="$(cd "$(dirname "$0")/.." && pwd)/test/validate-handoff.js"
 if [[ -f "$HANDOFF_DEBT_SCRIPT" ]]; then
     # 6a : check dette depuis git
     if bash "$HANDOFF_DEBT_SCRIPT" --check 2>/dev/null; then
-        # 6b : validation structurelle du dernier handoff intégré (anti-triche)
+        # 6b : validation structurelle du dernier handoff INTÉGRÉ (lu depuis handoff-debt.sh)
         if [[ -f "$VALIDATE_HANDOFF" ]]; then
-            HANDOFF_DIR_6B="$(cd "$(dirname "$0")/.." && pwd)/docs/handoffs"
-            LATEST=$(find "$HANDOFF_DIR_6B" -maxdepth 1 -name "202*.md" -not -name "_template*" -print0 2>/dev/null | xargs -0 ls -t 2>/dev/null | head -1 || echo "")
-            if [[ -n "$LATEST" ]] && node "$VALIDATE_HANDOFF" "$LATEST" >/dev/null 2>&1; then
-                pass "Dette sous seuil + handoff récent valide structurellement"
-            elif [[ -n "$LATEST" ]]; then
+            REPO_6B="$(cd "$(dirname "$0")/.." && pwd)"
+            LATEST_REL=$(bash "$HANDOFF_DEBT_SCRIPT" --json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin)['lastIntegratedHandoff']['file'])" 2>/dev/null || echo "")
+            if [[ -n "$LATEST_REL" ]] && node "$VALIDATE_HANDOFF" "$REPO_6B/$LATEST_REL" >/dev/null 2>&1; then
+                pass "Dette sous seuil + handoff intégré valide structurellement"
+            elif [[ -n "$LATEST_REL" ]]; then
                 echo ""
-                node "$VALIDATE_HANDOFF" "$LATEST"
-                fail "Dernier handoff $(basename "$LATEST") invalide structurellement"
+                node "$VALIDATE_HANDOFF" "$REPO_6B/$LATEST_REL"
+                fail "Handoff intégré $LATEST_REL invalide structurellement"
             else
-                pass "Dette sous seuil (aucun handoff à valider)"
+                pass "Dette sous seuil (aucun handoff intégré à valider)"
             fi
         else
             pass "Dette sous seuil"

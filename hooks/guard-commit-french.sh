@@ -16,5 +16,14 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
       echo "§13 : les messages de commit doivent être en français. Message détecté en anglais."
       exit 2
     fi
+
+    # §25 — rappel doux (pas bloquant) si feat:/fix:/refactor: sans tag review
+    if echo "$MSG" | grep -qiE "^(feat|fix|refactor):"; then
+      if ! echo "$MSG" | grep -qiE "\[(needs-review|no-review-needed:[^]]+)\]"; then
+        PREFIX=$(echo "$MSG" | awk -F: '{print $1}')
+        echo "§25 : commit ${PREFIX}: sans tag [needs-review] ou [no-review-needed: raison]."
+        echo "      → /handoff-debt pour voir la dette et générer un draft."
+      fi
+    fi
   fi
 fi
