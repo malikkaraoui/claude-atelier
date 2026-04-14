@@ -103,8 +103,9 @@ npx claude-atelier init --global
 # Choisir la langue (défaut: fr)
 npx claude-atelier init --lang en
 
-# Diagnostic santé (27+ checks)
+# Diagnostic santé (25 checks · 8 catégories · --json pour CI)
 npx claude-atelier doctor
+npx claude-atelier doctor --json   # output structuré CI-friendly
 
 # Mettre à jour (préserve le §0 du projet)
 npx claude-atelier update
@@ -245,7 +246,7 @@ Le hook `routing-check.sh` injecte le modèle actif à chaque message et recomma
 ```text
 /atelier-help       → Oracle : état du projet + commandes disponibles
 /atelier-setup      → Onboarding interactif (7 étapes)
-/atelier-doctor     → Diagnostic santé (27+ checks)
+/atelier-doctor     → Diagnostic santé (25 checks · 8 catégories · --json)
 /angle-mort         → Review anti-complaisance avant release
 /audit-safe         → Audit sécurité (5 checks)
 /review-copilot     → Handoff review pour Copilot/GPT
@@ -563,7 +564,7 @@ The `routing-check.sh` hook injects the active model on every message and recomm
 ```text
 /atelier-help       → Oracle: project state + available commands
 /atelier-setup      → Interactive onboarding (7 steps)
-/atelier-doctor     → Health diagnostic (27+ checks)
+/atelier-doctor     → Health diagnostic (25 checks · 8 categories · --json)
 /angle-mort         → Anti-complacency review before release
 /audit-safe         → Security audit (5 checks)
 /review-copilot     → Handoff review for Copilot/GPT
