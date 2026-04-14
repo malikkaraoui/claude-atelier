@@ -2,18 +2,32 @@
 
 <div align="center">
 
-## 🛠️
+```text
+  ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗
+ ██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝
+ ██║     ██║     ███████║██║   ██║██║  ██║█████╗
+ ██║     ██║     ██╔══██║██║   ██║██║  ██║██╔══╝
+ ╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗
+  ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝
+          A T E L I E R
+```
 
-### Framework de travail pour Claude Code
+## ⚡ From vibes to rails — Claude Code, disciplined
 
-Règles runtime bilingues · Enforcement par hooks · Orchestration multi-agents · Mode nuit autonome
+Rails d'enforcement · 5 agents nommés · 14 skills · Mode nuit supervisé
 
-[![npm version](https://img.shields.io/npm/v/claude-atelier.svg)](https://www.npmjs.com/package/claude-atelier)
-[![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg)](https://www.npmjs.com/package/claude-atelier)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Token savings](https://img.shields.io/badge/token%20savings-up%20to%2090%25-brightgreen)](https://claude-atelier.vercel.app/token-savings)
+[![npm version](https://img.shields.io/npm/v/claude-atelier.svg?style=flat-square&color=CB3837)](https://www.npmjs.com/package/claude-atelier)
+[![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/claude-atelier)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![Token savings](https://img.shields.io/badge/token%20savings-up%20to%2090%25-brightgreen?style=flat-square)](https://claude-atelier.vercel.app/token-savings)
 
 **[📦 npm](https://www.npmjs.com/package/claude-atelier) · [📖 Docs](https://claude-atelier.vercel.app) · [🐛 Issues](https://github.com/malikkaraoui/claude-atelier/issues)**
+
+```bash
+npx claude-atelier init
+```
+
+> *2 000+ téléchargements par semaine · utilisé en prod · MIT*
 
 ---
 
@@ -42,6 +56,7 @@ Règles runtime bilingues · Enforcement par hooks · Orchestration multi-agents
 ### Le problème
 
 Claude Code sans structure, c'est ça :
+
 - Opus qui tourne toute la nuit sur une tâche Haiku → budget cramé
 - Commit signé avec `Co-Authored-By` × 50 → historique pollué
 - Push sans tests → régression en prod silencieuse
@@ -132,11 +147,13 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 | **Isaac** 📦 | NPM Publish / Registry | `npm publish`, `npm version`, `registry`... | Pipeline CI/CD, versionning sémantique, tokens, troubleshooting |
 | **Mohamed** 📋 | Review inter-LLM | `feat:` commit, 100+ lignes, 10 commits, session restart | Instruit le dossier review : commits, diff, question précise, handoff Copilot/GPT |
 | **Amine** 🧪 | Tests hooks | `feat:` commit sans fichier `test/` modifié | Alerte feat sans tests, 20 tests unitaires hooks, `npm run test:hooks` |
+| **Xavier** 📡 | Freebox API | `freebox`, `fbx`, `app_token`, `mafreebox`... | Auth LCD complète : discovery → app_token → HMAC-SHA1 session → NAT |
 
 *« Stay hungry, stay foolish — mais build depuis le Makefile. »* — Steve
 *« npm install — deux mots qui doivent toujours marcher. »* — Isaac
 *« Un code non challengé n'est pas fini. C'est une bombe à retardement. »* — Mohamed
 *« Pas de test, pas de feat. C'est pas négociable. »* — Amine
+*« Un bouton LCD. Une seule pression. Un token permanent. »* — Xavier
 
 Steve et Isaac sont injectés via `routing-check.sh` sur détection de stack. Mohamed arrive via les hooks Challenger (`guard-review-auto.sh`) et le cross-session check. Amine vérifie que chaque feat commit inclut des tests — automatiquement, sans que tu aies à y penser.
 
@@ -188,7 +205,7 @@ Permissions incluses par défaut : `Read`, `Edit`, `Write`, `Glob`, `Grep`, `git
 
 Le hook `routing-check.sh` injecte le modèle actif à chaque message et recommande un switch si mismatch :
 
-```
+```text
 [ROUTING] modèle: claude-opus-4-6 | Opus→archi | Sonnet→dev | Haiku→exploration
 ```
 
@@ -209,9 +226,9 @@ Le hook `routing-check.sh` injecte le modèle actif à chaque message et recomma
 
 ---
 
-### Skills — 13 slash commands
+### Skills — 14 slash commands
 
-```
+```text
 /atelier-help       → Oracle : état du projet + commandes disponibles
 /atelier-setup      → Onboarding interactif (7 étapes)
 /atelier-doctor     → Diagnostic santé (27+ checks)
@@ -225,6 +242,7 @@ Le hook `routing-check.sh` injecte le modèle actif à chaque message et recomma
 /qmd-init           → Installe QMD (moteur recherche markdown local)
 /bmad-init          → Installe BMAD (optionnel, gros projets)
 /ios-setup          → Configure le workflow iOS/tvOS : VS Code + Xcode + Makefile V4
+/freebox-init       → Bootstrap Freebox : app_token LCD + session HMAC-SHA1 + NAT
 ```
 
 ---
@@ -260,7 +278,7 @@ ne push jamais                Screenshot VSCode → diagnostic
 
 Un seul LLM ne voit pas ses propres angles morts.
 
-```
+```text
 /review-copilot → handoff .md → Copilot répond
 → /integrate-review → trier (retenu / à garder / écarté) → actions
 ```
@@ -277,6 +295,7 @@ Chargés conditionnellement selon le projet actif. Certains activent un agent no
 | --- | --- | --- |
 | iOS / tvOS / iPadOS | `stacks/ios-xcode.md` | **Steve** 🍎 |
 | NPM Publish / Registry | `stacks/npm-publish.md` | **Isaac** 📦 |
+| Freebox API | `stacks/freebox.md` | **Xavier** 📡 |
 | JavaScript/TypeScript | `stacks/javascript.md` | — |
 | Python | `stacks/python.md` | — |
 | Java | `stacks/java.md` | — |
@@ -347,6 +366,7 @@ MIT — voir [LICENSE](LICENSE).
 ### The Problem
 
 Claude Code without structure looks like this:
+
 - Opus running overnight on a Haiku-level task → budget gone
 - `Co-Authored-By` on every commit × 50 → polluted git history
 - Push without tests → silent regression in prod
@@ -381,7 +401,7 @@ Rust→Swift FFI included. Troubleshooting included. Mention `xcode` or `swift` 
 
 ---
 
-### Installation
+### Installation (EN)
 
 ```bash
 # Initialize in current project
@@ -435,11 +455,13 @@ When a specific domain is detected in your message, the atelier automatically lo
 | **Isaac** 📦 | NPM Publish / Registry | `npm publish`, `npm version`, `registry`... | CI/CD pipeline, semantic versioning, tokens, troubleshooting |
 | **Mohamed** 📋 | Inter-LLM Review | `feat:` commit, 100+ lines, 10 commits, session restart | Prepares review dossier: commits, diff, precise question, Copilot/GPT handoff |
 | **Amine** 🧪 | Hook Tests | `feat:` commit without `test/` changes | Alerts feat without tests, 20 hook unit tests, `npm run test:hooks` |
+| **Xavier** 📡 | Freebox API | `freebox`, `fbx`, `app_token`, `mafreebox`... | Full LCD auth: discovery → app_token → HMAC-SHA1 session → NAT |
 
 *"Stay hungry, stay foolish — but build from the Makefile."* — Steve
 *"npm install — two words that must always work."* — Isaac
 *"Unchallenged code isn't done. It's a time bomb."* — Mohamed
 *"No test, no feat. Not negotiable."* — Amine
+*"One LCD button. One press. One permanent token."* — Xavier
 
 Steve and Isaac are injected via `routing-check.sh` on stack detection. Mohamed arrives via the Challenger hooks (`guard-review-auto.sh`) and the cross-session check. Amine verifies that every feat commit includes tests — automatically, no manual trigger.
 
@@ -508,9 +530,9 @@ The `routing-check.sh` hook injects the active model on every message and recomm
 
 ---
 
-### Skills — 13 slash commands
+### Skills — 14 slash commands (EN)
 
-```
+```text
 /atelier-help       → Oracle: project state + available commands
 /atelier-setup      → Interactive onboarding (7 steps)
 /atelier-doctor     → Health diagnostic (27+ checks)
@@ -524,6 +546,7 @@ The `routing-check.sh` hook injects the active model on every message and recomm
 /qmd-init           → Install QMD (local markdown search engine)
 /bmad-init          → Install BMAD (optional, large projects)
 /ios-setup          → Configure iOS/tvOS workflow: VS Code + Xcode + Makefile V4
+/freebox-init       → Bootstrap Freebox: LCD app_token + HMAC-SHA1 session + NAT
 ```
 
 ---
@@ -553,6 +576,7 @@ Loaded conditionally based on the active project. Some activate a named agent.
 | --- | --- | --- |
 | iOS / tvOS / iPadOS | `stacks/ios-xcode.md` | **Steve** 🍎 |
 | NPM Publish / Registry | `stacks/npm-publish.md` | **Isaac** 📦 |
+| Freebox API | `stacks/freebox.md` | **Xavier** 📡 |
 | JavaScript/TypeScript | `stacks/javascript.md` | — |
 | Python | `stacks/python.md` | — |
 | Java | `stacks/java.md` | — |
