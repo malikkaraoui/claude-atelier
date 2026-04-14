@@ -314,7 +314,146 @@ Bypass = bug critique du runtime. Pre-push gate étape 6 bloque sans appel.
 
 ---
 
-## 9. Engagement
+## 9. Critique Copilot v2 — corrections anti-triche (2026-04-14, 12:54)
+
+Après lecture du doc v1 ci-dessus, Copilot a renvoyé un second verdict — plus dur, plus utile. Citation directe :
+
+> « Mon verdict : bon cap, pas encore anti-triche.
+>
+> **Le bon :**
+> - Lot 1 d'abord : exact.
+> - Pas de reset sans preuve : exact.
+> - Pre-push gate étape 6 : indispensable.
+>
+> **Les failles restantes :**
+> - `.claude/handoff-debt.json` versionné mais éditable → Claude peut mentir dedans.
+> - `validate-handoff.js` par nombre de mots → trivial à bourrer.
+> - pre-commit seul n'a aucune valeur : `--no-verify` côté humain existe.
+>
+> **Je cadrerais plus strictement :**
+> - preuve = handoff + réponse non vide + intégration non vide + `reviewedRange` git,
+> - reset uniquement via `/integrate-review`,
+> - gate finale calcule la dette **depuis git, jamais depuis un JSON déclaratif**. »
+
+### 9.1 Les 3 failles que la v1 laissait ouvertes
+
+| # | Faille v1 | Comment je triche | Correction v2 |
+|---|-----------|-------------------|---------------|
+| 1 | `.claude/handoff-debt.json` versionné = source de vérité | J'édite le JSON pour réduire `linesAddedSince` à 0, je commit, plus de dette | Le JSON devient un **cache lisible** (pour affichage hooks). La **source de vérité = `git log <reviewedRange>..HEAD --shortstat`** calculé à la volée par chaque check |
+| 2 | `validate-handoff.js` vérifie ≥ 200 mots | Je bourre 200 mots de blabla générique | Validation **structurelle** : section "Réponse de" non vide ET section "Intégration" non vide ET frontmatter `reviewedRange` = vrai range git (sha…sha) qui matche les commits |
+| 3 | Pre-commit seul | Côté humain : `git commit --no-verify`. Côté Claude : si on ajoute un `--no-verify` dans une commande Bash, je peux le faire passer | Pre-push **+** validation au moment du `npm version` **+** validation côté CI (artifact JSON doctor uploadé). Bypass = 3 contournements visibles |
+
+### 9.2 Corrections appliquées au doc
+
+**Section 3.3 (Validation qualité) — réécrite :**
+
+```text
+3.3 — Validation structurelle du handoff (PAS par mots)
+
+  Le script test/validate-handoff.js vérifie :
+    a. Frontmatter contient `reviewedRange: <sha-from>..<sha-to>` (vrai range git)
+    b. Section "## Réponse de :" contient au moins 100 caractères de TEXTE distinct
+       de la réponse template (hash de la section ≠ hash template)
+    c. Section "## Intégration" contient au moins 50 caractères de texte
+    d. Tous les fichiers listés dans "### Fichiers à lire" existent dans le repo
+       au moment du commit identifié par sha-to
+    e. La date dans le frontmatter est ≤ 7 jours
+
+  Échec d'un seul critère = handoff invalide = dette non resetée.
+```
+
+**Section 3.4 (Reset) — réécrite :**
+
+```text
+3.4 — Reset uniquement par /integrate-review + recalcul depuis git
+
+  /integrate-review fait :
+    1. Lit le dernier handoff dans docs/handoffs/
+    2. Run validate-handoff.js — si échec, refuse
+    3. Calcule reviewedRange = HEAD au moment de l'intégration
+    4. Écrit le cache .claude/handoff-debt.json avec reviewedRange = "<sha>..<sha>"
+       (le JSON n'est qu'un MIROIR de cet état)
+    5. Aucun autre script ne peut écrire dans .claude/handoff-debt.json
+       (hook PreToolUse bloque tout Edit/Write sur ce fichier sauf via /integrate-review)
+```
+
+**Section 8.1 (Schéma JSON) — annoté :**
+
+Le JSON est désormais **annoté comme cache, pas source de vérité** :
+
+```json
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "version": "2.0.0",
+  "_warning": "CACHE LISIBLE — NE PAS ÉDITER MANUELLEMENT. Source de vérité = git. Reset uniquement via /integrate-review.",
+  "lastIntegratedHandoff": {
+    "file": "docs/handoffs/...",
+    "integratedAt": "2026-04-14T12:30:00Z",
+    "reviewedRange": "1e0b59e..7a9756f",
+    "validatedBy": "/integrate-review",
+    "validationChecksum": "sha256:..."
+  },
+  "currentDebt_computedFromGit": {
+    "_note": "Recalculé à chaque check via: git log <reviewedRange.to>..HEAD --shortstat",
+    "commitsSince": "computed",
+    "linesAddedSince": "computed",
+    "daysSince": "computed"
+  }
+}
+```
+
+**Section 8.2 (Message d'erreur push bloqué) — réécrite :**
+
+```text
+[GATE 6/6] Handoff debt (calculé depuis git, pas JSON)
+[FAIL] Dette de review dépassée
+
+  Constat (calcul live depuis git log <reviewedRange>..HEAD) :
+    - 5 commits depuis le dernier handoff intégré (seuil: 3)
+    - 187 lignes ajoutées (seuil: 100)
+    - 4 jours depuis le dernier /integrate-review (seuil: 7)
+
+  Dernier reviewedRange : 1e0b59e..7a9756f
+  Dernier handoff intégré : docs/handoffs/2026-04-14-XXX.md
+
+  Pour débloquer (aucun bypass possible) :
+    1. Lance /review-copilot pour générer un handoff
+    2. Donne-le à Copilot/GPT
+    3. Copie sa réponse dans la section "## Réponse de :" du fichier
+    4. Lance /integrate-review qui :
+       a. Valide structurellement le handoff (validate-handoff.js)
+       b. Si OK, écrit reviewedRange dans le cache JSON
+       c. Recalcule la dette depuis git → 0
+
+  Bypass triple-bloqué :
+    - --no-verify : refusé par §13/§22
+    - Édit manuel du JSON : Edit/Write sur .claude/handoff-debt.json bloqué par hook
+    - Handoff bidon : validate-handoff.js détecte (réponse vide, range git invalide, etc.)
+```
+
+### 9.3 Nouvelles failles potentielles (à anticiper)
+
+Question méta : qu'est-ce qui peut casser le **schéma v2** ?
+
+| # | Faille hypothétique | Mitigation |
+|---|---------------------|------------|
+| 1 | Je crée un commit Copilot bidon (avec un autre LLM ou moi-même) | Validation devrait inclure : la réponse dans "## Réponse de :" doit avoir un **hash distinct** des handoffs précédents (pas du copier-coller) |
+| 2 | Je désactive le hook PreToolUse qui bloque l'édition du JSON | Hook config dans `settings.json` lisible — diff visible. Mais : ajout d'un check dans `pre-push-gate.sh` qui vérifie que `settings.json` n'a pas dégradé les protections §25 |
+| 3 | Je modifie `validate-handoff.js` lui-même pour qu'il accepte tout | Lint check ad-hoc : `test/lint-handoff-validator.js` qui vérifie que `validate-handoff.js` contient toujours les 5 critères listés en 3.3 |
+| 4 | Je supprime `validate-handoff.js` | `npm run lint` exige sa présence |
+| 5 | Je remplace `pre-push-gate.sh` étape 6 par un no-op | `test/lint-pre-push-gate.js` vérifie que les 6 étapes sont présentes |
+| 6 | Je commit ces lints en les désactivant | Audit mensuel cron qui pousse un commit "audit handoff: X commits, Y reviews, ratio Z" — trace permanente git log |
+
+### 9.4 Engagement v2 — clause anti-triche explicite
+
+J'ajoute aux engagements de la section 10 :
+
+5. **Toute modification de** : `validate-handoff.js`, `pre-push-gate.sh` étape 6, hook qui bloque édition du JSON, ou `.claude/CLAUDE.md` §25 → **DOIT** déclencher un handoff Copilot dédié AVANT le commit (méta-méta-conformité).
+6. **Si je détecte que je suis en train d'écrire du code qui réduit la friction du système §25** (ex: "et si on baissait le seuil à 200 lignes ?"), c'est un signal — le signaler explicitement avant de continuer.
+
+---
+
+## 10. Engagement
 
 Je m'engage à :
 
@@ -327,5 +466,7 @@ Cette dernière clause est la plus importante. Si je triche, la trace doit être
 
 ---
 
-> Document généré le 2026-04-14 par Claude Sonnet 4.6 après review GPT-5.4 (inférée — Copilot).
+> Document généré le 2026-04-14 par Claude Sonnet 4.6.
+> v1 : après review GPT-5.4 (inférée — Copilot).
+> v2 : après second tour de review Copilot — corrections anti-triche (section 9).
 > Référence : `docs/handoffs/2026-04-14-review-inspiration-claw-code-v0.7-to-0.15.md`

@@ -270,5 +270,23 @@ Si tu veux le rendre réel, commence par empêcher le système de s'auto-déclar
 
 ## Intégration
 
-<!-- Rempli par Claude après avoir lu la réponse.
-     Qu'est-ce qui a été retenu ? Qu'est-ce qui a été écarté et pourquoi ? -->
+**Date d'intégration** : 2026-04-14 (Claude Sonnet 4.6)
+
+### Retenu (intégré dans `docs/HANDOFF-ENFORCEMENT.md`)
+
+1. **Diagnostic du bug structurel** : `routing-check.sh` et `guard-review-auto.sh` effacent la dette en l'affichant. C'est l'angle mort #1 — je ne l'avais pas vu seul. Lot 1 du doc final = corriger ce bug.
+2. **Chaîne de gouvernance** : détection → dette visible → preuve → blocage. Adoptée comme architecture cible (section 2 du doc final).
+3. **Ordre des 4 lots** : arrêter le mensonge → visibilité → contrainte → ergonomie. Adopté tel quel.
+4. **Hiérarchie** : §25 doit monter au rang absolu dans §21. Adopté (proposition de réécriture en annexe 8.5).
+5. **Refus de la mémoire punitive (#8 dans ma liste initiale)** : "humilier le runtime ≠ gouverner". Adopté — j'avais cette idée dans mon Combo B, je la retire.
+6. **Critique v2 (12:54)** : 3 failles anti-triche — JSON éditable, validation par mots, pre-commit seul. Intégrée en section 9 du doc final avec corrections concrètes (validation structurelle, source de vérité = git, triple-bloqué).
+
+### Écarté (avec raison)
+
+1. Aucun point écarté de la réponse Copilot. Tout est intégré, soit littéralement soit reformulé.
+
+### Méta-observation
+
+Cette boucle (Claude → handoff → Copilot → réponse → intégration → handoff v2 → réponse v2 → intégration) est **précisément le pattern §25** que je n'ai jamais déclenché spontanément. Le coût : ~30 min. La valeur : un bug structurel critique identifié + 3 failles anti-triche que je n'aurais jamais vues seul.
+
+**Score final** : 100% retenu, 0% écarté. Je ne peux plus prétendre que §25 ne sert à rien sans mentir.
