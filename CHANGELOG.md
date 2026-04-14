@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0] — 2026-04-14
+
+### Added — `PARITY.md` racine
+
+- **`PARITY.md`** : tableau complet feature par feature claude-atelier vs Claude Code natif. 12 catégories (config, hooks, skills, orchestration, MCPs, sécurité, sessions, tokens, stacks, autonomie, inter-agents, CLI). Couverture résumée : **33 ajouts ➕, 5 extensions 🔧, 6 hors-scope ❌**.
+- **README** : lien `📊 Parity` ajouté dans la barre de hero.
+
+---
+
 ## [0.8.0] — 2026-04-14
 
 ### Added — `PHILOSOPHY.md` racine
