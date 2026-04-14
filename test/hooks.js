@@ -231,6 +231,15 @@ test('routing-check signale quand il ne lui reste que le cache', () => {
   ok(r.stdout.includes('modèle issu du cache session-start'), 'warning cache attendu');
 });
 
+test('routing-check alerte fort si aucun modèle n’est disponible', () => {
+  resetRoutingEnv();
+  const r = hook('routing-check.sh', { prompt: 'bonjour' });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('[HORODATAGE]'), 'horodatage toujours présent');
+  ok(r.stdout.includes('| inconnu'), 'modèle inconnu attendu');
+  ok(r.stdout.includes('🚨 [ROUTING] MODÈLE INCONNU'), 'alerte forte attendue');
+});
+
 // ─────────────────────────────────────────────────────────────
 // Bilan
 // ─────────────────────────────────────────────────────────────

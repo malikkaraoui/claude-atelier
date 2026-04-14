@@ -40,7 +40,7 @@
       "inputs": ["prompt", "model (if available in hook JSON)", "transcript_path", "current-model from /tmp"],
       "outputs": ["additionalContext: [HORODATAGE] + [ROUTING] + source modèle + warnings éventuels"],
       "rule": "§1 + §15 + §10",
-      "test": "test/hooks.js → routing-check.sh (3 tests)",
+      "test": "test/hooks.js → routing-check.sh (4 tests)",
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       }
