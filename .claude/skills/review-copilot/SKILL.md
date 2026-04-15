@@ -70,8 +70,10 @@ le format suivant :
 ## Réponse de : Copilot/GPT
 
 **INSTRUCTION POUR LE LLM QUI REPOND :**
-Tu DOIS écrire ta réponse directement dans ce fichier, dans cette
-section. N'écris PAS ta réponse dans le chat. Utilise Edit/Write.
+Tu DOIS écrire ta réponse directement dans **ce même fichier `.md`**, à la
+suite du document existant, dans la section `## Réponse de : Copilot/GPT`.
+Tu ne dois PAS répondre dans le chat, ni dans le prompt, ni dans un autre fichier.
+Ce document est le vase communicant entre GPT et Claude. Utilise Edit/Write.
 Quand tu as fini, dis : "J'ai répondu dans [chemin du fichier]."
 
 ---
