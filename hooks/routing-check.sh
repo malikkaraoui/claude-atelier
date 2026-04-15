@@ -8,6 +8,19 @@ THROTTLE_SECONDS=1800  # 30 minutes
 # Lire le message utilisateur (JSON stdin) avec python3 pour un parsing fiable
 _RAW_INPUT=$(cat)
 
+SESSION_ID=$(echo "$_RAW_INPUT" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    print(d.get('session_id', ''))
+except: pass
+" 2>/dev/null)
+
+# Persister session_id courant (P1 — pré-requis V2 socket actionneur)
+if [ -n "$SESSION_ID" ]; then
+  printf '%s\n' "$SESSION_ID" > /tmp/claude-atelier-current-session-id
+fi
+
 PROMPT=$(echo "$_RAW_INPUT" | python3 -c "
 import sys, json
 try:
@@ -77,8 +90,18 @@ if [ -z "$MODEL" ]; then
   MODEL="inconnu"
 fi
 
+# ===== MODE SWITCH A/M (Auto ou Manuel) =====
+SWITCH_MODE_FILE="/tmp/claude-atelier-switch-mode"
+SWITCH_MODE=$(cat "$SWITCH_MODE_FILE" 2>/dev/null || echo "M")
+# Normaliser : seul A ou M accepté, défaut M
+case "$SWITCH_MODE" in
+  A|a) SWITCH_MODE="A" ;;
+  *)   SWITCH_MODE="M" ;;
+esac
+
 # ===== HORODATAGE + MODÈLE (toujours en premier — machine time) =====
 echo "[HORODATAGE] $(date '+%Y-%m-%d %H:%M:%S') | $MODEL"
+echo "[SWITCH-MODE] $SWITCH_MODE"
 
 # ===== HANDOFF DEBT BANNER §25 (calculé depuis git, jamais JSON) =====
 DEBT_SCRIPT="$REPO_ROOT/scripts/handoff-debt.sh"

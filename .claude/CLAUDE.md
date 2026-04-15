@@ -20,10 +20,10 @@ Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + comm
 
 ## §1 Horodatage + Modèle — EXIGENCE non négociable
 
-Extraire MODEL-ID de la ligne `[ROUTING] modèle actif: MODEL-ID` injectée par `routing-check.sh` (jamais du system prompt — stale). Priorité source : `live > cache > transcript`. Si `source: transcript`, signaler la fragilité (probable post-compaction).
-**Ta réponse DOIT commencer par cette ligne, AVANT tout texte ou tool call** : `` `[YYYY-MM-DD HH:MM:SS | MODEL-ID] PASTILLE` ``.
-La flèche (`⬆️`/`⬇️`/`=`) est extraite de la ligne `[METRICS]` injectée par `model-metrics.sh` — dernière valeur. `⬆️` = monter de modèle, `⬇️` = descendre, `=` = optimal. Si absente → omettre.
-L'horodatage du hook = contexte, **pas** ta sortie. Aucune exception. Modèle indispo → `[date estimée | modèle inconnu]`.
+Extraire MODEL-ID de `[ROUTING] modèle actif: MODEL-ID` (jamais du system prompt). Source : `live > cache > transcript` — si `transcript`, signaler fragilité.
+**Réponse DOIT commencer par** : `` `[YYYY-MM-DD HH:MM:SS | MODEL-ID] PASTILLE MODE` ``. Flèche de `[METRICS]` (`⬆️`/`⬇️`/`=`). Mode de `[SWITCH-MODE]` (`A`=auto, `M`=manuel, défaut `M`).
+**Mode A** : flèche `⬆️`/`⬇️` → `python3 scripts/switch_model.py <model>` immédiat. **Mode M** : annoncer reco, attendre validation. Toggle : "passe en auto" → `echo A > /tmp/claude-atelier-switch-mode`.
+Horodatage hook = contexte, **pas** ta sortie. Modèle indispo → `[date | modèle inconnu]`.
 
 ## §2 Langue & Ton
 

@@ -218,7 +218,7 @@ Copilot confirme que la feature tient et cible 3 fragilités réelles. Verdict r
 | --- | --- | --- | --- | --- |
 | 1 | Reformuler message de succès `switch_model.py` : `"commande /model injectée (pas de preuve post-condition)"` au lieu de `[OK] switch effectué` | 🟠 moyenne | `scripts/switch_model.py` | fix immédiat |
 | 2 | Documenter dans `model-metrics.sh` (header) le biais structurel `Bash → medium` pour sessions shell-légères | 🟡 basse | `hooks/model-metrics.sh` | avec action 1 |
-| 3 | Choisir contrat `session_id` pour V2 avant implémentation socket : **option 2 retenue** (persister `session_id` courant dans `/tmp/claude-atelier-current-session-id` via hook `UserPromptSubmit`) | 🔴 bloquante V2 | nouveau hook ou extension `routing-check.sh` | pré-requis V2 |
+| 3 | ~~Choisir contrat `session_id` pour V2~~ — **FAIT** : persisté dans `/tmp/claude-atelier-current-session-id` via `routing-check.sh` à chaque `UserPromptSubmit` | ✅ fait | `hooks/routing-check.sh` | commit ci-dessous |
 | 4 | Ajouter les 4 conditions de préflight V2 dans plan socket : wrapper actif + session_id résolu + socket présent + `status`/`ping` OK → sinon fallback tmux | 🔴 bloquante V2 | `docs/handoffs/2026-04-15-v2-plugin-socket-actionneur-plan.md` | mise à jour plan |
 
 ### Décisions architecturales
