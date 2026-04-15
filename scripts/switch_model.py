@@ -3,8 +3,11 @@
 scripts/switch_model.py — Injecte /model <alias> dans un pane tmux Claude Code.
 
 Fonctionne uniquement en mode terminal avec tmux.
-En mode VSCode, le focus Bash ne permet pas d'atteindre le chat Claude Code
-via simulation clavier — tape /model <alias> directement dans le chat.
+En mode VSCode, Mode M est le contrat officiel : aucun switch auto in-session
+n'est possible (pas de commande/API publique exposée par l'extension Anthropic).
+L'extension ne gère pas le hot-reload du modèle — settings.json = init session only.
+→ Tape /model <alias> directement dans le chat VS Code.
+V2 socket/IPC exclu définitivement (testé 2026-04-15, voir handoff v2-switch-vscode-invalidation).
 
 Usage:
     python3 scripts/switch_model.py <model> [pane_tmux]
