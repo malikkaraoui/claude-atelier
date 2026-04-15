@@ -47,7 +47,7 @@
       "Bash(cd *)",
       "Bash(python scripts/switch_model.py*)",
       "Bash(python3 scripts/switch_model.py*)",
-      "Bash(tmux send-keys*)"
+      "Bash(osascript*)"
     ],
     "_comment_deny": "Liste noire absolue. Jamais autorisee, peu importe le mode.",
     "deny": [

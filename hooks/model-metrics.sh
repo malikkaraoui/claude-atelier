@@ -49,6 +49,9 @@ model = sys.argv[2]
 LOW_TOOLS  = {'Read', 'Glob', 'Grep', 'NotebookRead', 'ListMcpResourcesTool', 'ReadMcpResourceTool'}
 HIGH_TOOLS = {'Agent', 'WebSearch', 'WebFetch'}
 # medium = tout le reste (Edit, Write, Bash, TodoWrite, ToolSearch, etc.)
+# NOTE: Bash est toujours medium — proxy grossier sur le mix d'outils observé,
+# pas une estimation de complexité réelle. Les sessions shell-intensives peuvent
+# produire des faux 🟢. V1 assumée comme heuristique, pas comme contrat.
 
 lines = []
 try:

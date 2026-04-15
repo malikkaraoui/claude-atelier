@@ -336,6 +336,22 @@ test('silencieux si pas de transcript', () => {
   ok(r.stdout.trim() === '', 'aucune sortie sans transcript');
 });
 
+test('format role/content (fallback) — sonnet + 5 tours Read → léger surplus 🟠', () => {
+  writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');
+  const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  // Format alternatif : {"role":"assistant","content":[...]}
+  const lines = [['Read'], ['Glob'], ['Grep'], ['Read'], ['Read']].map(tools =>
+    JSON.stringify({ role: 'assistant', content: tools.map((name, i) => ({ type: 'tool_use', id: `t${i}`, name, input: {} })) })
+  );
+  writeFileSync(transcript, lines.join('\n'));
+  const r = hook('model-metrics.sh', { transcript_path: transcript });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('[METRICS]'), '[METRICS] présent (format role/content)');
+  ok(r.stdout.includes('🟠'), 'pastille 🟠 pour léger surplus sonnet/low');
+  rmSync(dir, { recursive: true, force: true });
+});
+
 // ─────────────────────────────────────────────────────────────
 // Bilan
 // ─────────────────────────────────────────────────────────────
