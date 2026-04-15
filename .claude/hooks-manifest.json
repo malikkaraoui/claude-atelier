@@ -41,7 +41,7 @@
       "exitCodes": {
         "0": "always (silent capture)"
       },
-      "sha256": "4a52ec865b494425"
+      "sha256": "fc355cc058c8698d"
     },
     {
       "name": "routing-check",
@@ -63,7 +63,7 @@
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       },
-      "sha256": "b5e9e71966f62c74"
+      "sha256": "b9991dc7e9575336"
     },
     {
       "name": "guard-no-sign",
