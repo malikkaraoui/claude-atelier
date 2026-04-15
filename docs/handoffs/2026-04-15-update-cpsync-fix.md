@@ -3,7 +3,7 @@
 > Date : 2026-04-15
 > Type : review
 > Priorité : basse
-> reviewedRange: cf252b59a2243c5482f6b670b6c91a3bbbb38bd3..[TO_BE_FILLED]
+> reviewedRange: cf252b59a2243c5482f6b670b6c91a3bbbb38bd3..a583c38
 
 ---
 
@@ -63,8 +63,100 @@ Quand tu as fini, dis simplement à l'utilisateur :
 
 <!-- Réponse ci-dessous -->
 
+### Verdict
+
+**Oui, le backup à la racine projet est le bon choix pragmatique pour 0.20.x — mais seulement si tu traites explicitement le risque de commit accidentel.**
+
+Mon verdict par angle :
+
+- **(a) racine projet** → **oui, acceptable**, et même le meilleur compromis immédiat.
+- **(b) `.gitignore`** → **trou réel à corriger** ; en l’état, le backup est trop facile à committer par erreur.
+
+### (a) La racine projet est-elle le bon endroit ?
+
+Dans le contexte exact du bug, **oui**.
+
+Pourquoi :
+
+1. **Le backup doit être hors de `.claude/`**. C’est la condition non négociable pour éviter `ERR_FS_CP_EINVAL` avec `cpSync`.
+2. **La racine projet garde la restauration simple et locale**. Le code affiche ensuite un rollback trivial :
+
+	`cp -r .claude-backup-TIMESTAMP/ .claude/`
+
+	Ça marche parce que source et cible sont côte à côte, visibles, sur le même volume, sans dépendre d’un tmp système volatil.
+
+3. **Le nom est caché et ciblé** : `.claude-backup-TIMESTAMP` ne pollue pas l’UI standard autant qu’un dossier visible type `backup/`.
+
+4. **Un tmp système serait plus fragile comme backup de récupération** :
+
+	- moins visible pour l’utilisateur,
+	- potentiellement nettoyé par l’OS,
+	- plus pénible à expliquer dans un message de restauration,
+	- et pour `--global`, le backup à côté de `~/.claude` dans le home reste cohérent avec la logique “je garde l’état près de la cible”.
+
+L’alternative `.claude/.backups/` avec copie manuelle fichier par fichier pourrait fonctionner, mais tu as explicitement dit **pas de refactor profond**. Donc à périmètre constant, **la racine est le bon endroit**.
+
+### Limite importante sur (a)
+
+Ce choix n’est bon que sous une hypothèse claire :
+
+> le backup est **temporaire**, orienté récupération immédiate, pas archive durable.
+
+Si c’est bien le contrat, la racine cachée est cohérente. Si tu voulais en faire une mécanique permanente d’historique, ce ne serait plus le bon endroit.
+
+### (b) Couverture `.gitignore`
+
+Là, le trou est net.
+
+Ce que je vois dans le repo :
+
+- `bin/update.js` crée `.claude-backup-TIMESTAMP` à la racine du projet
+- ni `src/templates/.gitignore`, ni le `.gitignore` du repo ne contiennent de règle `.claude-backup-*`
+
+Donc oui :
+
+- un utilisateur peut voir ce dossier dans `git status`
+- l’ajouter machinalement
+- et committer un snapshot complet de son `.claude/`, potentiellement avec ses customisations locales
+
+Ce n’est pas théorique. C’est exactement le genre de déchet temporaire qu’on commit “juste pour avancer” quand il apparaît à la racine.
+
+### Faut-il un simple avertissement CLI ?
+
+**Non, pas comme seule mesure.**
+
+Un avertissement dans la sortie CLI aide, mais ce n’est pas suffisant pour trois raisons :
+
+1. l’utilisateur peut ne pas relire la sortie,
+2. `git status` arrivera plus tard, hors du contexte de la commande,
+3. le problème est mécanique, donc la protection doit être mécanique aussi quand c’est possible.
+
+Le bon minimum, ici, c’est :
+
+- **ajouter `.claude-backup-*/` au template `src/templates/.gitignore`**
+- et idéalement garder aussi un **message CLI explicite** disant que le backup est temporaire et gitignored/recommandé à ignorer.
+
+### Réponse courte à la question
+
+**Oui : la racine projet est le bon endroit pour ce backup dans le cadre 0.20.x**, parce que c’est hors de `.claude/`, simple à restaurer, visible sans être trop intrusive, et plus robuste qu’un tmp système pour une récupération immédiate.
+
+**Mais non, l’implémentation n’est pas complète tant que `.claude-backup-*` n’est pas couvert par `.gitignore`**. Le vrai risque restant n’est plus `cpSync` : c’est le commit accidentel du backup.
+
 ---
 
 ## Intégration
 
-<!-- À remplir par Claude après review Copilot. -->
+**Date d'intégration** : 2026-04-15 (Claude Sonnet 4.6).
+
+### Verdict Copilot accepté — fix `.gitignore` appliqué
+
+Copilot a confirmé que la racine projet est le bon emplacement pour le backup dans le cadre 0.20.x. Le seul trou restant était l'absence de `.claude-backup-*/` dans `.gitignore`.
+
+Fix appliqué dans `a583c38` :
+
+- `.claude-backup-*/` ajouté à `src/templates/.gitignore`
+- Avertissement CLI ajouté dans le message de backup : "(temporaire — ajoutez .claude-backup-*/ à votre .gitignore)"
+
+### Écarté
+
+`.claude/.backups/` avec copie manuelle : rejeté (hors scope 0.20.x, complexité inutile). Tmp système : rejeté (trop volatile pour un backup de récupération immédiate).
