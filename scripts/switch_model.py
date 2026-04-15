@@ -64,7 +64,10 @@ def switch_model(model: str, pane: str = "claude-session") -> bool:
         print(f"[ERROR] tmux send-keys: {r.stderr.strip()}", file=sys.stderr)
         return False
 
-    print(f"[OK] Switch → {model} injecté dans pane tmux '{pane}'")
+    print(
+        f"[INJECTED] /model {model} envoyé à pane tmux '{pane}' "
+        "(pas de preuve post-condition — vérifier le prochain [ROUTING])"
+    )
     return True
 
 

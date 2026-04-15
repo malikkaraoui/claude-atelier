@@ -6,6 +6,11 @@
 # La flèche (⬆️/⬇️/=) est lue par Claude pour construire la ligne §1.
 #
 # Ne bloque jamais — warning-only. Silencieux si pas de transcript.
+#
+# Biais connu (V1) : `Bash` est toujours classé `medium` sans analyse du contenu.
+# Les sessions shell-légères (ls/cat/git status/find) remontent donc en `medium`
+# au lieu de `low`. Signal = mix d'outils observés, pas coût réel du travail.
+# Accepté comme heuristique — ré-ingénierie reportée en V2+ si gênant en prod.
 
 _RAW_INPUT=$(cat)
 
