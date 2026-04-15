@@ -175,7 +175,7 @@ export async function runUpdate(argv) {
     const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
     backupPath = join(dirname(targetDir), `.claude-backup-${ts}`);
     cpSync(targetDir, backupPath, { recursive: true });
-    console.log(`${DIM}Backup → ${relative(process.cwd(), backupPath)}/${NC}\n`);
+    console.log(`${DIM}Backup → ${relative(process.cwd(), backupPath)}/ (temporaire — ajoutez .claude-backup-*/ à votre .gitignore)${NC}\n`);
   }
 
   // 2. Copy/merge all template files (skip backup dir as exclude)

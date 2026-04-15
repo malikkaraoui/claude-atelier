@@ -85,3 +85,4 @@ htmlcov/
 .claude/projects/
 .claude/todos/
 .claude/shell-snapshots/
+.claude-backup-*/
