@@ -1,7 +1,7 @@
 #!/bin/bash
 # Helper partagé — parse le JSON stdin des hooks Claude Code
 # Usage: source "$(dirname "$0")/_parse-input.sh"
-# Fournit: $HOOK_COMMAND, $HOOK_EXIT_CODE, $HOOK_FILE_PATH, $HOOK_MODEL, $HOOK_PROMPT, $HOOK_SESSION_ID
+# Fournit: $HOOK_COMMAND, $HOOK_EXIT_CODE, $HOOK_FILE_PATH, $HOOK_MODEL, $HOOK_PROMPT, $HOOK_SESSION_ID, $HOOK_SOURCE
 # shellcheck disable=SC2034
 # (variables consumées par les scripts qui sourcent — shellcheck ne les voit pas)
 
@@ -54,5 +54,14 @@ import sys, json
 try:
     d = json.load(sys.stdin)
     print(d.get('session_id', ''))
+except: pass
+" 2>/dev/null)
+
+# SessionStart sub-event : startup | resume | compact | clear
+HOOK_SOURCE=$(echo "$_HOOK_INPUT" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    print(d.get('source', ''))
 except: pass
 " 2>/dev/null)

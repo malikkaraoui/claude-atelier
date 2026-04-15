@@ -20,7 +20,7 @@ Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + comm
 
 ## §1 Horodatage + Modèle — EXIGENCE non négociable
 
-Extraire MODEL-ID de la ligne `[ROUTING] modèle actif: MODEL-ID` injectée par `routing-check.sh` (jamais du system prompt — stale).
+Extraire MODEL-ID de la ligne `[ROUTING] modèle actif: MODEL-ID` injectée par `routing-check.sh` (jamais du system prompt — stale). Priorité source : `live > cache > transcript`. Si `source: transcript`, signaler la fragilité (probable post-compaction).
 **Ta réponse DOIT commencer par cette ligne, AVANT tout texte ou tool call** : `` `[YYYY-MM-DD HH:MM:SS | MODEL-ID] PASTILLE` ``.
 La flèche (`⬆️`/`⬇️`/`=`) est extraite de la ligne `[METRICS]` injectée par `model-metrics.sh` — dernière valeur. `⬆️` = monter de modèle, `⬇️` = descendre, `=` = optimal. Si absente → omettre.
 L'horodatage du hook = contexte, **pas** ta sortie. Aucune exception. Modèle indispo → `[date estimée | modèle inconnu]`.

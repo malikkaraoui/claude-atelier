@@ -235,3 +235,66 @@ Copilot confirme que la feature tient et cible 3 fragilités réelles. Verdict r
 ### Prochain commit
 
 Actions 1 + 2 en un seul commit (cosmétique + doc). Actions 3 + 4 en pré-requis V2 socket, séparées.
+
+---
+
+## Bug #1 — Compaction corrompt le cache modèle (fondation)
+
+> Détecté 2026-04-15 15:30 — Malik
+
+### Symptôme
+
+Après `/compact`, le modèle affiché dans `[ROUTING]` ne reflète plus le modèle réel de la session. Exemple observé :
+
+- Malik sur Opus → `/compact` → hook affiche `claude-haiku-4-5` → cache écrasé avec mauvais modèle → `[METRICS] ⬆️ limite basse → /model sonnet` émis à tort.
+
+### Cause racine
+
+Dans [hooks/routing-check.sh:58](../../hooks/routing-check.sh#L68), la source `transcript` grep `Set model to claude-...` avec `tail -1`. Après compaction :
+
+- soit la ligne du dernier switch réel a été tronquée du résumé
+- soit une ligne antérieure `Set model to claude-haiku-...` remonte en `tail -1`
+
+Le fichier cache `/tmp/claude-atelier-current-model` est ensuite écrasé avec cette valeur stale. Toutes les sorties `[ROUTING]` et `[METRICS]` héritent du mauvais modèle.
+
+### Garde-fous proposés
+
+| # | Garde-fou | Efficacité | Coût |
+| --- | --- | --- | --- |
+| 1 | Hook `SessionStart:compact` qui **invalide** le cache (ne rien écrire tant que pas de source live) — prochain message affiche "modèle inconnu → tape /model" | 🟢 simple, robuste | ~10 lignes |
+| 2 | Inverser priorité : `live` > `cache` > `transcript` (au lieu de `live` > `transcript` > `cache`). Si Claude Code passe `model` dans le JSON input des hooks, c'est la vérité runtime. | 🟢 si live dispo | ~5 lignes |
+| 3 | Marqueur `/tmp/claude-atelier-post-compact-flag` créé par `SessionStart:compact` ; `routing-check.sh` ignore le transcript tant que ce flag existe (jusqu'au prochain `/model X` explicite) | 🟠 plus complexe | ~15 lignes |
+
+### Reco Claude : combiner 1 + 2
+
+- **1** couvre la fenêtre critique juste après compaction (pas d'écrasement cache avec valeur stale).
+- **2** préfère la vérité runtime (JSON `model` field) à la reconstitution fragile via transcript.
+
+### Décision requise (Malik)
+
+- [ ] Option 1 seule
+- [ ] Option 2 seule
+- [x] **Option 1 + 2 combinées (reco Claude)** — validé 2026-04-15 15:36
+- [ ] Option 3 seule
+- [ ] Autre
+
+### Implémentation (2026-04-15)
+
+- [x] **Garde-fou #1** — `hooks/session-model.sh` : `rm -f` du cache si `source == "compact"` et pas de `HOOK_MODEL` live
+- [x] **Garde-fou #2** — `hooks/routing-check.sh` : priorité inversée en `live > cache > transcript` + écriture cache **uniquement** si source `live` (transcript ne contamine plus)
+- [x] **`hooks/_parse-input.sh`** — `HOOK_SOURCE` ajouté (sub-event SessionStart)
+- [x] **Tests** — 2 nouveaux tests garde-fous (36/36 OK), 3 tests flèches fixés (`↑/↓` → `⬆️/⬇️`)
+- [x] **`hooks-manifest.json`** — sha256 sync
+
+Si le comportement se reproduit malgré ces 2 garde-fous → passer à **option 3** (flag `/tmp/claude-atelier-post-compact-flag`).
+
+### Impact sur V2 socket
+
+Non bloquant mais **lié** : si le modèle cache est corrompu, `switch_model.py` ne peut pas détecter si un `/model X` a eu effet (pas de post-condition). Un cache fiable est pré-requis pour une vraie vérification de switch en V2.
+
+### Fichiers impactés (estimation)
+
+- `hooks/routing-check.sh` : logique de priorité source modèle
+- `hooks/session-model.sh` (nouveau ou existant ?) : SessionStart:compact
+- `.claude/settings.json` : enregistrer hook SessionStart:compact si pas déjà
+- `test/hooks.js` : test simulant scénario post-compaction

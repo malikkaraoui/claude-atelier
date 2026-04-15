@@ -189,7 +189,7 @@ test('silencieux sur commande non-commit', () => {
 
 // ─────────────────────────────────────────────────────────────
 // session-model.sh + routing-check.sh
-// Règle §1 : modèle live > transcript > cache
+// Règle §1 : modèle live > cache > transcript (post bug-fix compaction)
 // ─────────────────────────────────────────────────────────────
 console.log('\n── session-model.sh + routing-check.sh ──');
 
@@ -252,6 +252,29 @@ test('routing-check alerte fort si aucun modèle n’est disponible', () => {
   ok(r.stdout.includes('🚨 [ROUTING] MODÈLE INCONNU'), 'alerte forte attendue');
 });
 
+test('garde-fou #1 : session-model à compact sans model invalide le cache', () => {
+  writeFileSync('/tmp/claude-atelier-current-model', 'claude-opus-4-6\n');
+  const r = hook('session-model.sh', { source: 'compact', hook_event_name: 'SessionStart' });
+  ok(r.status === 0, 'exit 0');
+  let cacheExists = true;
+  try { readFileSync('/tmp/claude-atelier-current-model', 'utf8'); } catch { cacheExists = false; }
+  ok(!cacheExists, 'cache supprimé post-compact sans model live');
+});
+
+test('garde-fou #2 : routing-check en source transcript n’écrase PAS le cache', () => {
+  resetRoutingEnv();
+  writeFileSync('/tmp/claude-atelier-current-model', 'claude-opus-4-6\n');
+  const dir = mkdtempSync(resolve(tmpdir(), 'claude-routing-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  writeFileSync(transcript, 'Set model to claude-haiku-4-5\n');
+  const r = hook('routing-check.sh', { prompt: 'audit', transcript_path: transcript });
+  ok(r.status === 0, 'exit 0');
+  // Nouvelle priorité : cache (opus) > transcript (haiku) donc source=cache et opus gagne
+  ok(r.stdout.includes('[ROUTING] source modèle: cache'), 'cache doit primer sur transcript');
+  ok(readFileSync('/tmp/claude-atelier-current-model', 'utf8').trim() === 'claude-opus-4-6', 'cache intact (pas écrasé)');
+  rmSync(dir, { recursive: true, force: true });
+});
+
 // ─────────────────────────────────────────────────────────────
 // guard-tests-before-push.sh — §11/§24 : tests avant push
 // ─────────────────────────────────────────────────────────────
@@ -290,7 +313,7 @@ function makeTranscript(dir, turns) {
   return transcript;
 }
 
-test('opus + 5 tours Read/Glob/Grep → surdimensionné ↓', () => {
+test('opus + 5 tours Read/Glob/Grep → surdimensionné ⬇️', () => {
   writeFileSync('/tmp/claude-atelier-current-model', 'claude-opus-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
   const transcript = makeTranscript(dir, [
@@ -299,12 +322,12 @@ test('opus + 5 tours Read/Glob/Grep → surdimensionné ↓', () => {
   const r = hook('model-metrics.sh', { transcript_path: transcript });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[METRICS]'), '[METRICS] présent');
-  ok(r.stdout.includes('↓'), 'flèche ↓ attendue (descendre)');
+  ok(r.stdout.includes('⬇️'), 'flèche ⬇️ attendue (descendre)');
   ok(r.stdout.includes('surdimensionné') || r.stdout.includes('/model sonnet'), 'verdict surdimensionné');
   rmSync(dir, { recursive: true, force: true });
 });
 
-test('haiku + 5 tours Agent/WebSearch → insuffisant ↑', () => {
+test('haiku + 5 tours Agent/WebSearch → insuffisant ⬆️', () => {
   const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
   const transcript = makeTranscript(dir, [
     ['Agent'], ['WebSearch'], ['Agent', 'WebFetch'], ['Agent'], ['WebSearch'],
@@ -312,7 +335,7 @@ test('haiku + 5 tours Agent/WebSearch → insuffisant ↑', () => {
   const r = hook('model-metrics.sh', { transcript_path: transcript, model: 'claude-haiku-4-5' });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[METRICS]'), '[METRICS] présent');
-  ok(r.stdout.includes('↑'), 'flèche ↑ pour insuffisant (monter)');
+  ok(r.stdout.includes('⬆️'), 'flèche ⬆️ pour insuffisant (monter)');
   ok(r.stdout.includes('insuffisant') || r.stdout.includes('/model opus'), 'verdict insuffisant');
   rmSync(dir, { recursive: true, force: true });
 });
@@ -336,7 +359,7 @@ test('silencieux si pas de transcript', () => {
   ok(r.stdout.trim() === '', 'aucune sortie sans transcript');
 });
 
-test('format role/content (fallback) — sonnet + 5 tours Read → léger surplus ↓', () => {
+test('format role/content (fallback) — sonnet + 5 tours Read → léger surplus ⬇️', () => {
   writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
   const transcript = resolve(dir, 'session.jsonl');
@@ -348,7 +371,7 @@ test('format role/content (fallback) — sonnet + 5 tours Read → léger surplu
   const r = hook('model-metrics.sh', { transcript_path: transcript });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[METRICS]'), '[METRICS] présent (format role/content)');
-  ok(r.stdout.includes('↓'), 'flèche ↓ pour léger surplus sonnet/low');
+  ok(r.stdout.includes('⬇️'), 'flèche ⬇️ pour léger surplus sonnet/low');
   rmSync(dir, { recursive: true, force: true });
 });
 

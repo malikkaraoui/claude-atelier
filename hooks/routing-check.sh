@@ -47,10 +47,21 @@ except: pass
 
 MODEL=""
 
+# Priorité : live > cache > transcript (garde-fou #2 anti-corruption post-compact).
+# Seule la source `live` écrit le cache — transcript trop fragile après compaction.
+
 if [ -n "$LIVE_MODEL" ]; then
   MODEL=$(normalize_model "$LIVE_MODEL")
   MODEL_SOURCE="live"
   printf '%s\n' "$MODEL" > "$MODEL_FILE"
+fi
+
+if [ -z "$MODEL" ]; then
+  CACHED=$(cat "$MODEL_FILE" 2>/dev/null || echo "")
+  if [ -n "$CACHED" ]; then
+    MODEL=$(normalize_model "$CACHED")
+    MODEL_SOURCE="cache"
+  fi
 fi
 
 if [ -z "$MODEL" ] && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
@@ -58,17 +69,12 @@ if [ -z "$MODEL" ] && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
   if [ -n "$LAST_MODEL_CHANGE" ]; then
     MODEL=$(normalize_model "$LAST_MODEL_CHANGE")
     MODEL_SOURCE="transcript"
-    printf '%s\n' "$MODEL" > "$MODEL_FILE"
+    # Pas d'écriture cache — source fragile, ne doit pas contaminer la lecture suivante.
   fi
 fi
 
 if [ -z "$MODEL" ]; then
-  MODEL=$(cat "$MODEL_FILE" 2>/dev/null || echo "")
-  if [ -n "$MODEL" ]; then
-    MODEL_SOURCE="cache"
-  else
-    MODEL="inconnu"
-  fi
+  MODEL="inconnu"
 fi
 
 # ===== HORODATAGE + MODÈLE (toujours en premier — machine time) =====

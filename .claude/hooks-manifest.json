@@ -22,7 +22,7 @@
       "exitCodes": {
         "0": "always (sourced, never executed standalone)"
       },
-      "sha256": "54caac1c09f3c8d2"
+      "sha256": "5acb5943e580af50"
     },
     {
       "name": "session-model",
@@ -41,7 +41,7 @@
       "exitCodes": {
         "0": "always (silent capture)"
       },
-      "sha256": "c87679e6522674d8"
+      "sha256": "4a52ec865b494425"
     },
     {
       "name": "routing-check",
@@ -63,7 +63,7 @@
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       },
-      "sha256": "b98f60c6827161c1"
+      "sha256": "fdda6dc83d8838e5"
     },
     {
       "name": "guard-no-sign",
