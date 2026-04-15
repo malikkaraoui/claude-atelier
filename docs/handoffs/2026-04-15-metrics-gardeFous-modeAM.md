@@ -3,7 +3,7 @@
 > Date : 2026-04-15
 > Type : review
 > Priorité : haute (infrastructure hooks critique)
-> reviewedRange: c281580..aef8c3e
+> reviewedRange: c281580..68d62806af514712c6b8987b69c9bdbdd1bec359
 
 ---
 
