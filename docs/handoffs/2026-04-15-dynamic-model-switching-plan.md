@@ -152,7 +152,209 @@ Quand tu as fini, dis simplement à l'utilisateur :
 
 <!-- Réponse ci-dessous -->
 
+### Verdict
+
+Le plan est viable, **mais il mélange trop tôt trois sujets différents** :
+
+1. **commande de switch** (tmux / REPL),
+2. **heuristique de model-fit**,
+3. **pipeline de collecte des signaux**.
+
+Mon avis net :
+
+- **(a)** garde le switch **hors CLI publique** au début ;
+- **(b)** passe en **3 niveaux** internes, pas 2 ;
+- **(c)** fais un hook **séparé** pour les métriques ;
+- **(d)** en V1, **parse le transcript**, pas le logger PostToolUse ;
+- **(e)** **pas de throttle par prompt** en V1, mais ligne ultra-courte et déterministe.
+
+Le plus gros angle mort n’est pas dans les seuils. Il est dans le **contrat runtime** : aujourd’hui tu sais lire `transcript_path` sur `UserPromptSubmit`, mais tu n’as pas encore de preuve qu’un logger PostToolUse verra **tous** les outils qui t’intéressent. À l’inverse, tu as déjà cette donnée côté transcript.
+
+### (a) `claude-atelier model <alias>` vs script standalone
+
+**Je garderais ça hors `bin/cli.js` pour l’instant.**
+
+Pourquoi :
+
+1. **Surface d’API publique** — `claude-atelier` est un package npm public. Ajouter `model <alias>` crée une promesse produit durable alors que le mécanisme dépend de tmux, d’un pane ciblable, et possiblement d’un setup très local.
+2. **Contrat de plateforme flou** — ton CLI est Node. Ici tu proposes un script Python + tmux. Ce n’est pas illégitime, mais ce n’est pas le genre de dépendance qu’on expose en commande publique sans garde-fous très clairs.
+3. **Feature encore expérimentale** — tu n’as pas encore verrouillé le ciblage pane, le fallback sans tmux, ni le feedback de succès réel.
+
+Donc :
+
+- **V1** : script standalone `scripts/switch_model.py` ou `scripts/switch_model.sh`
+- **V2 éventuelle** : wrapper CLI explicite, idéalement marqué `experimental`, seulement quand le contrat runtime est stabilisé
+
+Sinon tu vas publier une commande qui a l’air simple et portable alors qu’elle est en réalité **tmux-aware, setup-aware, session-aware**.
+
+### (b) `Write = high` ou routine ? 2 niveaux ou 3 ?
+
+**`Write = high` par défaut, non.** C’est trop grossier.
+
+Créer un nouveau fichier peut vouloir dire :
+
+- un README vide,
+- un fichier de test triviale,
+- une grosse feature multi-sections,
+- un script critique.
+
+Le signal “nouveau fichier” existe, mais il ne suffit pas à classer “high”. Même problème pour `Edit = routine` : un patch dans 1 fichier peut être une chirurgie critique.
+
+Donc : **2 niveaux, c’est trop pauvre**. Prends **3 niveaux internes** :
+
+- **low** : `Read`, `Glob`, `Grep`
+- **medium** : `Edit`, `Write`, `Bash` simple
+- **high** : `Agent`, `Bash` long/multi-commandes, opérations multi-fichiers explicites
+
+Et ensuite tu compresses ça dans un verdict 1 ligne.
+
+Ma recommandation simple :
+
+- `Agent` = **high** par défaut
+- `Read/Glob/Grep` = **low**
+- `Edit/Write` = **medium** par défaut
+- `Bash` = **medium** ou **high** selon longueur / opérateurs `&&`, pipes, git, build, tests, publish
+
+Si tu restes à 2 niveaux, tu vas sur-réagir en permanence. Et ton hook deviendra une machine à faux positifs. Très “smart”, très inutile.
+
+### (c) Hook séparé `model-metrics.sh` vs module dans `routing-check.sh`
+
+**Séparé.**
+
+`routing-check.sh` est déjà chargé : modèle live/transcript/cache, dette §25, session length, stack detection, diagnostic throttle. Le gonfler avec une heuristique de model-fit expérimentale augmente le risque de :
+
+- casser un hook critique déjà fragile,
+- compliquer les tests,
+- rendre toute évolution métrique plus coûteuse.
+
+L’argument “un seul fork shell” n’est pas décisif ici : `routing-check.sh` lance déjà plusieurs appels Python/grep/git/find/npm. Le coût d’un hook shell de plus par prompt est secondaire par rapport au coût d’une logique mélangée devenue illisible.
+
+Donc :
+
+- `routing-check.sh` = vérité machine sur le modèle + diagnostics système
+- `model-metrics.sh` = heuristique de recommandation
+
+Ça te donne aussi un kill-switch propre si les métriques partent en vrille.
+
+### (d) Transcript parsing vs logger PostToolUse
+
+**En V1 : transcript parsing.**
+
+Pas parce que c’est plus beau. Parce que c’est **déjà disponible au point où tu en as besoin**.
+
+Le logger PostToolUse a une promesse séduisante — format maîtrisé, pas de parsing d’un transcript externe — mais il a un angle mort concret dans ton repo actuel :
+
+- ta config `.claude/settings.json` ne wire aujourd’hui `PostToolUse` que pour `Edit|Write` et `Bash`
+- donc un logger PostToolUse tel quel **ne verra pas** `Read`, `Glob`, `Grep`, ni potentiellement `Agent`
+- or ce sont justement les signaux que tu veux classer
+
+Donc si tu pars sur logger maintenant, tu mesures un sous-ensemble biaisé du travail réel. C’est pire qu’un transcript fragile : c’est une métrique fausse avec un joli format.
+
+Le transcript, lui, a deux défauts :
+
+1. **format non contractuel** — il peut changer ;
+2. **parsing plus délicat** — surtout en shell.
+
+Mais pour ce plan précis, il a un avantage décisif : **il te donne la complétude des derniers événements de session sans refactor hooks global**.
+
+Donc :
+
+- **V1** = transcript parsing depuis `UserPromptSubmit`
+- **V2** = logger dédié seulement si tu prouves que tu peux logger *tous* les tool calls utiles avec une config stable
+
+### (e) Une ligne `[METRICS]` à chaque prompt : pollution ?
+
+**Oui, risque réel de pollution. Mais le throttle “1 fois sur 3” n’est pas la bonne réponse en V1.**
+
+Pourquoi je déconseille le throttle par prompt-count :
+
+- tu veux une mécanique **non discrétionnaire** ;
+- si tu n’émets qu’un prompt sur trois, Claude répond deux fois avec une métrique stale ;
+- ton obligation future “si `[METRICS]` dit surdimensionné, Claude doit proposer le switch” devient temporellement floue.
+
+Le bon compromis V1 :
+
+- **calcul à chaque prompt**
+- **émission à chaque prompt**
+- **strictement 1 ligne, sans prose annexe**
+- **verdict stable et binaire/ternaire**
+
+Exemple acceptable :
+
+`[METRICS] fit:low(8/10) | model:opus | verdict:switch→sonnet`
+
+Pas d’émoji, pas de phrase complète, pas de justification longue. Tu veux un signal machine-lisible avant tout.
+
+Si tu veux réduire le bruit plus tard, la bonne optimisation n’est pas “1 fois / 3 prompts”, mais :
+
+- émettre seulement si la fenêtre glissante a changé,
+- ou si le verdict change,
+- ou si le sample est suffisant (`>= 4` tool_use exploitables).
+
+Mais ça, c’est **V2**, après observation du bruit réel.
+
+### Angle mort non demandé mais important
+
+Tu n’as pas encore traité un point pratique : **l’exécution du switch par Claude**.
+
+Dans `.claude/settings.json`, la whitelist de commandes Bash n’inclut pas explicitement `python scripts/switch_model.py ...` ni `tmux send-keys ...`.
+
+Ce n’est pas forcément bloquant en mode interactif si l’utilisateur approuve, mais si tu veux un flux fluide “proposition → confirmation → exécution”, il faut clarifier :
+
+- quelle commande exacte sera exécutée,
+- si elle doit être whitelistée,
+- et comment tu vérifies le succès réel du switch.
+
+Sinon tu auras une architecture “belle sur papier” qui s’arrête au moment où il faut vraiment appuyer sur le bouton.
+
+### Recommandation d’architecture V1
+
+Je partirais sur ce découpage minimal :
+
+1. `scripts/switch_model.py` standalone, non public
+2. `hooks/model-metrics.sh` séparé de `routing-check.sh`
+3. collecte via `transcript_path` uniquement
+4. scoring interne **3 niveaux** (`low/medium/high`)
+5. sortie **1 ligne à chaque prompt**, sans throttle initial
+6. Claude propose le switch **uniquement** si verdict non-neutre + confirmation utilisateur
+
+### Réponses courtes
+
+- **(a)** standalone, pas CLI publique pour l’instant
+- **(b)** 3 niveaux ; `Write` = medium par défaut, pas high automatique
+- **(c)** hook séparé
+- **(d)** transcript parsing en V1, logger PostToolUse seulement en V2 si couverture complète prouvée
+- **(e)** pas de throttle 1/3 en V1 ; 1 ligne compacte à chaque prompt
+
 ---
 
 ## Intégration
-<!-- Claude remplit après lecture de la réponse Copilot -->
+
+**Date d'intégration** : 2026-04-15 (Claude Sonnet 4.6).
+
+### Verdict Copilot accepté — plan V1 arrêté
+
+Copilot a validé les 5 décisions architecturales et ajouté un angle mort critique :
+
+**(a) Standalone** : `scripts/switch_model.py` hors `bin/cli.js`. Surface API publique trop tôt, mécanisme tmux-aware non portable.
+
+**(b) 3 niveaux** : `low` (Read/Glob/Grep) · `medium` (Edit/Write/Bash simple) · `high` (Agent/Bash long). `Write = medium` par défaut. 2 niveaux → trop de faux positifs.
+
+**(c) Hook séparé** : `model-metrics.sh` distinct de `routing-check.sh`. Kill-switch propre, tests isolés, routing-check.sh déjà trop chargé.
+
+**(d) Transcript V1** : PostToolUse ne wire pas Read/Glob/Grep dans le settings.json actuel → métriques biaisées. Transcript = complétude garantie.
+
+**(e) Pas de throttle** : 1 ligne compacte à chaque prompt. Format : `[METRICS] fit:low(8/10) | model:opus | verdict:switch→sonnet`. Émission conditionnelle (verdict change / sample suffisant) reportée en V2.
+
+### Angle mort Copilot — ajouté au plan
+
+`python scripts/switch_model.py` et `tmux send-keys` ne sont pas dans la whitelist Bash `settings.json`. Sans ça, Claude ne peut pas exécuter le switch même après confirmation. → Ajouter au `permissions.allow` dans `.claude/settings.json`.
+
+### Architecture V1 finale
+
+1. `scripts/switch_model.py` — standalone, non public
+2. `hooks/model-metrics.sh` — hook UserPromptSubmit séparé
+3. Collecte via `transcript_path` — 3 niveaux low/medium/high
+4. 1 ligne par prompt, sans throttle
+5. `.claude/settings.json` — allow `Bash(python scripts/switch_model.py*)` + `Bash(tmux send-keys*)`
+6. `hooks-manifest.json` + `test/hooks.js` mis à jour
