@@ -1,5 +1,10 @@
 #!/bin/bash
 # Hook UserPromptSubmit — Model Routing + Détection stack + Diagnostic périodique
+#
+# HYPOTHÈSE V1 — mono-session : tous les fichiers /tmp/claude-atelier-* sont des
+# singletons globaux non scoppés par session_id. Avec plusieurs sessions ouvertes,
+# last-writer-wins s'applique (modèle, session_id, switch-mode). À adresser avant
+# V2 socket via cache nommé par session_id ou passage explicite de l'id à l'actionneur.
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 THROTTLE_FILE="/tmp/claude-atelier-diagnostic-last"

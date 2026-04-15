@@ -21,6 +21,9 @@ VALID_MODELS = ["opus", "sonnet", "haiku", "opusplan"]
 
 # Programmes full-screen qui absorberaient l'injection de façon indésirable
 _UNSAFE_COMMANDS = {"vim", "nvim", "less", "man", "nano", "more", "vi"}
+# GUARD PARTIEL : pane_current_command != programme unsafe ≠ "Claude Code tourne ici".
+# Un pane zsh ordinaire valide ce check. /model sera injecté dans le shell → perdu.
+# Vérifier [ROUTING] au message suivant pour confirmer le switch effectif.
 
 
 def _pane_current_command(pane: str) -> str:

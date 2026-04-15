@@ -4,6 +4,11 @@
 # Garde-fou #1 contre corruption cache post-compaction :
 # si source == "compact" et pas de HOOK_MODEL live → invalider le cache
 # pour éviter qu'une valeur stale (héritée du transcript tronqué) persiste.
+#
+# HYPOTHÈSE V1 — mono-session : CACHE_FILE est un singleton global non scoppé
+# par session_id. Avec 2 sessions simultanées, un compact de la session A peut
+# invalider le cache de la session B. Acceptable tant qu'une seule session est
+# active. À adresser avant V2 socket (cache par session_id).
 
 set -eu
 
