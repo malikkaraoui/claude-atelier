@@ -7,6 +7,7 @@ THROTTLE_SECONDS=1800  # 30 minutes
 
 # Lire le message utilisateur (JSON stdin) avec python3 pour un parsing fiable
 _RAW_INPUT=$(cat)
+
 PROMPT=$(echo "$_RAW_INPUT" | python3 -c "
 import sys, json
 try:

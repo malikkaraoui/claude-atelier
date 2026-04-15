@@ -22,7 +22,7 @@
       "exitCodes": {
         "0": "always (sourced, never executed standalone)"
       },
-      "sha256": "22e37ceb14ed4aaf"
+      "sha256": "54caac1c09f3c8d2"
     },
     {
       "name": "session-model",
@@ -63,7 +63,7 @@
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       },
-      "sha256": "859a040e766b94c6"
+      "sha256": "b98f60c6827161c1"
     },
     {
       "name": "guard-no-sign",
@@ -203,7 +203,7 @@
       "exitCodes": {
         "0": "always (warning only, never blocks)"
       },
-      "sha256": "e730e6e3ac982b34"
+      "sha256": "a16c75da0248b5fe"
     },
     {
       "name": "guard-hooks-reload",

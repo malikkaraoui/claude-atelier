@@ -46,8 +46,7 @@
       "Bash(chmod *)",
       "Bash(cd *)",
       "Bash(python scripts/switch_model.py*)",
-      "Bash(python3 scripts/switch_model.py*)",
-      "Bash(osascript*)"
+      "Bash(python3 scripts/switch_model.py*)"
     ],
     "_comment_deny": "Liste noire absolue. Jamais autorisee, peu importe le mode.",
     "deny": [

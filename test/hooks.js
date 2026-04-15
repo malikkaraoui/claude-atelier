@@ -290,7 +290,7 @@ function makeTranscript(dir, turns) {
   return transcript;
 }
 
-test('opus + 5 tours Read/Glob/Grep → surdimensionné 🔴', () => {
+test('opus + 5 tours Read/Glob/Grep → surdimensionné ↓', () => {
   writeFileSync('/tmp/claude-atelier-current-model', 'claude-opus-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
   const transcript = makeTranscript(dir, [
@@ -299,12 +299,12 @@ test('opus + 5 tours Read/Glob/Grep → surdimensionné 🔴', () => {
   const r = hook('model-metrics.sh', { transcript_path: transcript });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[METRICS]'), '[METRICS] présent');
-  ok(r.stdout.includes('🔴'), 'pastille 🔴 attendue');
+  ok(r.stdout.includes('↓'), 'flèche ↓ attendue (descendre)');
   ok(r.stdout.includes('surdimensionné') || r.stdout.includes('/model sonnet'), 'verdict surdimensionné');
   rmSync(dir, { recursive: true, force: true });
 });
 
-test('haiku + 5 tours Agent/WebSearch → insuffisant 🔴', () => {
+test('haiku + 5 tours Agent/WebSearch → insuffisant ↑', () => {
   const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
   const transcript = makeTranscript(dir, [
     ['Agent'], ['WebSearch'], ['Agent', 'WebFetch'], ['Agent'], ['WebSearch'],
@@ -312,12 +312,12 @@ test('haiku + 5 tours Agent/WebSearch → insuffisant 🔴', () => {
   const r = hook('model-metrics.sh', { transcript_path: transcript, model: 'claude-haiku-4-5' });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[METRICS]'), '[METRICS] présent');
-  ok(r.stdout.includes('🔴'), 'pastille 🔴 pour insuffisant');
+  ok(r.stdout.includes('↑'), 'flèche ↑ pour insuffisant (monter)');
   ok(r.stdout.includes('insuffisant') || r.stdout.includes('/model opus'), 'verdict insuffisant');
   rmSync(dir, { recursive: true, force: true });
 });
 
-test('sonnet + 5 tours Edit/Write → optimal 🟢', () => {
+test('sonnet + 5 tours Edit/Write → optimal =', () => {
   writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
   const transcript = makeTranscript(dir, [
@@ -326,7 +326,7 @@ test('sonnet + 5 tours Edit/Write → optimal 🟢', () => {
   const r = hook('model-metrics.sh', { transcript_path: transcript });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[METRICS]'), '[METRICS] présent');
-  ok(r.stdout.includes('🟢'), 'pastille 🟢 pour optimal');
+  ok(r.stdout.includes(' ='), 'flèche = pour optimal');
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -336,7 +336,7 @@ test('silencieux si pas de transcript', () => {
   ok(r.stdout.trim() === '', 'aucune sortie sans transcript');
 });
 
-test('format role/content (fallback) — sonnet + 5 tours Read → léger surplus 🟠', () => {
+test('format role/content (fallback) — sonnet + 5 tours Read → léger surplus ↓', () => {
   writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
   const transcript = resolve(dir, 'session.jsonl');
@@ -348,7 +348,7 @@ test('format role/content (fallback) — sonnet + 5 tours Read → léger surplu
   const r = hook('model-metrics.sh', { transcript_path: transcript });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[METRICS]'), '[METRICS] présent (format role/content)');
-  ok(r.stdout.includes('🟠'), 'pastille 🟠 pour léger surplus sonnet/low');
+  ok(r.stdout.includes('↓'), 'flèche ↓ pour léger surplus sonnet/low');
   rmSync(dir, { recursive: true, force: true });
 });
 

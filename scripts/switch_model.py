@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 """
-scripts/switch_model.py — Injecte /model <alias> dans la session Claude Code active.
+scripts/switch_model.py — Injecte /model <alias> dans un pane tmux Claude Code.
 
-Stratégie automatique par ordre de priorité :
-  1. tmux disponible  → tmux send-keys (terminal)
-  2. osascript (macOS) → simulation clavier dans VS Code (nécessite Accessibilité)
-  3. Aucun            → erreur explicite
+Fonctionne uniquement en mode terminal avec tmux.
+En mode VSCode, le focus Bash ne permet pas d'atteindre le chat Claude Code
+via simulation clavier — tape /model <alias> directement dans le chat.
 
 Usage:
     python3 scripts/switch_model.py <model> [pane_tmux]
 
 Modèles valides : opus | sonnet | haiku | opusplan
-
-Prérequis macOS (une seule fois) :
-    Réglages système → Confidentialité → Accessibilité → autoriser Terminal (ou VS Code)
+Pane            : ID ou nom de fenêtre tmux (défaut : claude-session)
 """
 
 import shutil
@@ -22,11 +19,9 @@ import sys
 
 VALID_MODELS = ["opus", "sonnet", "haiku", "opusplan"]
 
-# Programmes full-screen qui absorberaient l'injection de façon indésirable (tmux)
+# Programmes full-screen qui absorberaient l'injection de façon indésirable
 _UNSAFE_COMMANDS = {"vim", "nvim", "less", "man", "nano", "more", "vi"}
 
-
-# ── Backend tmux ──────────────────────────────────────────────────────────────
 
 def _pane_current_command(pane: str) -> str:
     r = subprocess.run(
@@ -36,61 +31,6 @@ def _pane_current_command(pane: str) -> str:
     return r.stdout.strip() if r.returncode == 0 else ""
 
 
-def _switch_via_tmux(model: str, pane: str) -> bool:
-    current_cmd = _pane_current_command(pane)
-    if current_cmd in _UNSAFE_COMMANDS:
-        print(
-            f"[ERROR] Pane '{pane}' est dans '{current_cmd}' — injection annulée. "
-            "Quitte l'éditeur puis relance.",
-            file=sys.stderr,
-        )
-        return False
-    r = subprocess.run(
-        ["tmux", "send-keys", "-t", pane, f"/model {model}", "Enter"],
-        capture_output=True, text=True,
-    )
-    if r.returncode != 0:
-        print(f"[ERROR] tmux send-keys: {r.stderr.strip()}", file=sys.stderr)
-        return False
-    print(f"[OK] Switch → {model} injecté dans pane tmux '{pane}'")
-    return True
-
-
-# ── Backend osascript (macOS / VS Code) ───────────────────────────────────────
-
-_OSASCRIPT_TEMPLATE = """\
-tell application "Visual Studio Code" to activate
-delay 0.4
-tell application "System Events"
-    tell process "Code"
-        keystroke "/model {model}"
-        key code 36
-    end tell
-end tell
-"""
-
-
-def _switch_via_osascript(model: str) -> bool:
-    script = _OSASCRIPT_TEMPLATE.format(model=model)
-    r = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
-    if r.returncode != 0:
-        err = r.stderr.strip()
-        if "not allowed" in err.lower() or "1002" in err or "-1719" in err or "-25211" in err or "saisies" in err:
-            print(
-                "[ERROR] Permissions Accessibilité manquantes.\n"
-                "→ Réglages système → Confidentialité & Sécurité → Accessibilité\n"
-                "→ Autoriser Terminal (ou l'application depuis laquelle tu lances ce script)",
-                file=sys.stderr,
-            )
-        else:
-            print(f"[ERROR] osascript: {err}", file=sys.stderr)
-        return False
-    print(f"[OK] Switch → {model} injecté via osascript (VS Code)")
-    return True
-
-
-# ── Point d'entrée ────────────────────────────────────────────────────────────
-
 def switch_model(model: str, pane: str = "claude-session") -> bool:
     if model not in VALID_MODELS:
         print(
@@ -99,19 +39,33 @@ def switch_model(model: str, pane: str = "claude-session") -> bool:
         )
         return False
 
-    if shutil.which("tmux"):
-        return _switch_via_tmux(model, pane)
+    if not shutil.which("tmux"):
+        print(
+            "[INFO] tmux non disponible (mode VSCode).\n"
+            f"→ Tape directement dans le chat : /model {model}",
+            file=sys.stderr,
+        )
+        return False
 
-    if shutil.which("osascript"):
-        return _switch_via_osascript(model)
+    current_cmd = _pane_current_command(pane)
+    if current_cmd in _UNSAFE_COMMANDS:
+        print(
+            f"[ERROR] Pane '{pane}' est dans '{current_cmd}' — injection annulée. "
+            "Quitte l'éditeur puis relance.",
+            file=sys.stderr,
+        )
+        return False
 
-    print(
-        "[ERROR] Ni tmux ni osascript disponible — switch impossible.\n"
-        "  tmux  : disponible en mode terminal\n"
-        "  osascript : disponible sur macOS",
-        file=sys.stderr,
+    r = subprocess.run(
+        ["tmux", "send-keys", "-t", pane, f"/model {model}", "Enter"],
+        capture_output=True, text=True,
     )
-    return False
+    if r.returncode != 0:
+        print(f"[ERROR] tmux send-keys: {r.stderr.strip()}", file=sys.stderr)
+        return False
+
+    print(f"[OK] Switch → {model} injecté dans pane tmux '{pane}'")
+    return True
 
 
 if __name__ == "__main__":

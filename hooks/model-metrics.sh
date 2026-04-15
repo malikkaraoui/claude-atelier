@@ -3,7 +3,7 @@
 #
 # Analyse les 5 derniers tours assistant dans le transcript JSONL.
 # Émet [METRICS] fit:VERDICT | model:MODEL | MESSAGE PASTILLE
-# La pastille (🟢/🟠/🔴) est lue par Claude pour construire la ligne §1.
+# La flèche (⬆️/⬇️/=) est lue par Claude pour construire la ligne §1.
 #
 # Ne bloque jamais — warning-only. Silencieux si pas de transcript.
 
@@ -124,18 +124,19 @@ else:
 
 # Verdict + pastille
 VERDICTS = {
-    ('high',   'opus'):   ('optimal',      '🟢', ''),
-    ('high',   'sonnet'): ('limite',        '🟠', '/model opus recommandé'),
-    ('high',   'haiku'):  ('insuffisant',   '🔴', 'tâches complexes → /model opus'),
-    ('medium', 'sonnet'): ('optimal',       '🟢', ''),
-    ('medium', 'haiku'):  ('limite basse',  '🟠', 'tâches standard → /model sonnet'),
-    ('medium', 'opus'):   ('léger surplus', '🟠', 'tâches standard → /model sonnet'),
-    ('low',    'haiku'):  ('optimal',       '🟢', ''),
-    ('low',    'sonnet'): ('léger surplus', '🟠', 'tâches simples → /model haiku'),
-    ('low',    'opus'):   ('surdimensionné','🔴', 'tâches simples → /model sonnet'),
+    # pastille : ⬆️ = monter de modèle, ⬇️ = descendre, = = optimal
+    ('high',   'opus'):   ('optimal',      '=', ''),
+    ('high',   'sonnet'): ('limite',        '⬆️', '/model opus recommandé'),
+    ('high',   'haiku'):  ('insuffisant',   '⬆️', 'tâches complexes → /model opus'),
+    ('medium', 'sonnet'): ('optimal',       '=', ''),
+    ('medium', 'haiku'):  ('limite basse',  '⬆️', 'tâches standard → /model sonnet'),
+    ('medium', 'opus'):   ('léger surplus', '⬇️', 'tâches standard → /model sonnet'),
+    ('low',    'haiku'):  ('optimal',       '=', ''),
+    ('low',    'sonnet'): ('léger surplus', '⬇️', 'tâches simples → /model haiku'),
+    ('low',    'opus'):   ('surdimensionné','⬇️', 'tâches simples → /model sonnet'),
 }
 
-verdict, pastille, suggestion = VERDICTS.get((complexity, tier), ('inconnu', '🟠', ''))
+verdict, pastille, suggestion = VERDICTS.get((complexity, tier), ('inconnu', '=', ''))
 detail = f"{HIGH_C}h/{MED_C}m/{LOW_C}l/{total}t"
 
 line = f"[METRICS] fit:{complexity}({detail}) | model:{model} | {verdict}"
