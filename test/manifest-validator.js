@@ -69,6 +69,23 @@ for (const hook of manifest.hooks) {
   }
 }
 
+// Check 4 : scan shell pour `exit 2`/`return 2` — ferme la faille de sous-déclaration
+// (Copilot 2026-04-15 : un hook peut devenir bloquant via exit 2 dans le shell
+// sans déclarer "2" dans manifest.exitCodes — validator restait vert. Plus maintenant.)
+const EXIT2_PATTERN = /^[^#]*\b(exit|return)\s+2\b/m;
+for (const hook of manifest.hooks) {
+  const abs = resolve(root, hook.file);
+  if (!existsSync(abs)) continue;
+  const src = readFileSync(abs, 'utf8');
+  // Strip line comments to éviter faux positifs sur "exit 2" cité dans un commentaire
+  const codeOnly = src.split('\n').map((l) => l.replace(/#.*$/, '')).join('\n');
+  const shellHasExit2 = EXIT2_PATTERN.test(codeOnly);
+  const manifestDeclaresExit2 = hook.exitCodes && Object.keys(hook.exitCodes).includes('2');
+  if (shellHasExit2 && !manifestDeclaresExit2) {
+    errors.push(`[shell-drift] ${hook.name} : le shell contient \`exit 2\`/\`return 2\` mais le manifest n'a pas \`exitCodes["2"]\` — sous-déclaration sémantique`);
+  }
+}
+
 if (errors.length > 0) {
   console.error('hooks-manifest.json : ADMISSION REFUSÉE');
   errors.forEach((e) => console.error(`  - ${e}`));
