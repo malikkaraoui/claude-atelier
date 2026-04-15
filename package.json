@@ -28,6 +28,7 @@
     "claude-atelier": "bin/cli.js"
   },
   "files": [
+    ".claude/",
     "bin/",
     "src/",
     "scripts/",
