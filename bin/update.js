@@ -173,14 +173,14 @@ export async function runUpdate(argv) {
   let backupPath = null;
   if (!opts.dryRun && existsSync(targetDir)) {
     const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
-    backupPath = join(targetDir, `.backup-${ts}`);
+    backupPath = join(dirname(targetDir), `.claude-backup-${ts}`);
     cpSync(targetDir, backupPath, { recursive: true });
     console.log(`${DIM}Backup → ${relative(process.cwd(), backupPath)}/${NC}\n`);
   }
 
   // 2. Copy/merge all template files (skip backup dir as exclude)
   const report = [];
-  copyDirRecursive(templateDir, targetDir, opts.dryRun, report, [`.backup-${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15)}`]);
+  copyDirRecursive(templateDir, targetDir, opts.dryRun, report);
 
   // 3. Print report grouped by tag
   const groups = { NEW: [], MERGED: [], UPDATED: [] };
@@ -205,7 +205,7 @@ export async function runUpdate(argv) {
   console.log(`${GREEN}✓ Mise à jour terminée.${NC}`);
   if (backupPath) {
     console.log(`${DIM}Backup conservé : ${relative(process.cwd(), backupPath)}/${NC}`);
-    console.log(`${DIM}Pour annuler : cp -r ${relative(process.cwd(), backupPath)}/* ${relative(process.cwd(), targetDir)}/${NC}`);
+    console.log(`${DIM}Pour annuler : cp -r ${relative(process.cwd(), backupPath)}/ ${relative(process.cwd(), targetDir)}/${NC}`);
   }
   console.log(`\nRun ${CYAN}claude-atelier doctor${NC} pour vérifier.\n`);
 
