@@ -44,7 +44,10 @@
       "Bash(ls *)",
       "Bash(cat /tmp/claude-atelier*)",
       "Bash(chmod *)",
-      "Bash(cd *)"
+      "Bash(cd *)",
+      "Bash(python scripts/switch_model.py*)",
+      "Bash(python3 scripts/switch_model.py*)",
+      "Bash(tmux send-keys*)"
     ],
     "_comment_deny": "Liste noire absolue. Jamais autorisee, peu importe le mode.",
     "deny": [
@@ -159,6 +162,10 @@
           {
             "type": "command",
             "command": "bash \"/Users/malik/Documents/claude-atelier/Claude instructions/hooks/routing-check.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"/Users/malik/Documents/claude-atelier/Claude instructions/hooks/model-metrics.sh\""
           }
         ]
       }

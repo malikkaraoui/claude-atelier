@@ -21,8 +21,7 @@ Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + comm
 ## §1 Horodatage + Modèle
 
 Le hook `routing-check.sh` injecte `[HORODATAGE] YYYY-MM-DD HH:MM:SS | model` à chaque message (heure machine, pas serveurs Anthropic).
-**Ouvrir chaque réponse avec cette ligne exacte** : `[YYYY-MM-DD HH:MM:SS | model]`.
-Si non disponible → `[date estimée | modèle inconnu]`.
+**Ouvrir chaque réponse avec cette ligne exacte** : `[YYYY-MM-DD HH:MM:SS | model] PASTILLE` (🟢/🟠/🔴 depuis `[METRICS]`, omettre si absent). Si non disponible → `[date estimée | modèle inconnu]`.
 
 ## §2 Langue & Ton
 
@@ -92,8 +91,8 @@ Stateless, idempotent, secrets externalisés, IaC, fail fast, tests locaux avant
 ## §15 Token Management → `../templates/settings.json`
 
 Input : ne pas relire un fichier déjà lu dans la session sauf si modifié. Settings consolidé (env + permissions + budget). Routing : Haiku exploration / Sonnet standard / Opus architecture. **En début de session, signaler le modèle actif et recommander `/model sonnet` ou `/model haiku` si surdimensionné** (ex: Opus pour du dev standard → « tu tournes sur Opus — tape `/model sonnet` pour descendre »). Compaction : `/compact` après explore, après feature, avant switch.
-
 **QMD-first** : pour tout fichier `.md` du projet, utiliser `mcp__qmd__get` ou `mcp__qmd__query` avant `Read`. `Read` sur un `.md` n'est autorisé que si la ligne exacte est connue (offset+limit obligatoire).
+**Auto-métriques** : `model-metrics.sh` émet `[METRICS]` à chaque message — mécanique, pas à ta discrétion. Lire la pastille, l'inclure en §1. Si l'utilisateur demande explicitement un switch ("passe sur haiku", "monte sur opus") : exécuter immédiatement `python3 scripts/switch_model.py <model> [pane]` sans attendre de proposition.
 
 ## §16 Orchestration → `./orchestration/`
 
