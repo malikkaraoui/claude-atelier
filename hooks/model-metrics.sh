@@ -130,13 +130,13 @@ else:
 # Verdict + pastille
 VERDICTS = {
     # pastille : ⬆️ = monter de modèle, ⬇️ = descendre, = = optimal
-    ('high',   'opus'):   ('optimal',      '=', ''),
+    ('high',   'opus'):   ('optimal',      '🟢', ''),
     ('high',   'sonnet'): ('limite',        '⬆️', '/model opus recommandé'),
     ('high',   'haiku'):  ('insuffisant',   '⬆️', 'tâches complexes → /model opus'),
-    ('medium', 'sonnet'): ('optimal',       '=', ''),
+    ('medium', 'sonnet'): ('optimal',       '🟢', ''),
     ('medium', 'haiku'):  ('limite basse',  '⬆️', 'tâches standard → /model sonnet'),
     ('medium', 'opus'):   ('léger surplus', '⬇️', 'tâches standard → /model sonnet'),
-    ('low',    'haiku'):  ('optimal',       '=', ''),
+    ('low',    'haiku'):  ('optimal',       '🟢', ''),
     ('low',    'sonnet'): ('léger surplus', '⬇️', 'tâches simples → /model haiku'),
     ('low',    'opus'):   ('surdimensionné','⬇️', 'tâches simples → /model sonnet'),
 }

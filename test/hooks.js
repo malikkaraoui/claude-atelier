@@ -340,7 +340,7 @@ test('haiku + 5 tours Agent/WebSearch → insuffisant ⬆️', () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-test('sonnet + 5 tours Edit/Write → optimal =', () => {
+test('sonnet + 5 tours Edit/Write → optimal 🟢', () => {
   writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
   const transcript = makeTranscript(dir, [
@@ -349,7 +349,7 @@ test('sonnet + 5 tours Edit/Write → optimal =', () => {
   const r = hook('model-metrics.sh', { transcript_path: transcript });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[METRICS]'), '[METRICS] présent');
-  ok(r.stdout.includes(' ='), 'flèche = pour optimal');
+  ok(r.stdout.includes('🟢'), 'pastille 🟢 pour optimal');
   rmSync(dir, { recursive: true, force: true });
 });
 
