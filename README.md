@@ -216,9 +216,28 @@ Permissions incluses par défaut : `Read`, `Edit`, `Write`, `Glob`, `Grep`, `git
 
 ---
 
-### Token Routing — Ne plus brûler son budget
+### Token Routing — Mode éco automatique
 
-Le hook `routing-check.sh` injecte le modèle actif à chaque message et recommande un switch si mismatch :
+Comme le mode éco d'une voiture : à chaque message, le système observe ce que tu fais et te dit si tu roules avec le bon moteur.
+
+```text
+`[2026-04-15 14:32:11 | claude-sonnet-4-6] 🟢 M`
+```
+
+**Trois pastilles — une seule lecture :**
+
+| Pastille | Signal | Exemple |
+| --- | --- | --- |
+| `🟢` | Modèle optimal pour la tâche en cours | Sonnet sur du dev standard |
+| `⬆️` | Tâche trop complexe — passe au modèle supérieur | Haiku sur de l'archi → monte sur Sonnet |
+| `⬇️` | Modèle surdimensionné — descends | Opus sur un `ls` → descends sur Haiku |
+
+Le hook `model-metrics.sh` analyse les 5 derniers tours d'assistant, classe les outils utilisés par complexité, et compare au tier du modèle actif. Résultat émis à chaque message — mécanique, pas à la discrétion du modèle.
+
+**Deux modes de switch :**
+
+- **Mode M (défaut)** — le modèle *propose*, tu valides. Fiable, aucun risque.
+- **Mode A (opt-in, terminal + tmux)** — switch automatique immédiat. `echo A > /tmp/claude-atelier-switch-mode` pour activer.
 
 ```text
 [ROUTING] modèle: claude-opus-4-6 | Opus→archi | Sonnet→dev | Haiku→exploration
@@ -542,9 +561,28 @@ Default permissions included: `Read`, `Edit`, `Write`, `Glob`, `Grep`, `git *`, 
 
 ---
 
-### Token Routing — Stop burning budget
+### Token Routing — Eco mode, automatic
 
-The `routing-check.sh` hook injects the active model on every message and recommends a switch if there's a mismatch:
+Like the eco mode on a car: every message, the system watches what you're doing and tells you if you're running on the right engine.
+
+```text
+`[2026-04-15 14:32:11 | claude-sonnet-4-6] 🟢 M`
+```
+
+**Three indicators — one glance:**
+
+| Indicator | Signal | Example |
+| --- | --- | --- |
+| `🟢` | Model is optimal for the current task | Sonnet on standard dev |
+| `⬆️` | Task is too complex — switch up | Haiku on architecture → go up to Sonnet |
+| `⬇️` | Model is oversized — switch down | Opus on a `ls` → drop to Haiku |
+
+The `model-metrics.sh` hook analyzes the last 5 assistant turns, classifies tools used by complexity, and compares against the active model tier. Emitted every message — mechanical, not at the model's discretion.
+
+**Two switch modes:**
+
+- **Mode M (default)** — the model *proposes*, you validate. Reliable, zero risk.
+- **Mode A (opt-in, terminal + tmux)** — immediate automatic switch. `echo A > /tmp/claude-atelier-switch-mode` to enable.
 
 | Model | Usage | Relative cost |
 | --- | --- | --- |
