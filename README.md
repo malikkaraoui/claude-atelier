@@ -20,6 +20,7 @@ Rails d'enforcement · 12 agents nommés · 14 skills · Mode nuit supervisé
 [![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/claude-atelier)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Token savings](https://img.shields.io/badge/token%20savings-up%20to%2090%25-brightgreen?style=flat-square)](https://claude-atelier.vercel.app/token-savings)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Malik%20Karaoui-0077B5?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/malik-karaoui/)
 
 **[📦 npm](https://www.npmjs.com/package/claude-atelier) · [📖 Docs](https://claude-atelier.vercel.app) · [📜 Philosophy](PHILOSOPHY.md) · [📊 Parity](PARITY.md) · [🐛 Issues](https://github.com/malikkaraoui/claude-atelier/issues)**
 
