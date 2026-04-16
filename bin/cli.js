@@ -21,6 +21,8 @@ const pkg = JSON.parse(
   readFileSync(join(__dirname, '..', 'package.json'), 'utf8')
 );
 
+// ⚠️  BLOC GÉNÉRÉ — ne pas éditer manuellement.
+// Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
 claude-atelier v0.20.7
 Opinionated Claude Code configuration: bilingual runtime rules, orchestration patterns, autonomy modes, security gates and stack-specific satellites. Installable via CLI.
