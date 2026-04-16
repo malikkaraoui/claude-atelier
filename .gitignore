@@ -65,3 +65,4 @@ workflow-vscode-xcode.md
 .claude/todos/
 .claude/shell-snapshots/
 watchdog-report-*.txt
+.claude/worktrees/
