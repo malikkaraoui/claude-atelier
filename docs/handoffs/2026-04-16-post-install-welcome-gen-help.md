@@ -3,7 +3,7 @@
 > Date : 2026-04-16
 > Type : review
 > Priorité : moyenne
-> reviewedRange: 68d62806af514712c6b8987b69c9bdbdd1bec359..bd3d69e
+> reviewedRange: 68d62806af514712c6b8987b69c9bdbdd1bec359..914aa5126e091e5cb9db6809d82a5d8060b7da92
 
 ---
 
@@ -62,12 +62,14 @@ Review l'ensemble du mécanisme post-install (les 3 nouveaux fichiers + leur câ
 
 ### Fichiers à lire
 
-- `bin/welcome.js` (161 lignes — logique classification + affichage)
-- `bin/post-install-checks.js` (39 lignes — npm audit + lint-npm-files)
-- `scripts/gen-help.js` (82 lignes — regex remplacement HELP)
-- `src/features.json` (37 lignes — source de vérité commandes)
-- `bin/init.js` (lignes ~229–260 — câblage post-setup-s0)
-- `bin/update.js` (lignes ~200–215 — câblage post-copy)
+```text
+bin/welcome.js                   (161 lignes — logique classification + affichage)
+bin/post-install-checks.js       (39 lignes — npm audit + lint-npm-files)
+scripts/gen-help.js              (82 lignes — regex remplacement HELP)
+src/features.json                (37 lignes — source de vérité commandes)
+bin/init.js                      (lignes ~229–260 — câblage post-setup-s0)
+bin/update.js                    (lignes ~200–215 — câblage post-copy)
+```
 
 ### Contraintes / hors scope
 
