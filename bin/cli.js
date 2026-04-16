@@ -22,27 +22,32 @@ const pkg = JSON.parse(
 );
 
 const HELP = `
-claude-atelier v${pkg.version}
-${pkg.description}
+claude-atelier v0.20.7
+Opinionated Claude Code configuration: bilingual runtime rules, orchestration patterns, autonomy modes, security gates and stack-specific satellites. Installable via CLI.
 
 Usage:
   claude-atelier <command> [options]
 
 Commands:
-  init              Install config into ./.claude/ (or ~/.claude/ with --global)
-  update            Update config, preserving project §0
-  doctor            Verify installation integrity
-  lint              Validate markdown references and CLAUDE core length
+  init              Installe la config dans ./.claude/ (ou ~/.claude/ avec --global)
+  update            Met à jour la config en préservant §0 et les customisations projet
+  doctor            Vérifie l'intégrité de l'installation
+  lint              Valide les références markdown et la longueur du core CLAUDE.md
 
 Options:
-  --version, -v     Print version and exit
-  --help, -h        Print this help and exit
-  --global          Target global config (~/.claude/) instead of project
-  --lang <fr|en>    Language (default: fr)
+  --version, -v       Affiche la version et quitte
+  --help, -h          Affiche l'aide et quitte
+  --global            Cible la config globale (~/.claude/) au lieu du projet
+  --lang <fr|en>      Langue (défaut : fr)
 
-Status:
-  Available: init, update, lint, doctor
-  Repo: ${pkg.homepage}
+Highlights:
+  • Runtime bilingue FR/EN avec règles de code et orchestration
+  • Gates de sécurité : secrets, lint, tests, pre-push
+  • Routing automatique Haiku/Sonnet/Opus selon la tâche
+  • Skills slash commands (/handoff, /angle-mort, /token-routing…)
+  • Hooks : horodatage, métriques, garde-fous commits
+
+Repo: https://github.com/malikkaraoui/claude-atelier#readme
 `;
 
 function runNodeScript(relativePath) {

@@ -22,6 +22,8 @@ import {
 import { dirname, join, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
+import { showWelcome } from './welcome.js';
+import { runPostInstallChecks } from './post-install-checks.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
@@ -202,12 +204,19 @@ export async function runUpdate(argv) {
     return 0;
   }
 
-  console.log(`${GREEN}✓ Mise à jour terminée.${NC}`);
   if (backupPath) {
     console.log(`${DIM}Backup conservé : ${relative(process.cwd(), backupPath)}/${NC}`);
-    console.log(`${DIM}Pour annuler : cp -r ${relative(process.cwd(), backupPath)}/ ${relative(process.cwd(), targetDir)}/${NC}`);
+    console.log(`${DIM}Pour annuler : cp -r ${relative(process.cwd(), backupPath)}/ ${relative(process.cwd(), targetDir)}/${NC}\n`);
   }
-  console.log(`\nRun ${CYAN}claude-atelier doctor${NC} pour vérifier.\n`);
+
+  // Post-install checks : npm audit + package.json#files
+  await runPostInstallChecks(process.cwd(), PKG_ROOT);
+
+  // Welcome screen adapté à l'état du projet
+  const claudeMd = opts.global
+    ? join(homedir(), '.claude', 'CLAUDE.md')
+    : join(process.cwd(), '.claude', 'CLAUDE.md');
+  await showWelcome({ claudeMdPath: claudeMd, projectRoot: process.cwd(), pkgRoot: PKG_ROOT, action: 'update' });
 
   return 0;
 }

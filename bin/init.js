@@ -14,6 +14,8 @@ import { dirname, join, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { execSync } from 'node:child_process';
+import { showWelcome } from './welcome.js';
+import { runPostInstallChecks } from './post-install-checks.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
@@ -227,8 +229,6 @@ export async function runInit(argv) {
   }
 
   if (!dryRun) {
-    console.log(`\n${GREEN}Done.${NC} Run ${CYAN}claude-atelier doctor${NC} to verify.`);
-
     // §0 + QMD interactive wizard
     if (!isGlobal) {
       const claudeMd = join(target, 'CLAUDE.md');
@@ -236,24 +236,22 @@ export async function runInit(argv) {
       await setupS0(claudeMd, process.cwd());
     }
 
-    // Post-install recommendations
-    const recommendations = [];
+    // Post-install checks : npm audit + package.json#files
+    await runPostInstallChecks(process.cwd(), PKG_ROOT);
 
-    // Check for newer version on npm
+    // Welcome screen adapté à l'état du projet
+    const claudeMdFinal = join(target, 'CLAUDE.md');
+    await showWelcome({ claudeMdPath: claudeMdFinal, projectRoot: process.cwd(), pkgRoot: PKG_ROOT, action: 'init' });
+
+    // Check for newer version (static command, no user input)
     try {
-      const pkg = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8'));
+      const pkgJson = JSON.parse(readFileSync(join(PKG_ROOT, 'package.json'), 'utf8'));
       const latest = execSync('npm view claude-atelier version 2>/dev/null', { encoding: 'utf8' }).trim();
-      if (latest && latest !== pkg.version) {
-        recommendations.push(`${YELLOW}[UPDATE]${NC}  claude-atelier ${pkg.version} → ${GREEN}${latest}${NC} disponible\n       ${CYAN}npm update claude-atelier${NC} ou ${CYAN}npx claude-atelier@latest init${NC}`);
+      if (latest && latest !== pkgJson.version) {
+        console.log(`${YELLOW}[UPDATE]${NC} claude-atelier ${pkgJson.version} → ${GREEN}${latest}${NC} disponible`);
+        console.log(`  ${CYAN}npm update claude-atelier${NC}\n`);
       }
     } catch (_) {}
-
-    if (recommendations.length > 0) {
-      console.log(`${CYAN}Recommandations post-install :${NC}\n`);
-      for (const r of recommendations) {
-        console.log(`  ${r}\n`);
-      }
-    }
   } else {
     console.log(`\n${YELLOW}DRY RUN complete.${NC} Remove --dry-run to install for real.\n`);
   }
