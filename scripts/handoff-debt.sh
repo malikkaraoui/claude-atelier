@@ -106,7 +106,7 @@ if [[ $LINES_ADDED -ge $THRESHOLD_LINES ]]; then
 fi
 if [[ $COMMITS_SINCE -ge $THRESHOLD_COMMITS ]]; then
   # On ne bloque que s'il y a aussi des commits feat/fix dedans
-  FEAT_COUNT=$(git -C "$REPO_ROOT" log "$RANGE" --format=%s 2>/dev/null | grep -cE "^(feat|fix|refactor)" || echo 0)
+  FEAT_COUNT=$(git -C "$REPO_ROOT" log "$RANGE" --format=%s 2>/dev/null | grep -cE "^(feat|fix|refactor)" || true)
   if [[ $FEAT_COUNT -gt 0 ]]; then
     EXCEEDS=true
     REASONS="${REASONS}commits($COMMITS_SINCE>=$THRESHOLD_COMMITS, $FEAT_COUNT feat/fix) "
