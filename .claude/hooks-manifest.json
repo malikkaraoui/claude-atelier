@@ -185,7 +185,7 @@
       "exitCodes": {
         "0": "always (suggestion only, never blocks)"
       },
-      "sha256": "824fec3d985b97c5"
+      "sha256": "9bdf27119658eac3"
     },
     {
       "name": "model-metrics",
