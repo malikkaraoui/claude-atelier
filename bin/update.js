@@ -159,19 +159,29 @@ function bridgeSkillsToGithub(claudeSkillsDir, projectRoot) {
   const githubSkillsDir = join(projectRoot, '.github', 'skills');
   if (!existsSync(githubSkillsDir)) mkdirSync(githubSkillsDir, { recursive: true });
 
+  let created = 0;
+  let skipped = 0;
+
   for (const entry of readdirSync(claudeSkillsDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const skillMd = join(claudeSkillsDir, entry.name, 'SKILL.md');
     if (!existsSync(skillMd)) continue;
 
     const linkPath = join(githubSkillsDir, `${entry.name}.md`);
-    if (existsSync(linkPath)) continue;
+    if (existsSync(linkPath)) { skipped++; continue; }
 
     try {
       symlinkSync(relative(githubSkillsDir, skillMd), linkPath);
     } catch (_) {
       copyFileSync(skillMd, linkPath);
     }
+    created++;
+  }
+
+  if (created > 0) {
+    console.log(`${GREEN}[BRIDGE]${NC} .github/skills/ — ${created} skill(s) liés`);
+  } else if (skipped > 0) {
+    console.log(`${YELLOW}[SKIP]${NC} .github/skills/ — ${skipped} skill(s) déjà présents`);
   }
 }
 
@@ -182,6 +192,7 @@ function copyAgentsMd(templatePath, destPath, dryRun, report) {
   const exists = existsSync(destPath);
   if (exists) {
     report.push({ tag: 'SKIP', path: destPath });
+    if (!dryRun) console.log(`\x1b[0;33m[SKIP]\x1b[0m AGENTS.md already exists (additive — not overwritten)`);
     return;
   }
   if (!dryRun) {
@@ -222,10 +233,12 @@ export async function runUpdate(argv) {
   const report = [];
   copyDirRecursive(templateDir, targetDir, opts.dryRun, report);
 
-  // 2b. AGENTS.md to project root (additive — never overwrite)
-  if (!opts.global) {
+  // 2b. AGENTS.md — additive copy to project root (or ~/.claude/ for global)
+  {
     const agentsMdSrc = join(PKG_ROOT, 'src', 'templates', 'AGENTS.md');
-    const agentsMdDest = join(process.cwd(), 'AGENTS.md');
+    const agentsMdDest = opts.global
+      ? join(homedir(), '.claude', 'AGENTS.md')
+      : join(process.cwd(), 'AGENTS.md');
     copyAgentsMd(agentsMdSrc, agentsMdDest, opts.dryRun, report);
   }
 

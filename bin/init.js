@@ -33,13 +33,16 @@ function bridgeSkillsToGithub(claudeSkillsDir, projectRoot) {
   const githubSkillsDir = join(projectRoot, '.github', 'skills');
   if (!existsSync(githubSkillsDir)) mkdirSync(githubSkillsDir, { recursive: true });
 
+  let created = 0;
+  let skipped = 0;
+
   for (const entry of readdirSync(claudeSkillsDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const skillMd = join(claudeSkillsDir, entry.name, 'SKILL.md');
     if (!existsSync(skillMd)) continue;
 
     const linkPath = join(githubSkillsDir, `${entry.name}.md`);
-    if (existsSync(linkPath)) continue;
+    if (existsSync(linkPath)) { skipped++; continue; }
 
     // Symlink (Unix) with copy fallback (Windows)
     try {
@@ -47,6 +50,13 @@ function bridgeSkillsToGithub(claudeSkillsDir, projectRoot) {
     } catch (_) {
       copyFileSync(skillMd, linkPath);
     }
+    created++;
+  }
+
+  if (created > 0) {
+    console.log(`${GREEN}[BRIDGE]${NC} .github/skills/ — ${created} skill(s) liés`);
+  } else if (skipped > 0) {
+    console.log(`${YELLOW}[SKIP]${NC} .github/skills/ — ${skipped} skill(s) déjà présents`);
   }
 }
 
@@ -269,7 +279,7 @@ export async function runInit(argv) {
   // 8b. Copy AGENTS.md to project root (cross-agent standard)
   const agentsMdSrc = join(PKG_ROOT, 'src', 'templates', 'AGENTS.md');
   const agentsMdDest = isGlobal
-    ? null
+    ? join(homedir(), '.claude', 'AGENTS.md')
     : join(process.cwd(), 'AGENTS.md');
   if (agentsMdDest && existsSync(agentsMdSrc) && !existsSync(agentsMdDest)) {
     if (!dryRun) {
