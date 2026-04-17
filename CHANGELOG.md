@@ -15,6 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Séréna, chef designer senior + MCP magic (21st.dev)
+
+- **`src/skills/design-senior/SKILL.md`** : nouveau skill Séréna — flow complet (vérif UI/UX Pro Max, onboarding clé API magic, design-first avant toute implémentation UI).
+- **`hooks/detect-design-need.sh`** : hook `UserPromptSubmit` — 30+ keywords design (charte, landing page, ui, ux, shadcn…). Propose `/design-senior` avec throttle session-scoped (flag `/tmp/` par hash de session).
+- **`src/templates/.mcp.json`** : template MCP avec `qmd` + `magic` (`@21st-dev/magic@latest`, clé via `${MAGIC_API_KEY}`).
+- **`src/templates/.env.example`** : guide clé API usage 21st.dev (`an_sk_...`, free tier 100 uses, gitignored).
+- **`bin/init.js`** : étapes 7 (merge `.mcp.json`) + 8 (copie `.env.example`) ajoutées à l'init.
+- **`src/skills/atelier-setup/SKILL.md`** : étape 5 (Séréna + magic), renumérotation BMAD→6, QMD→7, Résumé→8.
+- **Architecture deux clés distinctes** : clé MCP connexion (dans `~/.claude.json`, non critique) vs clé API usage `an_sk_...` (dans `.env`, gitignored, facturation 21st.dev).
+- **40/40 tests passent** (`node test/hooks.js`).
+
 ---
 
 ## [0.20.0] — 2026-04-14

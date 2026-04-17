@@ -73,7 +73,42 @@ Tape [OK] quand c'est fait, ou [SKIP] pour plus tard."
 
 Même approche — demander, fournir le prompt, attendre confirmation.
 
-### 5. BMAD-METHOD (optionnel)
+### 5. Séréna — Design Senior + MCP magic (optionnel)
+
+```text
+[ ] Skill design-senior installé
+[ ] MCP magic (21st.dev) configuré
+```
+
+Vérifier :
+```bash
+ls .claude/skills/design-senior/ 2>/dev/null && echo "OK" || echo "MISSING"
+grep -q "magic" ~/.claude.json 2>/dev/null || grep -q "magic" .mcp.json 2>/dev/null && echo "OK" || echo "MISSING"
+```
+
+Si skill absent → il sera copié au prochain `npx claude-atelier init`.
+
+Si MCP magic absent → proposer :
+
+"Séréna est la chef designer senior de l'atelier.
+Elle s'active automatiquement quand tu parles design, UI/UX, charte.
+
+Pour les composants UI premium, elle utilise le MCP **magic** (21st.dev).
+L'installation est gratuite, l'utilisation nécessite une clé API
+(free tier = 100 uses).
+
+**Installation rapide (scope user, tous les projets) :**
+```
+claude mcp add magic --scope user --env API_KEY=\"ta-clé\" -- npx -y @21st-dev/magic@latest
+```
+
+1. Créer un compte : https://21st.dev
+2. Générer une clé : https://21st.dev/agents/api-keys
+3. Lancer la commande ci-dessus avec ta clé
+
+[OUI] Installer magic | [SKIP] Continuer sans"
+
+### 6. BMAD-METHOD (optionnel)
 
 ```text
 [ ] BMAD-METHOD pour les gros projets
@@ -92,7 +127,7 @@ script, ce n'est pas nécessaire.
 
 Si oui → `npx bmad-method install` dans le projet.
 
-### 6. QMD (optionnel, conditionnel)
+### 7. QMD (optionnel, conditionnel)
 
 Compter les fichiers `.md` dans le projet :
 `find . -name '*.md' -not -path './.git/*' -not -path './node_modules/*' | wc -l`
@@ -107,7 +142,7 @@ pour retrouver du contexte rapidement (plans, bugs, reviews).
 
 Si oui → guider l'installation de QMD (voir `src/fr/ecosystem/qmd-integration.md`).
 
-### 7. Résumé
+### 8. Résumé
 
 Afficher le résumé final :
 
@@ -119,6 +154,7 @@ Afficher le résumé final :
 ║  [✅] Contexte projet §0 rempli                  ║
 ║  [✅] Night Watchdog 🐶 actif                    ║
 ║  [✅] Review Reminder actif                      ║
+║  [✅] Séréna + MCP magic configurés             ║
 ║  [—]  BMAD : non installé (petit projet)        ║
 ║  [—]  QMD : non installé (< 5 fichiers .md)     ║
 ╠══════════════════════════════════════════════════╣

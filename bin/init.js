@@ -219,6 +219,43 @@ export async function runInit(argv) {
     : join(process.cwd(), 'scripts');
   copyDirRecursive(scriptsSrc, scriptsDest, dryRun, copied);
 
+  // 7. Merge .mcp.json (MCP servers: qmd + magic)
+  const mcpTemplate = join(PKG_ROOT, 'src', 'templates', '.mcp.json');
+  const mcpDest = isGlobal
+    ? join(homedir(), '.mcp.json')
+    : join(process.cwd(), '.mcp.json');
+  if (existsSync(mcpTemplate)) {
+    if (dryRun) {
+      copied.push(existsSync(mcpDest) ? `${mcpDest} (merged)` : mcpDest);
+    } else {
+      const tpl = JSON.parse(readFileSync(mcpTemplate, 'utf8'));
+      let merged = tpl;
+      if (existsSync(mcpDest)) {
+        const existing = JSON.parse(readFileSync(mcpDest, 'utf8'));
+        merged = {
+          ...existing,
+          mcpServers: { ...tpl.mcpServers, ...(existing.mcpServers || {}) },
+        };
+      }
+      writeFileSync(mcpDest, JSON.stringify(merged, null, 2) + '\n');
+      copied.push(mcpDest);
+    }
+  }
+
+  // 8. Copy .env.example (guide pour les clés API)
+  const envExSrc = join(PKG_ROOT, 'src', 'templates', '.env.example');
+  const envExDest = isGlobal
+    ? null
+    : join(process.cwd(), '.env.example');
+  if (envExDest && existsSync(envExSrc) && !existsSync(envExDest)) {
+    if (!dryRun) {
+      copyFileSync(envExSrc, envExDest);
+    }
+    copied.push(envExDest);
+  } else if (envExDest && existsSync(envExDest)) {
+    console.log(`${YELLOW}[SKIP]${NC} .env.example already exists`);
+  }
+
   // Summary
   console.log(`\n${GREEN}${copied.length} files${NC} ${dryRun ? 'would be' : ''} installed:\n`);
   for (const f of copied) {

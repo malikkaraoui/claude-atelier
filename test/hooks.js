@@ -10,7 +10,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -373,6 +373,89 @@ test('format role/content (fallback) — sonnet + 5 tours Read → léger surplu
   ok(r.stdout.includes('[METRICS]'), '[METRICS] présent (format role/content)');
   ok(r.stdout.includes('⬇️'), 'flèche ⬇️ pour léger surplus sonnet/low');
   rmSync(dir, { recursive: true, force: true });
+});
+
+// ─────────────────────────────────────────────────────────────
+// detect-design-need.sh — Séréna auto-proposition
+// ─────────────────────────────────────────────────────────────
+console.log('\n── detect-design-need.sh ──');
+
+function resetSerenaFlag() {
+  for (const name of readdirSync('/tmp')) {
+    if (name.startsWith('claude-atelier-serena-proposed-')) {
+      try { rmSync(`/tmp/${name}`, { force: true }); } catch {}
+    }
+  }
+}
+
+test('détecte "landing page" et propose Séréna', () => {
+  resetSerenaFlag();
+  const r = hook('detect-design-need.sh', {
+    prompt: 'je veux créer une landing page pour mon SaaS',
+    session_id: 'serena-session-1'
+  });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('SÉRÉNA'), 'proposition Séréna présente');
+  ok(r.stdout.includes('/design-senior'), 'slash command mentionné');
+});
+
+test('détecte "charte graphique" et propose Séréna', () => {
+  resetSerenaFlag();
+  const r = hook('detect-design-need.sh', {
+    prompt: 'on doit refaire la charte graphique du projet',
+    session_id: 'serena-session-2'
+  });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('SÉRÉNA'), 'proposition Séréna présente');
+});
+
+test('throttle : pas de double proposition dans la même session', () => {
+  resetSerenaFlag();
+  hook('detect-design-need.sh', {
+    prompt: 'créer un dashboard ui',
+    session_id: 'serena-same-session'
+  });
+  const r2 = hook('detect-design-need.sh', {
+    prompt: 'ajoute un sidebar au design',
+    session_id: 'serena-same-session'
+  });
+  ok(r2.stdout.trim() === '', 'deuxième appel silencieux (throttle)');
+});
+
+test('sessions distinctes : la proposition repart une fois par session', () => {
+  resetSerenaFlag();
+  hook('detect-design-need.sh', {
+    prompt: 'créer un dashboard ui',
+    session_id: 'serena-session-a'
+  });
+  const r2 = hook('detect-design-need.sh', {
+    prompt: 'ajoute un sidebar au design',
+    session_id: 'serena-session-b'
+  });
+  ok(r2.stdout.includes('SÉRÉNA'), 'la nouvelle session doit reproposer Séréna');
+});
+
+test('fallback transcript_path : throttle isolé par transcript si session_id absent', () => {
+  resetSerenaFlag();
+  hook('detect-design-need.sh', {
+    prompt: 'je veux une hero section',
+    transcript_path: '/tmp/serena-transcript-a.jsonl'
+  });
+  const r2 = hook('detect-design-need.sh', {
+    prompt: 'je veux une hero section',
+    transcript_path: '/tmp/serena-transcript-b.jsonl'
+  });
+  ok(r2.stdout.includes('SÉRÉNA'), 'un transcript distinct ne doit pas être throttlé');
+});
+
+test('silencieux sur prompt sans rapport avec le design', () => {
+  resetSerenaFlag();
+  const r = hook('detect-design-need.sh', {
+    prompt: 'corrige le bug dans le hook routing-check',
+    session_id: 'serena-session-3'
+  });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.trim() === '', 'aucune sortie');
 });
 
 // ─────────────────────────────────────────────────────────────

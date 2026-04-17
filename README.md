@@ -14,11 +14,11 @@
 
 ## ⚡ From vibes to rails — Claude Code, disciplined
 
-Rails d'enforcement · 12 agents nommés · 14 skills · Mode nuit supervisé
+Rails d'enforcement · 13 agents nommés · 15 skills · Mode nuit supervisé
 
 [![npm version](https://img.shields.io/npm/v/claude-atelier.svg?style=flat-square&color=CB3837)](https://www.npmjs.com/package/claude-atelier)
 [![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/claude-atelier)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/license/MIT)
 [![Token savings](https://img.shields.io/badge/token%20savings-up%20to%2090%25-brightgreen?style=flat-square)](https://claude-atelier.vercel.app/token-savings)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Malik%20Karaoui-0077B5?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/malik-karaoui/)
 
@@ -134,8 +134,9 @@ Les règles critiques ne sont pas dans un README. Elles sont dans des hooks qui 
 | QMD-first : redirige `.md` → QMD | `guard-qmd-first.sh` PreToolUse | `Read` sur tout `.md` projet |
 | Longueur de session (300KB/600KB) | `routing-check.sh` UserPromptSubmit | Chaque message |
 | Suggestion Haiku (prompt court + mots d'exploration) | `routing-check.sh` UserPromptSubmit | Chaque message |
+| Détection besoin design → propose Séréna | `detect-design-need.sh` UserPromptSubmit | Chaque message |
 
-**Bilan : 14 rails / 16 règles.** Les 2 non automatisables (anti-hallucination, qualité code) relèvent du jugement du modèle.
+**Bilan : 15 rails / 16 règles.** Les 2 non automatisables (anti-hallucination, qualité code) relèvent du jugement du modèle.
 
 ---
 
@@ -157,6 +158,7 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 | **Camille** 🔥 | Firebase | `firebase.json`, `firestore.rules`, `functions/**`... | Règles Firestore, Auth providers, Emulator Suite, Secret Manager |
 | **Jeffrey** 🦙 | Ollama | `Modelfile`, `**/ollama*`... | Local first, quantization Q4/Q5/Q8, embeddings, API OpenAI-compat |
 | **Nael** 🔷 | JavaScript / TypeScript | `*.js`, `*.ts`, `*.tsx`, `*.mjs`... | Zéro `any`, zéro `var`, erreurs typées, Vitest/Playwright |
+| **Séréna** 🎨 | Design / UI/UX / Charte | `design`, `ui`, `ux`, `landing page`, `charte`... | Design-first : design system, palette, typo, composants 21st.dev (MCP magic) |
 
 *« Stay hungry, stay foolish — mais build depuis le Makefile. »* — Steve
 *« npm install — deux mots qui doivent toujours marcher. »* — Isaac
@@ -170,8 +172,9 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 *« Auth Google ? Un switch. Storage ? Un switch. Elle a pas le temps. »* — Camille
 *« Local first. Always. »* — Jeffrey
 *« Le compilateur ne pardonne pas. Moi non plus. »* — Nael
+*« Le code vient après. D'abord, on conçoit. »* — Séréna
 
-Steve et Isaac sont injectés via `routing-check.sh` sur détection de stack. Mohamed arrive via les hooks Challenger (`guard-review-auto.sh`) et le cross-session check. Amine vérifie que chaque feat commit inclut des tests — automatiquement, sans que tu aies à y penser.
+Steve et Isaac sont injectés via `routing-check.sh` sur détection de stack. Mohamed arrive via les hooks Challenger (`guard-review-auto.sh`) et le cross-session check. Amine vérifie que chaque feat commit inclut des tests — automatiquement, sans que tu aies à y penser. Séréna s'active via `detect-design-need.sh` dès qu'un besoin UI/UX/design est détecté dans le prompt.
 
 ---
 
@@ -261,11 +264,12 @@ Le hook `model-metrics.sh` analyse les 5 derniers tours d'assistant, classe les 
 
 ---
 
-### Skills — 14 slash commands
+### Skills — 15 slash commands
 
 ```text
 /atelier-help       → Oracle : état du projet + commandes disponibles
-/atelier-setup      → Onboarding interactif (7 étapes)
+/atelier-setup      → Onboarding interactif (8 étapes)
+/design-senior      → Séréna : chef designer senior, design-first (MCP magic 21st.dev)
 /atelier-doctor     → Diagnostic santé (25 checks · 8 catégories · --json)
 /angle-mort         → Review anti-complaisance avant release
 /audit-safe         → Audit sécurité (5 checks)
@@ -366,7 +370,7 @@ src/
 │   ├── runtime/       Flow, format, extended thinking, todo-session
 │   └── ecosystem/     Skills, plugins, hooks, memory, QMD, Hookify
 ├── stacks/            Satellites par stack (iOS, JS, Python, Java…)
-├── skills/            14 slash commands SKILL.md
+├── skills/            15 slash commands SKILL.md
 └── templates/         .gitignore, .claudeignore, settings.json
 
 .claude/hooks-manifest.json  Manifeste typé de tous les hooks (10 entrées)
@@ -481,6 +485,7 @@ Critical rules aren't in a README. They're in hooks that fire on every action.
 | QMD-first: redirect `.md` → QMD | `guard-qmd-first.sh` PreToolUse | `Read` on any project `.md` |
 | Session length (300KB/600KB) | `routing-check.sh` UserPromptSubmit | Every message |
 | Haiku suggestion (short prompt + exploration) | `routing-check.sh` UserPromptSubmit | Every message |
+| Design need detection → propose Séréna | `detect-design-need.sh` UserPromptSubmit | Every message |
 
 ---
 
@@ -502,6 +507,7 @@ When a specific domain is detected in your message, the atelier automatically lo
 | **Camille** 🔥 | Firebase | `firebase.json`, `firestore.rules`, `functions/**`... | Firestore rules, Auth providers, Emulator Suite, Secret Manager |
 | **Jeffrey** 🦙 | Ollama | `Modelfile`, `**/ollama*`... | Local first, Q4/Q5/Q8 quantization, embeddings, OpenAI-compat API |
 | **Nael** 🔷 | JavaScript / TypeScript | `*.js`, `*.ts`, `*.tsx`, `*.mjs`... | Zero `any`, zero `var`, typed errors, Vitest/Playwright |
+| **Séréna** 🎨 | Design / UI/UX / Brand | `design`, `ui`, `ux`, `landing page`, `brand`... | Design-first: design system, palette, typo, 21st.dev components (MCP magic) |
 
 *"Stay hungry, stay foolish — but build from the Makefile."* — Steve
 *"npm install — two words that must always work."* — Isaac
@@ -515,8 +521,9 @@ When a specific domain is detected in your message, the atelier automatically lo
 *"Auth Google? One switch. Storage? One switch. She doesn't have time."* — Camille
 *"Local first. Always."* — Jeffrey
 *"The compiler doesn't forgive. Neither do I."* — Nael
+*"Code comes after. First, we design."* — Séréna
 
-Steve and Isaac are injected via `routing-check.sh` on stack detection. Mohamed arrives via the Challenger hooks (`guard-review-auto.sh`) and the cross-session check. Amine verifies that every feat commit includes tests — automatically, no manual trigger.
+Steve and Isaac are injected via `routing-check.sh` on stack detection. Mohamed arrives via the Challenger hooks (`guard-review-auto.sh`) and the cross-session check. Amine verifies that every feat commit includes tests — automatically, no manual trigger. Séréna activates via `detect-design-need.sh` whenever a UI/UX/design need is detected in the prompt.
 
 ---
 
@@ -602,11 +609,12 @@ The `model-metrics.sh` hook analyzes the last 5 assistant turns, classifies tool
 
 ---
 
-### Skills — 14 slash commands (EN)
+### Skills — 15 slash commands (EN)
 
 ```text
 /atelier-help       → Oracle: project state + available commands
-/atelier-setup      → Interactive onboarding (7 steps)
+/atelier-setup      → Interactive onboarding (8 steps)
+/design-senior      → Séréna: senior design lead, design-first (MCP magic 21st.dev)
 /atelier-doctor     → Health diagnostic (25 checks · 8 categories · --json)
 /angle-mort         → Anti-complacency review before release
 /audit-safe         → Security audit (5 checks)

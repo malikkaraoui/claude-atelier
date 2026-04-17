@@ -219,7 +219,8 @@ Détails complets + scénarios + prompts → `src/fr/orchestration/parallelizati
 
 ```text
 /atelier-help       → Oracle : état du projet + commandes disponibles
-/atelier-setup      → Onboarding interactif (7 étapes)
+/atelier-setup      → Onboarding interactif (8 étapes)
+/design-senior      → Séréna : chef designer senior, design-first (MCP magic 21st.dev)
 /review-copilot     → Handoff review pour Copilot/GPT
 /integrate-review   → Ferme la boucle (lit réponse, trie, checklist)
 /angle-mort         → Review anti-complaisance avant release

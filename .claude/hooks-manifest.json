@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "version": "1.0.0",
   "description": "Manifeste typé de tous les hooks claude-atelier. Source de vérité — toute modif d'un hook doit synchroniser cette entrée. Vérifié par test/lint-hooks-manifest.js.",
-  "lastUpdated": "2026-04-15",
+  "lastUpdated": "2026-04-17",
   "hooks": [
     {
       "name": "_parse-input",
@@ -15,14 +15,17 @@
         "HOOK_EXIT_CODE",
         "HOOK_FILE_PATH",
         "HOOK_MODEL",
-        "HOOK_PROMPT"
+        "HOOK_PROMPT",
+        "HOOK_SESSION_ID",
+        "HOOK_TRANSCRIPT_PATH",
+        "HOOK_SOURCE"
       ],
       "rule": null,
       "test": null,
       "exitCodes": {
         "0": "always (sourced, never executed standalone)"
       },
-      "sha256": "5acb5943e580af50"
+      "sha256": "c732f4dcb16d3c13"
     },
     {
       "name": "session-model",
@@ -223,20 +226,41 @@
         "0": "always (warning only)"
       },
       "sha256": "fdc812990fe124ed"
+    },
+    {
+      "name": "detect-design-need",
+      "file": "hooks/detect-design-need.sh",
+      "type": "UserPromptSubmit",
+      "trigger": "every user prompt",
+      "purpose": "Détecte un besoin design/UI/UX dans le prompt et propose Séréna (chef designer senior). Throttle : 1 proposition par session.",
+      "inputs": [
+        "prompt",
+        "session_id",
+        "transcript_path"
+      ],
+      "outputs": [
+        "allow (exit 0) + injection suggestion Séréna si keywords détectés"
+      ],
+      "rule": "Skill design-senior — auto-proposition",
+      "test": "test/hooks.js → detect-design-need.sh",
+      "exitCodes": {
+        "0": "always (suggestion only, never blocks)"
+      },
+      "sha256": "7bd7bf903de5c239"
     }
   ],
   "stats": {
-    "total": 11,
+    "total": 12,
     "byType": {
       "helper": 1,
       "SessionStart": 1,
-      "UserPromptSubmit": 2,
+      "UserPromptSubmit": 3,
       "PreToolUse": 3,
       "PostToolUse": 3,
       "PreToolUse + PostToolUse": 1
     },
     "blocking": 3,
-    "warningOnly": 7,
+    "warningOnly": 8,
     "withTests": 3
   },
   "conventions": {
