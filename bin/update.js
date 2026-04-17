@@ -39,6 +39,7 @@ function parseArgs(argv) {
   return {
     global: args.includes('--global'),
     dryRun: args.includes('--dry-run'),
+    migrateAgentsMd: args.includes('--migrate-agents-md'),
   };
 }
 
@@ -175,6 +176,20 @@ function bridgeSkillsToGithub(claudeSkillsDir, projectRoot) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
+// ── AGENTS.md : additive copy — never overwrite existing ─────────────────────
+function copyAgentsMd(templatePath, destPath, dryRun, report) {
+  if (!existsSync(templatePath)) return;
+  const exists = existsSync(destPath);
+  if (exists) {
+    report.push({ tag: 'SKIP', path: destPath });
+    return;
+  }
+  if (!dryRun) {
+    copyFileSync(templatePath, destPath);
+  }
+  report.push({ tag: 'NEW', path: destPath });
+}
+
 export async function runUpdate(argv) {
   const opts = parseArgs(argv);
 
@@ -207,15 +222,22 @@ export async function runUpdate(argv) {
   const report = [];
   copyDirRecursive(templateDir, targetDir, opts.dryRun, report);
 
+  // 2b. AGENTS.md to project root (additive — never overwrite)
+  if (!opts.global) {
+    const agentsMdSrc = join(PKG_ROOT, 'src', 'templates', 'AGENTS.md');
+    const agentsMdDest = join(process.cwd(), 'AGENTS.md');
+    copyAgentsMd(agentsMdSrc, agentsMdDest, opts.dryRun, report);
+  }
+
   // 3. Print report grouped by tag
-  const groups = { NEW: [], MERGED: [], UPDATED: [] };
+  const groups = { NEW: [], MERGED: [], UPDATED: [], SKIP: [] };
   for (const { tag, path } of report) {
     const display = path.startsWith(process.cwd()) ? relative(process.cwd(), path) : path;
     groups[tag].push(display);
   }
 
   for (const [tag, files] of Object.entries(groups)) {
-    if (files.length === 0) continue;
+    if (files.length === 0 || tag === 'SKIP') continue;
     const color = tag === 'NEW' ? GREEN : tag === 'MERGED' ? CYAN : YELLOW;
     console.log(`${color}[${tag}]${NC} ${files.length} fichier(s) :`);
     files.forEach(f => console.log(`  ${DIM}${f}${NC}`));
@@ -230,6 +252,12 @@ export async function runUpdate(argv) {
   if (backupPath) {
     console.log(`${DIM}Backup conservé : ${relative(process.cwd(), backupPath)}/${NC}`);
     console.log(`${DIM}Pour annuler : cp -r ${relative(process.cwd(), backupPath)}/ ${relative(process.cwd(), targetDir)}/${NC}\n`);
+  }
+
+  // --migrate-agents-md : informational notice only
+  if (!opts.global && opts.migrateAgentsMd) {
+    console.log(`\n${CYAN}[--migrate-agents-md]${NC} Migration structurelle AGENTS.md activée.`);
+    console.log(`${YELLOW}Note :${NC} CLAUDE.md conservé tel quel — vérifier manuellement les sections dupliquées.\n`);
   }
 
   // Bridge .claude/skills/ → .github/skills/ (cross-agent standard)

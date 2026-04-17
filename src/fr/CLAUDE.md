@@ -1,6 +1,7 @@
-# CLAUDE.md — Core Runtime
+# CLAUDE.md — Delta Claude-specific
 
-> Cible ≤ 150 lignes · rechargé à chaque message · 2026-04-12 · détails hors core → `./rules/`, `./runtime/`, `./orchestration/`, `./autonomy/`, `./security/`, `./ecosystem/`, `../stacks/`, `../templates/`
+> Rechargé à chaque message · détails hors core → `./rules/`, `./runtime/`, `./orchestration/`, `./autonomy/`, `./security/`, `./ecosystem/`, `../stacks/`, `../templates/`
+> Règles communes à tous les agents → **`AGENTS.md`** (à la racine du projet)
 
 ## §0 Contexte projet actif
 
@@ -27,16 +28,9 @@ Le hook `routing-check.sh` injecte `[HORODATAGE] YYYY-MM-DD HH:MM:SS | model` à
 
 Français. Direct. Actionnable. Zéro pédagogie inutile. Pas de preamble, hedge ni platitude. Mise en scène contextuelle → `./runtime/theatre.md` (5 figures, micro-ouvertures sur moments forts uniquement).
 
-## §3 Flow de traitement
+## §3 Flow de traitement → `AGENTS.md`
 
-**Explore → Plan → Implement → Verify.**
-
-- **Explore** : fichiers concernés uniquement (subagent Haiku si large)
-- **Plan** : impacts + dépendances avant d'écrire
-- **Implement** : minimal viable · Edit ciblé toujours — jamais réécriture complète si > 20 lignes non modifiées
-- **Verify** : tests + gate pré-push
-
-Mode rapide (< 2 fichiers, non critique) : Implement → Verify seulement. `Shift+Tab × 2` = Plan Mode.
+Voir `AGENTS.md` (règle commune). Spécificité Claude : subagent Haiku si explore large. `Shift+Tab × 2` = Plan Mode.
 
 ## §4 Format de réponse
 
@@ -46,47 +40,31 @@ Mode rapide (< 2 fichiers, non critique) : Implement → Verify seulement. `Shif
 
 Outils : checklists, tableaux, blocs copier-coller.
 
-## §5 Anti-hallucination — règle absolue
+## §5 Anti-hallucination → `AGENTS.md` (absolu)
 
-Interdit d'inventer : faits, commandes, API, options, chiffres, comportements non vus.
-Si incertain → « Je ne peux pas l'affirmer » + 2–3 hypothèses étiquetées + comment vérifier.
-Info récente ou instable → signaler explicitement.
+## §6 Gestion des erreurs → `AGENTS.md`
 
-## §6 Gestion des erreurs
+## §7 Qualité du code → `AGENTS.md`
 
-Une tentative corrective directe. Échec → changer d'approche, jamais itérer à l'identique. Produire hypothèses + points de rupture + stratégie alternative.
+## §8 Anti-patterns → `AGENTS.md`
 
-## §7 Qualité du code
-
-Prêt prod, pas sur-ingénié : validation d'inputs, erreurs propres, logs utiles, commentaires si non trivial. Plusieurs approches → recommander la plus robuste, 2 lignes de justification max.
-
-## §8 Anti-patterns
-
-Refus : duplication, sur-ingénierie, optimisation prématurée, fonctions > 30 lignes sans raison, logique dispersée. Règle : logique réutilisée ≥ 2 fois → extraire.
-
-## §9 Architecture → `../templates/project-structure.md`
-
-Template par défaut : `/core` · `/modules` · `/services` · `/utils` · `/tests`. Projets opinionnés (Next.js, Django…) → suivre la convention du framework.
+## §9 Architecture → `AGENTS.md` + `../templates/project-structure.md`
 
 ## §10 Standards par stack → `../stacks/`
 
 Chargement conditionnel selon §0 « Stack ». Disponibles : `javascript` · `python` · `java` · `react-vite` · `firebase` · `docker` · `ollama` · `ios-xcode`.
 
-## §11 Tests
+## §11 Tests → `AGENTS.md`
 
-Obligatoires si logique métier, transformation, comportement critique. Couvrir nominal + edge cases + erreurs. Pour tout hook : ajouter/mettre à jour `test/hooks.js`. `npm test` doit passer avant chaque push.
+Spécificité Claude : pour tout hook, MAJ `test/hooks.js` + `.claude/hooks-manifest.json`.
 
-## §12 Code Review → `./runtime/code-review.md`
+## §12 Code Review → `AGENTS.md` + `./runtime/code-review.md`
 
-Déclenchement : après feature, audit global, blocage. **§5 prime** : jamais de critique inventée pour remplir une section.
+## §13 Git Workflow → `AGENTS.md`
 
-## §13 Git Workflow
+Spécificité Claude : `git push` précédé de la gate (§24).
 
-Commits atomiques, messages en français, **jamais signer** (pas de trailer `Co-Authored-By`). Checkpoint avant action risquée. `git push` toujours précédé de la gate (§24).
-
-## §14 Cloud / CI-CD
-
-Stateless, idempotent, secrets externalisés, IaC, fail fast, tests locaux avant déploiement.
+## §14 Cloud / CI-CD → `AGENTS.md`
 
 ## §15 Token Management → `../templates/settings.json`
 

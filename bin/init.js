@@ -266,6 +266,20 @@ export async function runInit(argv) {
     }
   }
 
+  // 8b. Copy AGENTS.md to project root (cross-agent standard)
+  const agentsMdSrc = join(PKG_ROOT, 'src', 'templates', 'AGENTS.md');
+  const agentsMdDest = isGlobal
+    ? null
+    : join(process.cwd(), 'AGENTS.md');
+  if (agentsMdDest && existsSync(agentsMdSrc) && !existsSync(agentsMdDest)) {
+    if (!dryRun) {
+      copyFileSync(agentsMdSrc, agentsMdDest);
+    }
+    copied.push(agentsMdDest);
+  } else if (agentsMdDest && existsSync(agentsMdDest)) {
+    console.log(`${YELLOW}[SKIP]${NC} AGENTS.md already exists`);
+  }
+
   // 8. Copy .env.example (guide pour les clés API)
   const envExSrc = join(PKG_ROOT, 'src', 'templates', '.env.example');
   const envExDest = isGlobal
