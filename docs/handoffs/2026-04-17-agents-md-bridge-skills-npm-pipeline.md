@@ -3,7 +3,7 @@
 > Date : 2026-04-17
 > Type : review
 > Priorité : moyenne
-> reviewedRange: 706892ced5edd1687fd6aa5427e4ddbb14f9c24e..7fe0be1f5bba8453fdc286b9da66f884b73e964b
+> reviewedRange: 706892ced5edd1687fd6aa5427e4ddbb14f9c24e..c2d9bfab2d00855696096cd2ba5c0cbe8ac6a47c
 
 ---
 
@@ -28,7 +28,7 @@
 - `bin/init.js` : copie `AGENTS.md` à la racine des nouveaux projets (skip si existe)
 - `bin/update.js` : copie `AGENTS.md` additivement + flag `--migrate-agents-md` pour migration opt-in
 
-### Questions précises
+### Question précise
 
 **1. Bridge skills symlinks — robustesse**
 
