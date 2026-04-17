@@ -18,6 +18,24 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m'
 
+# ─── 0/6 Remote sync check ────────────────────────────────────────────────────
+# Si le remote a des commits que le local n'a pas, les intégrer maintenant
+# plutôt que de se faire rejeter après 6 checks.
+if git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+    git fetch --quiet 2>/dev/null || true
+    LOCAL=$(git rev-parse HEAD 2>/dev/null)
+    REMOTE=$(git rev-parse '@{u}' 2>/dev/null || echo "$LOCAL")
+    BASE=$(git merge-base "$LOCAL" "$REMOTE" 2>/dev/null || echo "$LOCAL")
+    if [[ "$LOCAL" != "$REMOTE" && "$BASE" == "$LOCAL" ]]; then
+        echo -e "${YELLOW}[SYNC]${NC} Remote a des commits non intégrés — rebase automatique..."
+        git pull --rebase --quiet 2>/dev/null || {
+            echo -e "${RED}[FAIL]${NC} Rebase échoué — résous les conflits puis relance."
+            exit 1
+        }
+        echo -e "${GREEN}[SYNC]${NC} Rebase OK — local à jour avec remote."
+    fi
+fi
+
 # ─── Auto-sync SECURITY.md ────────────────────────────────────────────────────
 if [[ -f "scripts/update-security.js" ]] && [[ -f "package.json" ]]; then
     node scripts/update-security.js 2>/dev/null || true
