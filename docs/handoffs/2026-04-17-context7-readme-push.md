@@ -3,7 +3,7 @@
 > Date : 2026-04-17
 > Type : review
 > Priorité : moyenne
-> reviewedRange: 92ac9d6ccf3407059c20b7a3c452c14a2eccd87c..17fe356f52165d8ff0e414922b3349682eea9f4a
+> reviewedRange: 92ac9d6ccf3407059c20b7a3c452c14a2eccd87c..9255ad527c5d9fe885ee31b08b47dfb67856abc5
 
 ---
 
@@ -13,17 +13,21 @@
 
 Suite du handoff context7-mapping. Copilot a ajouté la mise en avant du Context7 dynamique dans le README (FR/EN), CHANGELOG et methodology.md. Claude a ensuite livré le satellite context7-mapping.md, durci le template handoff (GPT = reviewer only), et compressé CLAUDE.md.
 
-### Fichiers modifiés
+### Question précise
+
+Review du lot complet : la mise en avant du Context7 dynamique dans le README est-elle fidèle au mécanisme réel ? Les changements CLAUDE.md, satellite context7-mapping, et durcissement handoff GPT boundary sont-ils cohérents entre eux et avec le reste du repo ?
+
+### Fichiers à lire
 
 ```
-README.md                              — hero + killer bundle + section FR/EN Context7
-CHANGELOG.md                           — entrée Unreleased
-docs/methodology.md                    — bloc ingénierie contexte dynamique
-.claude/CLAUDE.md                      — §0 obligation + logbook + compression
-.claude/ecosystem/context7-mapping.md  — nouveau satellite
-.claude/skills/review-copilot/SKILL.md — GPT boundary (5 instructions)
-src/skills/review-copilot/SKILL.md     — sync
-SECURITY.md                            — bump 0.21.x
+README.md
+CHANGELOG.md
+docs/methodology.md
+.claude/CLAUDE.md
+.claude/ecosystem/context7-mapping.md
+.claude/skills/review-copilot/SKILL.md
+src/skills/review-copilot/SKILL.md
+SECURITY.md
 ```
 
 ### Contraintes / hors scope
