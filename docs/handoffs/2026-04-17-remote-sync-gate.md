@@ -41,7 +41,90 @@ scripts/handoff-debt.sh
 5. Tu peux **seulement ajouter du contenu sous `## Réponse de : Copilot/GPT`**. Tu ne modifies aucune autre section existante du fichier.
 6. Quand tu as fini, dis : "J'ai répondu dans docs/handoffs/2026-04-17-remote-sync-gate.md."
 
+### Verdict rapide
+
+Le step 0/6 est **utile**, mais **pas encore totalement robuste**. Il couvre bien le cas simple *"remote ahead, local clean, rebase trivial"*. Il couvre mal les cas de **divergence réelle**, de **working tree sale**, ou de **conflits de rebase** parce qu'il échoue de manière assez opaque.
+
+### Ce que le step fait bien
+
+1. **Détection du cas simple remote-ahead**
+	- `LOCAL != REMOTE`
+	- `BASE == LOCAL`
+	→ donc le local est strictement derrière le remote
+	→ `git pull --rebase` est cohérent.
+
+2. **Pas de rebase si pas d'upstream**
+	Le guard `git rev-parse ... '@{u}'` évite de casser les branches sans tracking branch.
+
+3. **Blocage immédiat si le rebase échoue**
+	En cas d'échec, la gate s'arrête avant les checks. C'est mieux que de lancer lint/tests sur un état git ambigu.
+
+### Ce qui n'est pas robuste
+
+1. **Cas de divergence locale + remote**
+	Si le local et le remote ont chacun avancé (`LOCAL != REMOTE` et `BASE != LOCAL`), le step ne fait rien. Il passe silencieusement à la suite, alors que le push a de fortes chances d'être rejeté plus tard.
+   
+	Donc aujourd'hui, le step 0/6 ne gère pas vraiment le cas "non-fast-forward" général ; il gère seulement le sous-cas **remote ahead pur**.
+
+2. **Conflits de rebase = message trop flou**
+	En cas de conflit, ou même simplement d'impossibilité de lancer le rebase (`working tree` sale, index non propre, fichier non tracké bloquant), tu tombes sur :
+   
+	`Rebase échoué — résous les conflits puis relance.`
+   
+	Le problème : ce message fusionne plusieurs causes différentes sous le mot "conflits".
+
+3. **stderr masqué**
+	`git pull --rebase --quiet 2>/dev/null` supprime les détails utiles :
+	- fichier en conflit
+	- rebase déjà en cours
+	- modifications non commités
+	- untracked files would be overwritten
+   
+	Résultat : le step échoue proprement, mais **diagnostique mal**.
+
+4. **`git fetch` silencieux avec `|| true`**
+	Si le fetch échoue (réseau, auth, remote temporairement indispo), le script continue quand même avec une vision potentiellement stale du remote. Ce n'est pas catastrophique, mais ce n'est pas robuste non plus : un step de sync qui ignore un échec de fetch perd sa source de vérité.
+
+### Que se passe-t-il en cas de conflits ?
+
+Concrètement, avec l'état actuel :
+
+1. `git pull --rebase` démarre
+2. Si Git rencontre un conflit ou refuse le rebase, la commande sort en non-zéro
+3. Le bloc `|| { ... exit 1; }` s'exécute
+4. La gate s'arrête immédiatement
+5. **Le repo peut rester en état de rebase interrompu** (`.git/rebase-merge`, conflits marqués dans les fichiers)
+
+Donc oui, le `exit 1` bloque bien le push, mais **il ne nettoie rien**. L'utilisateur doit ensuite faire lui-même : résolution + `git rebase --continue`, ou abandon via `git rebase --abort`.
+
+### Sur le lien avec `handoff-debt.sh`
+
+Le fix `grep -cE ... || true` est correct et indépendant du step 0/6. Il ferme un vrai bug bash et évite les erreurs de test arithmétique. Je ne vois pas de nouvel angle spécifique entre ce fix et l'auto-rebase.
+
+### Conclusion
+
+Le step 0/6 est **bon comme amortisseur de cas simple**, pas encore comme mécanisme de sync robuste. En cas de conflits, la gate bloque bien, mais laisse l'utilisateur dans un état git potentiellement interrompu avec très peu d'informations. Le vrai angle mort, c'est moins le `exit 1` que le **silence sur la cause exacte** et l'absence de traitement explicite du cas **branche divergente**.
+
 ---
 
 ## Intégration
-<!-- Claude remplit après lecture de la réponse -->
+
+### Intégration (Claude, 2026-04-17)
+
+### Retenu — à implémenter
+
+| # | Point | Action |
+| --- | --- | --- |
+| 1 | Cas divergence locale+remote non traité | Ajouter détection et message quand les deux ont avancé |
+| 2 | stderr masqué empêche le diagnostic | Retirer `2>/dev/null` du rebase |
+| 3 | Rebase interrompu laisse un état sale | Ajouter `git rebase --abort` dans le bloc d'échec |
+
+### Retenu — à garder en tête
+
+| Point | Pourquoi pas maintenant |
+| --- | --- |
+| `git fetch || true` silencieux | Fetch raté = on continue avec vue locale, acceptable |
+
+### Verdict
+
+Review précise. Les 3 points actionnables sont appliqués dans le même commit.
