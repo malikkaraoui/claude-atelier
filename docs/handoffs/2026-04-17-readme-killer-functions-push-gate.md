@@ -3,7 +3,7 @@
 > Date : 2026-04-17
 > Type : review
 > Priorité : moyenne
-> reviewedRange: ef0b878404f13dbb26e2d6fdc7516f2e7bad1461..90771135f3cc894132751d4d99ff0f27fc24619f
+> reviewedRange: ef0b878404f13dbb26e2d6fdc7516f2e7bad1461..c076125e4f179ca2a5c426a66f9753a79eb6eba0
 
 ---
 
@@ -13,7 +13,7 @@
 
 Le README a été refondu en vitrine plus "produit" pour mettre en tête les fonctions killer demandées par Malik : réduction de consommation tokens, mémoire persistante entre sessions, agents nommés, verrou §25 avant push/release, et monitoring du modèle avec mode éco visible d'un coup d'œil. Les compteurs principaux ont été réalignés sur l'état réel du repo (`16 skills`, `42 tests hooks`, `28 checks doctor`, `12 entrées manifest`). `docs/methodology.md` a été complété pour refléter les slash commands manquantes, et `PARITY.md` a été nettoyé sur les compteurs visibles. En voulant pousser ce lot, l'échec observé n'était pas un problème GitHub remote : c'était la gate §25 locale, qui a bloqué le push à cause de la dette handoff dépassée.
 
-**Range analysé** : `ef0b878404f13dbb26e2d6fdc7516f2e7bad1461..90771135f3cc894132751d4d99ff0f27fc24619f`
+**Range analysé** : `ef0b878404f13dbb26e2d6fdc7516f2e7bad1461..c076125e4f179ca2a5c426a66f9753a79eb6eba0`
 **Stats git** :  6 files changed, 157 insertions(+), 49 deletions(-)
 
 **Commits dans le range :**
