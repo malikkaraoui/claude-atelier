@@ -189,6 +189,26 @@ conditionnellement selon §0 :
 | Ollama | `stacks/ollama.md` | Modelfile, VRAM, quantization |
 | iOS / tvOS + Xcode | `stacks/ios-xcode.md` | SwiftUI, MVVM, xcodebuild, Makefile V4 |
 
+### Context7 dynamique — charger la bonne doc, pas toute la doc
+
+Le satellite `context7-mapping.md` ajoute une deuxième couche : le **contexte dynamique**.
+
+Le principe : croiser `§0` (**Phase + Stack**) pour déterminer si Context7 doit charger :
+
+- **aucune doc** (brainstorming)
+- **une doc ciblée** (documentation, maintenance)
+- **toute la stack active** (implémentation, review/test)
+- **uniquement l'infra** (release/production)
+
+Ce n'est pas juste du confort. C'est une discipline d'ingénierie :
+
+- moins de bruit contextuel
+- moins de tokens d'entrée brûlés inutilement
+- moins de réponses polluées par des libs hors sujet
+- plus de stabilité quand la session change de phase
+
+Le nom marketing peut claquer. Le mécanisme, lui, reste simple : **la bonne doc, au bon moment**.
+
 ---
 
 ## 8. Orchestration — Le bon agent au bon moment

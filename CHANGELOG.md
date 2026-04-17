@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Mise en avant du « contexte dynamique du Context7 »
+
+- **README** : la promesse produit met maintenant en avant le **contexte dynamique du Context7** dans le hero, le tableau "Killer bundle" et les sections FR/EN.
+- **`docs/methodology.md`** : la mécanique `§0 (Phase + Stack) → context7-mapping.md` est désormais formulée explicitement comme une discipline d'ingénierie de contexte, pas juste comme un détail de satellite.
+
 ### Added — Séréna, chef designer senior + MCP magic (21st.dev)
 
 - **`src/skills/design-senior/SKILL.md`** : nouveau skill Séréna — flow complet (vérif UI/UX Pro Max, onboarding clé API magic, design-first avant toute implémentation UI).

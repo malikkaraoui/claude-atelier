@@ -14,7 +14,7 @@
 
 ## ⚡ From vibes to rails — Claude Code, disciplined
 
-13 agents · 16 skills · mémoire persistante · mode éco · verrou review
+13 agents · 16 skills · mémoire persistante · Context7 dynamique · mode éco · verrou review
 
 [![npm version](https://img.shields.io/npm/v/claude-atelier.svg?style=flat-square&color=CB3837)](https://www.npmjs.com/package/claude-atelier)
 [![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/claude-atelier)
@@ -37,13 +37,14 @@ npx claude-atelier init
 | Killer function | Ce que ça change vraiment |
 | --- | --- |
 | **Token killer** | Routing Haiku/Sonnet/Opus, `/compact`, QMD-first, `maxBudgetUsd` → beaucoup moins de tokens brûlés pour rien |
+| **Contexte dynamique du Context7** | Le contexte doc se calibre selon `§0` (phase + stack) → tu charges les bonnes libs au bon moment, pas toute la bibliothèque du monde |
 | **Mémoire persistante intelligente** | Mémoire locale par projet + feedback user + règles de lecture/écriture → Claude reprend entre sessions sans repartir de zéro |
 | **Agents spécialisés** | 13 agents nommés + 16 slash commands → le bon spécialiste au bon moment |
 | **Verrou review avant push/release** | `git push` et `npm version` bloqués tant qu'un handoff §25 externe n'a pas été intégré |
 | **Mode éco visible en un clin d'œil** | Pastilles `⬆️ / 🟢 / ⬇️` et métriques runtime → tu vois immédiatement si le modèle est sous-régime ou sur-régime |
 | **Arsenal tout-en-un** | Hooks, skills, scripts, sécurité, satellites par stack, onboarding : un seul package npm |
 
-Un vrai arsenal de qualité supérieure : coût, mémoire, review, sécurité et agents — sans bricolage éparpillé.
+Un vrai arsenal de qualité supérieure : coût, contexte, mémoire, review, sécurité et agents — sans bricolage éparpillé.
 
 ### 💰 Token killer — up to 90% token cost reduction
 
@@ -249,6 +250,21 @@ Le harness maintient une mémoire locale par projet : préférences user, feedba
 - **Persistante** : la mémoire survit aux sessions
 - **Intelligente** : on n'y stocke pas le code, seulement ce qui manque au repo
 - **Disciplinée** : si mémoire et code se contredisent, le code courant gagne
+
+---
+
+### Contexte dynamique du Context7 — la bonne doc, au bon moment
+
+Le principe n'est pas de gaver la session avec toute la doc possible. Le principe est de **calibrer le contexte**.
+
+`claude-atelier` croise `§0` (**phase + stack**) avec le satellite `context7-mapping.md` pour décider **quelles docs valent vraiment le coût token** :
+
+- en **brainstorming** → pas de doc parasite
+- en **architecture** → patterns et ADR, pas des APIs au kilomètre
+- en **implémentation** → seulement les libs de la stack active
+- en **maintenance** → la lib du bug, pas le reste
+
+Résultat : moins de bruit, moins de tokens, plus de précision. C'est ça, le **contexte dynamique du Context7**.
 
 ---
 
@@ -468,7 +484,7 @@ Claude Code without structure looks like this:
 
 ### What it is
 
-A complete framework for Claude Code: runtime rules, enforcement hooks, slash command skills, per-stack satellites, named agents, persistent memory, review lock before push/release, eco mode, supervised night mode. Everything hardened in production.
+A complete framework for Claude Code: runtime rules, enforcement hooks, slash command skills, per-stack satellites, named agents, persistent memory, dynamic Context7, review lock before push/release, eco mode, supervised night mode. Everything hardened in production.
 
 **Real rails, not prose promises.** Push, versioning, review, cost and hygiene go through system mechanisms — not wishful prompt text.
 
@@ -631,6 +647,21 @@ The harness keeps a local project memory: user preferences, feedback, non-deriva
 - **Persistent**: survives across sessions
 - **Selective**: stores what the repo cannot tell on its own
 - **Disciplined**: if memory and current code disagree, current code wins
+
+---
+
+### Dynamic Context7 — the right docs, at the right time
+
+The point is not to stuff the session with every possible doc source. The point is to **calibrate context**.
+
+`claude-atelier` crosses `§0` (**phase + stack**) with `context7-mapping.md` to decide **which docs are actually worth the token cost**:
+
+- in **brainstorming** → no doc noise
+- in **architecture** → patterns and ADRs, not giant API dumps
+- in **implementation** → only the active stack libs
+- in **maintenance** → the bug's library, not the whole ecosystem
+
+Result: less noise, fewer tokens, more precision. That's the idea behind **Dynamic Context7**.
 
 ---
 
