@@ -210,9 +210,150 @@ test('FTS5 trigger: insert node, verify nodes_fts has matching row', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// Test: memory-read.js search modes
+// ─────────────────────────────────────────────────────────────
+console.log('\n── memory-read.js ──');
+
+test('--episodes-only returns recent episodes', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-read-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+
+  try {
+    // Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    // Insert an episode
+    const db = openDb(dbPath);
+    try {
+      const now = new Date().toISOString();
+      db.prepare(`
+        INSERT INTO episodes (session_id, summary, timestamp)
+        VALUES (?, ?, ?)
+      `).run('sess-1', 'Test episode summary', now);
+    } finally {
+      closeDb(db);
+    }
+
+    // Read with --episodes-only
+    const readResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-read.js'), '--episodes-only', '--db', dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+
+    ok(readResult.status === 0, `read should exit 0: ${readResult.stderr}`);
+    ok(readResult.stdout.includes('EPISODES_ONLY'), 'output should mention mode');
+    ok(readResult.stdout.includes('Test episode'), 'output should include episode summary');
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('FTS5 search finds matching nodes', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-read-fts-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+
+  try {
+    // Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    // Insert 3 nodes
+    const db = openDb(dbPath);
+    try {
+      const now = new Date().toISOString();
+      db.prepare(`
+        INSERT INTO nodes (name, type, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run('routing-engine', 'concept', 'Request routing logic', now, now);
+      db.prepare(`
+        INSERT INTO nodes (name, type, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run('database', 'concept', 'Data storage', now, now);
+      db.prepare(`
+        INSERT INTO nodes (name, type, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run('api-gateway', 'concept', 'Gateway for APIs', now, now);
+    } finally {
+      closeDb(db);
+    }
+
+    // Search for "routing"
+    const readResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-read.js'), 'routing', '--db', dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+
+    ok(readResult.status === 0, `read should exit 0: ${readResult.stderr}`);
+    ok(readResult.stdout.includes('FULL'), 'output should mention FULL mode');
+    ok(readResult.stdout.includes('routing-engine'), 'output should include routing node');
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('--graph shows 1-hop neighbors', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-read-graph-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+
+  try {
+    // Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    // Create 2 nodes and an edge
+    const db = openDb(dbPath);
+    try {
+      const now = new Date().toISOString();
+      db.prepare(`
+        INSERT INTO nodes (name, type, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run('routing', 'concept', 'Routing logic', now, now);
+      db.prepare(`
+        INSERT INTO nodes (name, type, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run('cache', 'concept', 'Caching layer', now, now);
+
+      // Get node IDs
+      const routingNode = db.prepare(`SELECT id FROM nodes WHERE name = ?`).get('routing');
+      const cacheNode = db.prepare(`SELECT id FROM nodes WHERE name = ?`).get('cache');
+
+      db.prepare(`
+        INSERT INTO edges (source_id, target_id, relation, weight, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(routingNode.id, cacheNode.id, 'depends_on', 1.0, now);
+    } finally {
+      closeDb(db);
+    }
+
+    // Query --graph routing
+    const readResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-read.js'), '--graph', 'routing', '--db', dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+
+    ok(readResult.status === 0, `read should exit 0: ${readResult.stderr}`);
+    ok(readResult.stdout.includes('GRAPH'), 'output should mention GRAPH mode');
+    ok(readResult.stdout.includes('cache'), 'output should include neighbor node');
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // Run all tests
 // ─────────────────────────────────────────────────────────────
 await runTests();
+
 
 console.log(`\n──────────────────────`);
 console.log(`✓ ${pass} passed`);
