@@ -12,7 +12,7 @@ figure: Célia
 
 ## Principes
 
-- **C++26** disponible (mars 2026) : Reflection, Contracts, `std::execution`
+- **C++26** en finalisation (mars 2026) : Reflection, Contracts, `std::execution` — support compilateur partiel
 - **RAII absolu** : chaque ressource a un destructeur qui la libère
 - **Smart pointers** : `unique_ptr` (défaut), `shared_ptr` (si partagé), `std::span` (vues)
 - **`const` par défaut** sur tout : variables, méthodes, références
