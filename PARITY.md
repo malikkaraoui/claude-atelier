@@ -16,7 +16,7 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 ## 1. Configuration & Hierarchy
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | `CLAUDE.md` projet | ✅ | Chargé automatiquement |
 | `CLAUDE.md` user (`~/.claude/`) | ✅ | Chargé automatiquement |
 | Chargement conditionnel par stack | ➕ | `.claude/stacks/*.md` chargés via §10 selon contexte projet |
@@ -27,27 +27,27 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 ## 2. Hooks
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | `UserPromptSubmit` hook | ✅ | Natif |
 | `PreToolUse` / `PostToolUse` hooks | ✅ | Natif |
 | `SessionStart` hooks | ✅ | Natif |
 | `routing-check.sh` (modèle actif) | ➕ | Injecte `[ROUTING] modèle actif: MODEL-ID` à chaque message — évite d'extraire le modèle d'un system prompt potentiellement stale |
 | `guard-no-sign.sh` (anti-signature) | ➕ | Bloque tout `Co-Authored-By` ou `--signoff` dans les commits |
 | `guard-commit-french.sh` | ➕ | Bloque les commits messages purement anglais (≥ 2 mots EN, 0 FR) |
-| Test suite des hooks | ➕ | `test/hooks.js` — 20 tests, exécutés à chaque `npm test` |
+| Test suite des hooks | ➕ | `test/hooks.js` — 42 tests, exécutés à chaque `npm test` |
 
 ## 3. Skills & Slash commands
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | Système de skills natif (`.claude/skills/`) | ✅ | Natif |
-| 14 skills bundlés FR | ➕ | `/init-projet`, `/audit-secu`, `/handoff-copilot`, `/freebox-init`, etc. — voir README |
+| 16 skills bundlés FR | ➕ | `/design-senior`, `/handoff-debt`, `/freebox-init`, `/ios-setup`, etc. — voir README |
 | Skills marketplace | ❌ | On n'en publie pas pour l'instant — `npm` est notre canal |
 
 ## 4. Subagents & Orchestration
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | `Agent` tool / subagents | ✅ | Natif |
 | `isolation: "worktree"` | ✅ | Natif |
 | Règles de spawn (Fork / Teammate / Worktree) | 🔧 | Documentées dans `.claude/orchestration/{modes,subagents,parallelization,spawn-rules}.md` |
@@ -57,14 +57,14 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 ## 5. Plan Mode
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | Plan Mode (`Shift+Tab × 2`) | ✅ | Natif |
 | Auto-déclenchement Plan Mode | ➕ | Règle §3 + §18 : architecture / migration / schéma DB → extended thinking high + Plan Mode |
 
 ## 6. MCPs
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | Système MCP natif | ✅ | Natif |
 | Lifecycle MCP documenté | 🔧 | `.claude/orchestration/mcp-lifecycle.md` — charger à la demande, purger en fin de session |
 | MCP `qmd` (recherche markdown hybride) | ➕ | Recommandé en §0 : 1364 docs indexés, BM25 + vec + hyde |
@@ -73,7 +73,7 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 ## 7. Sécurité & Pre-push Gate
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | Détection secrets ad-hoc | Partiel | Claude warne mais ne bloque pas |
 | **Pre-push gate 5 étapes** | ➕ | `scripts/pre-push-gate.sh` : secrets → fichiers sensibles → lint → build → tests |
 | Patterns secrets étendus | ➕ | `sk-*`, `AIza*`, `AKIA*`, `ghp_*`, `ya29.*`, BEGIN RSA/OPENSSH/EC, etc. |
@@ -85,7 +85,7 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 ## 8. Sessions & Memory
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | Auto-compaction | ✅ | Natif |
 | `/compact` manuel | ✅ | Natif |
 | Compaction à ~60% (recommandation) | ➕ | §15 : ne pas attendre 75-98% — résumé agressif garantit perte d'info |
@@ -95,7 +95,7 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 ## 9. Token Management
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | `maxBudgetUsd` | ✅ | Natif (settings.json) |
 | Routing modèle par tâche | ➕ | §15 : recommandation explicite + signalement de surdimensionnement Opus |
 | Limite ≤ 25 mots entre tool calls | ➕ | §2 — empêche le narrating verbeux |
@@ -105,7 +105,7 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 ## 10. Stacks & Standards
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | Standards par stack | ➕ | 9 stacks couverts : `javascript`, `python`, `java`, `react-vite`, `firebase`, `docker`, `ollama`, `ios-xcode`, `freebox` |
 | Théâtre (figures nommées par stack) | ➕ | 11 personnages — Pascal, Anthonio, Marcel, Nicolas & Fazia, Camille, Jeffrey, Nael, Xavier, Amine, etc. |
 | Chargement conditionnel | ➕ | §10 : seule la stack du projet courant est chargée |
@@ -113,7 +113,7 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 ## 11. Autonomie & Mode Nuit
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | `acceptEdits` mode | ✅ | Natif |
 | Permissions allow/deny | ✅ | Natif |
 | **Mode nuit supervisé** | ➕ | `.claude/autonomy/night-mode.md` : push autonome autorisé après gate verte, watchdog CAS F |
@@ -122,14 +122,14 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 ## 12. Inter-agents (Review Copilot)
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | **Handoff Copilot auto** | ➕ | §25 : proposer un handoff (`docs/handoffs/`) sans attendre — feature terminée, bug critique, 100+ lignes, 3+ tentatives échouées |
 | Format markdown structuré | ➕ | Template handoff fourni |
 
 ## 13. Installation & CLI
 
 | Feature | Statut | Détails |
-|---|---|---|
+| --- | --- | --- |
 | `npx claude-atelier init` | ➕ | Installe `.claude/` + `scripts/` + `hooks/` dans le projet |
 | `npx claude-atelier update` | ➕ | Fusionne les configs en préservant `§0 Contexte projet actif` |
 | `npm run doctor` | ➕ | Diagnostic santé — checks lint, hooks, refs, secrets |
@@ -139,7 +139,7 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 ## Hors scope (refusé par parti pris)
 
 | Feature | Pourquoi pas |
-|---|---|
+| --- | --- |
 | ❌ Réimplémentation du client Claude Code | Le client officiel suffit. Voir [claw-code](https://github.com/ultraworkers/claw-code) (Rust) pour une réimpl complète |
 | ❌ Runtime/agent custom | Pas de DSL maison, pas d'orchestrateur. Markdown + hooks = assez |
 | ❌ Système de plugins propriétaire | Le mécanisme natif (skills/hooks/MCPs) couvre nos besoins |
@@ -152,7 +152,7 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 ## Couverture résumée
 
 | Catégorie | Natif ✅ | Étendu 🔧 | Ajouté ➕ | Hors scope ❌ |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Configuration | 2 | 0 | 4 | 0 |
 | Hooks | 4 | 0 | 4 | 0 |
 | Skills | 1 | 0 | 1 | 1 |

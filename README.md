@@ -14,7 +14,7 @@
 
 ## ⚡ From vibes to rails — Claude Code, disciplined
 
-Rails d'enforcement · 13 agents nommés · 15 skills · Mode nuit supervisé
+13 agents · 16 skills · mémoire persistante · mode éco · verrou review
 
 [![npm version](https://img.shields.io/npm/v/claude-atelier.svg?style=flat-square&color=CB3837)](https://www.npmjs.com/package/claude-atelier)
 [![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/claude-atelier)
@@ -32,7 +32,20 @@ npx claude-atelier init
 
 ---
 
-### 💰 Up to 90% token cost reduction
+### 🔥 Killer bundle — tout le cockpit Claude Code dans un seul NPM
+
+| Killer function | Ce que ça change vraiment |
+| --- | --- |
+| **Token killer** | Routing Haiku/Sonnet/Opus, `/compact`, QMD-first, `maxBudgetUsd` → beaucoup moins de tokens brûlés pour rien |
+| **Mémoire persistante intelligente** | Mémoire locale par projet + feedback user + règles de lecture/écriture → Claude reprend entre sessions sans repartir de zéro |
+| **Agents spécialisés** | 13 agents nommés + 16 slash commands → le bon spécialiste au bon moment |
+| **Verrou review avant push/release** | `git push` et `npm version` bloqués tant qu'un handoff §25 externe n'a pas été intégré |
+| **Mode éco visible en un clin d'œil** | Pastilles `⬆️ / 🟢 / ⬇️` et métriques runtime → tu vois immédiatement si le modèle est sous-régime ou sur-régime |
+| **Arsenal tout-en-un** | Hooks, skills, scripts, sécurité, satellites par stack, onboarding : un seul package npm |
+
+Un vrai arsenal de qualité supérieure : coût, mémoire, review, sécurité et agents — sans bricolage éparpillé.
+
+### 💰 Token killer — up to 90% token cost reduction
 
 | Technique                                     | Savings                    |
 | --------------------------------------------- | -------------------------- |
@@ -70,9 +83,9 @@ Claude Code sans structure, c'est ça :
 
 ### Ce que c'est
 
-Un framework complet pour Claude Code : règles runtime, hooks d'enforcement, skills slash commands, satellites par stack, agents nommés, mode nuit supervisé. Tout ce qu'on a durci en production.
+Un framework complet pour Claude Code : règles runtime, hooks d'enforcement, skills slash commands, satellites par stack, agents nommés, mémoire persistante, verrou review avant push/release, mode éco, mode nuit supervisé. Tout ce qu'on a durci en production.
 
-**11 règles sur 16 enforcées par des mécanismes système.** Pas du texte dans un fichier.
+**Des rails réels, pas des promesses en prose.** Push, versioning, review, coût et hygiène passent par des mécanismes système — pas par de simples intentions dans un prompt.
 
 ### Workflow VS Code + Claude Code ↔ Xcode
 
@@ -104,7 +117,7 @@ npx claude-atelier init --global
 # Choisir la langue (défaut: fr)
 npx claude-atelier init --lang en
 
-# Diagnostic santé (26 checks · 8 catégories · shellcheck inclus · --json)
+# Diagnostic santé (28 checks · 10 catégories · shellcheck inclus · --json)
 npx claude-atelier doctor
 npx claude-atelier doctor --json   # output structuré CI-friendly
 
@@ -136,7 +149,7 @@ Les règles critiques ne sont pas dans un README. Elles sont dans des hooks qui 
 | Suggestion Haiku (prompt court + mots d'exploration) | `routing-check.sh` UserPromptSubmit | Chaque message |
 | Détection besoin design → propose Séréna | `detect-design-need.sh` UserPromptSubmit | Chaque message |
 
-**Bilan : 15 rails / 16 règles.** Les 2 non automatisables (anti-hallucination, qualité code) relèvent du jugement du modèle.
+**Bilan : 15 rails actifs.** Les règles purement de jugement (anti-hallucination, qualité code) restent du ressort du modèle.
 
 ---
 
@@ -149,7 +162,7 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 | **Steve** 🍎 | iOS / tvOS / iPadOS + Xcode | `swift`, `xcode`, `ios`, `simctl`... | Workflow V4 complet : Makefile, FFI Rust→Swift, troubleshooting, `Cmd+Shift+B` |
 | **Isaac** 📦 | NPM Publish / Registry | `npm publish`, `npm version`, `registry`... | Pipeline CI/CD, versionning sémantique, tokens, troubleshooting |
 | **Mohamed** 📋 | Review inter-LLM | `feat:` commit, 100+ lignes, 10 commits, session restart | Instruit le dossier review : commits, diff, question précise, handoff Copilot/GPT |
-| **Amine** 🧪 | Tests hooks | `feat:` commit sans fichier `test/` modifié | Alerte feat sans tests, 20 tests unitaires hooks, `npm run test:hooks` |
+| **Amine** 🧪 | Tests hooks | `feat:` commit sans fichier `test/` modifié | Alerte feat sans tests, 42 tests unitaires hooks, `npm run test:hooks` |
 | **Xavier** 📡 | Freebox API | `freebox`, `fbx`, `app_token`, `mafreebox`... | Auth LCD complète : discovery → app_token → HMAC-SHA1 session → NAT |
 | **Pascal** 🐳 | Docker | `Dockerfile`, `docker-compose`, `.dockerignore`... | Multi-stage, non-root, layer cache, healthchecks, BuildKit secrets |
 | **Anthonio** 🐍 | Python | `*.py`, `pyproject.toml`, `requirements*.txt`... | PEP 8, typage strict, uv + ruff + pyright, gestion d'erreurs frontière |
@@ -220,6 +233,25 @@ Permissions incluses par défaut : `Read`, `Edit`, `Write`, `Glob`, `Grep`, `git
 
 ---
 
+### Mémoire persistante — Claude n'oublie plus tout entre deux sessions
+
+Le harness maintient une mémoire locale par projet : préférences user, feedbacks, décisions non dérivables du code, références externes.
+
+```text
+~/.claude/projects/<project-slug>/memory/
+├── MEMORY.md
+├── user_*.md
+├── feedback_*.md
+├── project_*.md
+└── reference_*.md
+```
+
+- **Persistante** : la mémoire survit aux sessions
+- **Intelligente** : on n'y stocke pas le code, seulement ce qui manque au repo
+- **Disciplinée** : si mémoire et code se contredisent, le code courant gagne
+
+---
+
 ### Token Routing — Mode éco automatique
 
 Comme le mode éco d'une voiture : à chaque message, le système observe ce que tu fais et te dit si tu roules avec le bon moteur.
@@ -264,15 +296,16 @@ Le hook `model-metrics.sh` analyse les 5 derniers tours d'assistant, classe les 
 
 ---
 
-### Skills — 15 slash commands
+### Skills — 16 slash commands
 
 ```text
 /atelier-help       → Oracle : état du projet + commandes disponibles
 /atelier-setup      → Onboarding interactif (8 étapes)
 /design-senior      → Séréna : chef designer senior, design-first (MCP magic 21st.dev)
-/atelier-doctor     → Diagnostic santé (25 checks · 8 catégories · --json)
+/atelier-doctor     → Diagnostic santé (28 checks · 10 catégories · --json)
 /angle-mort         → Review anti-complaisance avant release
 /audit-safe         → Audit sécurité (5 checks)
+/handoff-debt       → Dette §25 live + génération de draft de handoff
 /review-copilot     → Handoff review pour Copilot/GPT
 /integrate-review   → Ferme la boucle (lit réponse, trie, checklist)
 /night-launch       → Prépare le mode nuit (8 prérequis)
@@ -294,7 +327,7 @@ Claude qui crash à 22h34, personne s'en rend compte, 8h perdues.
 Claude Code (VSCode)          Watchdog Cowork (Haiku)
 acceptEdits mode              Tâche planifiée horaire
 commits atomiques             git log → delta > 15 min ?
-ne push jamais                Screenshot VSCode → diagnostic
+push après gate verte         Screenshot VSCode → diagnostic
                               CAS A: bouton Allow → auto-clic
                               CAS B: spinner → silence
                               CAS C: figé → iMessage alerte
@@ -323,6 +356,19 @@ Un seul LLM ne voit pas ses propres angles morts.
 ```
 
 Déclenchement automatique via hook : feature terminée, 100+ lignes modifiées, 3+ tentatives échouées.
+
+---
+
+### Verrou §25 — pas de publish sauvage
+
+Le mécanisme n'est pas une "clé crypto" au sens strict. Le verrou réel, aujourd'hui, c'est :
+
+- **`pre-push-gate.sh` étape 6** : bloque `git push` si la dette de handoff §25 est dépassée
+- **`version-gate.js`** : bloque `npm version` tant qu'un handoff externe valide n'a pas été intégré
+- **source de vérité = git** : la dette est calculée depuis l'historique, pas depuis un compteur décoratif
+- **reset uniquement via `/integrate-review`** : pas de faux acquittement automatique
+
+Résultat : Claude ne peut pas publier proprement une feature lourde sans passer par la boucle de review/handoff.
 
 ---
 
@@ -370,17 +416,17 @@ src/
 │   ├── runtime/       Flow, format, extended thinking, todo-session
 │   └── ecosystem/     Skills, plugins, hooks, memory, QMD, Hookify
 ├── stacks/            Satellites par stack (iOS, JS, Python, Java…)
-├── skills/            15 slash commands SKILL.md
+├── skills/            16 slash commands SKILL.md
 └── templates/         .gitignore, .claudeignore, settings.json
 
-.claude/hooks-manifest.json  Manifeste typé de tous les hooks (10 entrées)
-hooks/                 10 hooks d'enforcement prêts à l'emploi
+.claude/hooks-manifest.json  Manifeste typé de tous les hooks (12 entrées, helper inclus)
+hooks/                 11 hooks d'enforcement + 1 helper partagé
 scripts/               pre-push-gate.sh (5 checks : secrets→lint→build→tests)
                        update-security.js (sync auto SECURITY.md depuis package.json)
 bin/cli.js             CLI (init, doctor, lint, update)
 .github/workflows/     CI (matrice Node 18/20/22) + npm publish sur tag
 test/                  lint-refs.js, lint-length.js, lint-hooks-manifest.js,
-                       doctor.js (26 checks · mode --json), hooks.js (20 tests)
+                       doctor.js (28 checks · mode --json), hooks.js (42 tests)
 ```
 
 ---
@@ -422,9 +468,9 @@ Claude Code without structure looks like this:
 
 ### What it is
 
-A complete framework for Claude Code: runtime rules, enforcement hooks, slash command skills, per-stack satellites, named agents, supervised night mode. Everything hardened in production.
+A complete framework for Claude Code: runtime rules, enforcement hooks, slash command skills, per-stack satellites, named agents, persistent memory, review lock before push/release, eco mode, supervised night mode. Everything hardened in production.
 
-**11 out of 16 rules enforced by system-level mechanisms.** Not text in a file.
+**Real rails, not prose promises.** Push, versioning, review, cost and hygiene go through system mechanisms — not wishful prompt text.
 
 ### VS Code + Claude Code ↔ Xcode Workflow
 
@@ -456,7 +502,7 @@ npx claude-atelier init --global
 # Pick language (default: fr)
 npx claude-atelier init --lang en
 
-# Health diagnostic (27+ checks)
+# Health diagnostic (28 checks · 10 categories · shellcheck included · --json)
 npx claude-atelier doctor
 
 # Update (preserves project §0)
@@ -498,7 +544,7 @@ When a specific domain is detected in your message, the atelier automatically lo
 | **Steve** 🍎 | iOS / tvOS / iPadOS + Xcode | `swift`, `xcode`, `ios`, `simctl`... | Full V4 workflow: Makefile, Rust→Swift FFI, troubleshooting, `Cmd+Shift+B` |
 | **Isaac** 📦 | NPM Publish / Registry | `npm publish`, `npm version`, `registry`... | CI/CD pipeline, semantic versioning, tokens, troubleshooting |
 | **Mohamed** 📋 | Inter-LLM Review | `feat:` commit, 100+ lines, 10 commits, session restart | Prepares review dossier: commits, diff, precise question, Copilot/GPT handoff |
-| **Amine** 🧪 | Hook Tests | `feat:` commit without `test/` changes | Alerts feat without tests, 20 hook unit tests, `npm run test:hooks` |
+| **Amine** 🧪 | Hook Tests | `feat:` commit without `test/` changes | Alerts feat without tests, 42 hook unit tests, `npm run test:hooks` |
 | **Xavier** 📡 | Freebox API | `freebox`, `fbx`, `app_token`, `mafreebox`... | Full LCD auth: discovery → app_token → HMAC-SHA1 session → NAT |
 | **Pascal** 🐳 | Docker | `Dockerfile`, `docker-compose`, `.dockerignore`... | Multi-stage, non-root, layer cache, healthchecks, BuildKit secrets |
 | **Anthonio** 🐍 | Python | `*.py`, `pyproject.toml`, `requirements*.txt`... | PEP 8, strict typing, uv + ruff + pyright, boundary error handling |
@@ -569,6 +615,25 @@ Default permissions included: `Read`, `Edit`, `Write`, `Glob`, `Grep`, `git *`, 
 
 ---
 
+### Persistent memory — Claude does not reboot to amnesia between sessions
+
+The harness keeps a local project memory: user preferences, feedback, non-derivable decisions, external references.
+
+```text
+~/.claude/projects/<project-slug>/memory/
+├── MEMORY.md
+├── user_*.md
+├── feedback_*.md
+├── project_*.md
+└── reference_*.md
+```
+
+- **Persistent**: survives across sessions
+- **Selective**: stores what the repo cannot tell on its own
+- **Disciplined**: if memory and current code disagree, current code wins
+
+---
+
 ### Token Routing — Eco mode, automatic
 
 Like the eco mode on a car: every message, the system watches what you're doing and tells you if you're running on the right engine.
@@ -609,15 +674,16 @@ The `model-metrics.sh` hook analyzes the last 5 assistant turns, classifies tool
 
 ---
 
-### Skills — 15 slash commands (EN)
+### Skills — 16 slash commands (EN)
 
 ```text
 /atelier-help       → Oracle: project state + available commands
 /atelier-setup      → Interactive onboarding (8 steps)
 /design-senior      → Séréna: senior design lead, design-first (MCP magic 21st.dev)
-/atelier-doctor     → Health diagnostic (25 checks · 8 categories · --json)
+/atelier-doctor     → Health diagnostic (28 checks · 10 categories · --json)
 /angle-mort         → Anti-complacency review before release
 /audit-safe         → Security audit (5 checks)
+/handoff-debt       → Live §25 debt + handoff draft generation
 /review-copilot     → Handoff review for Copilot/GPT
 /integrate-review   → Close the loop (read response, sort, checklist)
 /night-launch       → Prepare night mode (8 prerequisites)
@@ -639,7 +705,7 @@ Claude crashes at 10:34pm, nobody notices, 8 hours lost.
 Claude Code (VSCode)          Watchdog Cowork (Haiku)
 acceptEdits mode              Hourly scheduled task
 atomic commits                git log → delta > 15 min?
-never pushes                  Screenshot VSCode → diagnosis
+push after green gate         Screenshot VSCode → diagnosis
                               CASE A: Allow button → auto-click
                               CASE B: spinner → silence
                               CASE C: frozen → iMessage alert
@@ -668,6 +734,19 @@ A single LLM cannot see its own blind spots.
 ```
 
 Auto-triggered via hook: feature completed, 100+ lines modified, 3+ failed attempts.
+
+---
+
+### §25 lock — no cowboy publish
+
+This is not a literal crypto key. The real lock today is:
+
+- **`pre-push-gate.sh` step 6**: blocks `git push` when §25 handoff debt is above threshold
+- **`version-gate.js`**: blocks `npm version` until a valid external handoff has been integrated
+- **source of truth = git**: debt is computed from git history, not from decorative counters
+- **reset only via `/integrate-review`**: no automatic self-acquittal
+
+Net effect: Claude cannot cleanly publish a heavy feature without going through the review/handoff loop.
 
 ---
 
@@ -717,17 +796,17 @@ src/
 │   ├── runtime/       Flow, format, extended thinking, todo-session
 │   └── ecosystem/     Skills, plugins, hooks, memory, QMD, Hookify
 ├── stacks/            Per-stack satellites (iOS, JS, Python, Java…)
-├── skills/            14 SKILL.md slash commands
+├── skills/            16 slash commands SKILL.md
 └── templates/         .gitignore, .claudeignore, settings.json
 
-.claude/hooks-manifest.json  Typed manifest of all hooks (10 entries)
-hooks/                 10 enforcement hooks ready to use
+.claude/hooks-manifest.json  Typed manifest of all hooks (12 entries, helper included)
+hooks/                 11 enforcement hooks + 1 shared helper
 scripts/               pre-push-gate.sh (5 checks: secrets→lint→build→tests)
                        update-security.js (auto-syncs SECURITY.md from package.json)
 bin/cli.js             CLI (init, doctor, lint, update)
 .github/workflows/     CI (Node 18/20/22 matrix) + npm publish on tag
 test/                  lint-refs.js, lint-length.js, lint-hooks-manifest.js,
-                       doctor.js (26 checks · --json mode), hooks.js (20 tests)
+                       doctor.js (28 checks · --json mode), hooks.js (42 tests)
 ```
 
 ---

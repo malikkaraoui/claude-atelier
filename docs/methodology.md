@@ -17,6 +17,7 @@ consomme la totalité des tokens.
 | **Opus 4.6** | Architecture, debug bloquant, décision irréversible | ~50× |
 
 **Règles :**
+
 - En début de session, Claude **signale le modèle actif** et recommande
   un switch si surdimensionné
 - Subagents toujours en Haiku (`CLAUDE_CODE_SUBAGENT_MODEL: haiku`)
@@ -126,6 +127,7 @@ ne push jamais                Screenshot VSCode → diagnostic
 ```
 
 **Pré-requis non négociables :**
+
 - `.claudeignore` configuré
 - `git push` en deny
 - `maxBudgetUsd` défini (disjoncteur)
@@ -146,6 +148,7 @@ Le problème : un seul LLM ne voit pas ses propres angles morts.
 ```
 
 **Déclenchement automatique (§25) :**
+
 - Feature terminée
 - Bug fix critique
 - 100+ lignes modifiées
@@ -198,6 +201,7 @@ conditionnellement selon §0 :
 | **BMAD (optionnel)** | Gros projet, cycle complet | 6 agents spécialisés, 4 phases |
 
 **Règles de spawn :**
+
 - Prompt court et ciblé (le subagent ne voit pas la conversation parent)
 - 5-6 tâches max par agent
 - Fichiers distincts par agent (zéro overlap)
@@ -222,6 +226,7 @@ Détails complets + scénarios + prompts → `src/fr/orchestration/parallelizati
 /atelier-setup      → Onboarding interactif (8 étapes)
 /design-senior      → Séréna : chef designer senior, design-first (MCP magic 21st.dev)
 /review-copilot     → Handoff review pour Copilot/GPT
+/handoff-debt       → Dette §25 live + génération d'un draft de handoff
 /integrate-review   → Ferme la boucle (lit réponse, trie, checklist)
 /angle-mort         → Review anti-complaisance avant release
 /audit-safe         → Audit sécurité (5 checks)
@@ -231,6 +236,8 @@ Détails complets + scénarios + prompts → `src/fr/orchestration/parallelizati
 /bmad-init          → Installe BMAD (optionnel, gros projets)
 /qmd-init           → Installe QMD (optionnel, ≥ 5 fichiers .md)
 /compress           → Compresse CLAUDE.md pour réduire les tokens input
+/ios-setup          → Configure le workflow iOS/tvOS : VS Code + Xcode + Makefile V4
+/freebox-init       → Bootstrap Freebox : app_token LCD + session HMAC-SHA1 + NAT
 ```
 
 ---
