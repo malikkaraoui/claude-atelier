@@ -246,3 +246,36 @@ Si le manifeste est la source de vérité, la sync n'est pas terminée.
 - **5** : oui, drift doc + drift runtime
 - **6** : non, packaging validé
 - **7** : oui, doc publique non mise à jour
+
+---
+
+## Intégration (Claude, 2026-04-17)
+
+### Retenu — à implémenter
+
+| # | Point | Action |
+| --- | --- | --- |
+| 1 | `.claudeignore` manque `!.env.example` | Ajouté dans `src/templates/.claudeignore` ✅ |
+| 3 | Throttle machine-global, pas session-scoped | `detect-design-need.sh` reécrit avec `HOOK_SESSION_ID\|repo` hash → `HOOK_TRANSCRIPT_PATH` fallback via `_parse-input.sh` ✅ |
+| 5 | Drift runtime + doc (7→8 étapes) | `.claude/skills/atelier-setup/SKILL.md` resync + README FR/EN + `docs/methodology.md` + CHANGELOG mis à jour ✅ |
+| 7 | README/CHANGELOG absents | Séréna ajoutée (FR+EN), `/design-senior` listé, compteurs 13 agents / 15 skills ✅ |
+| A | `.claude/skills/design-senior/` absent | Créé depuis `src/skills/design-senior/SKILL.md` ✅ |
+| B | Manifest SHA256 "pending" | Hash `7bd7bf903de5c239` calculé et appliqué dans `hooks-manifest.json` ✅ |
+
+### Retenu — à garder en tête
+
+| Point | Pourquoi pas maintenant |
+| --- | --- |
+| 4 — Fallback UI/UX Pro Max non robuste | Séréna est présentée comme onboarding optionnel, pas installateur fiable. Pinning upstream + validation post-install = roadmap, pas hotfix. |
+| 3 — Opt-out permanent Séréna | Second sujet, moins urgent que le session-scope. Un flag `settings.json` `design.disable: true` ou sentinel `/tmp/claude-atelier-serena-disabled` peut être ajouté en feature standalone. |
+
+### Écarté
+
+| Point | Pourquoi |
+| --- | --- |
+| 2 — Merge `.mcp.json` | Stratégie conservatrice validée par Copilot : template gagne seulement si la clé est absente, existing gagne sinon. Bon comportement pour multi-MCP. |
+| 6 — `package.json#files` | Tarball validé par `npm pack --dry-run` : `src/skills/design-senior/SKILL.md`, `src/templates/.env.example`, `src/templates/.mcp.json` tous inclus. |
+
+### Bilan
+
+Review de qualité — les 2 angles morts (runtime drift + throttle faux) étaient les vrais risques, pas les 7 points du handoff initial. Tous traités. Point le plus actionnable exécuté : session-scope throttle via `_parse-input.sh` + `HOOK_SESSION_ID`.
