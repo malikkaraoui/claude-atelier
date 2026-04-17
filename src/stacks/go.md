@@ -16,7 +16,7 @@ figure: Gaëlle
 - **Erreurs explicites** : `if err != nil` — pas de try/catch, c'est voulu
 - **Interfaces implicites** : petites interfaces (1-3 méthodes), composées
 - **Goroutines** : concurrence légère native, pas de thread pools manuels
-- **Go 1.26** (fév 2026) : `new()` avec expressions, `crypto/hpke` post-quantum
+- **Go 1.26** (fév 2026) : `new()` avec expressions, `crypto/hpke` (HPKE — hybrid encryption, pas post-quantum)
 - **Generics** (1.18+) matures : utiliser pour les collections et utilitaires génériques
 
 ## Tooling par défaut
@@ -32,6 +32,7 @@ figure: Gaëlle
 - **govulncheck** : détecte les CVE connues dans le code source (curé par l'équipe Go)
 - **gosec** : détecte les CWE (peut ne pas être des CVE)
 - Utiliser les deux en CI : govulncheck pour les CVE, gosec pour les CWE
+- `go test -race` : détecteur de races obligatoire en CI (`-race` flag)
 - `crypto/tls` avec config sécurisée par défaut ; pas de TLS < 1.2
 - Context timeout sur toutes les requêtes réseau
 
@@ -71,5 +72,6 @@ figure: Gaëlle
 - **go test** : table-driven tests (standard Go)
 - **testify** : assertions simplifiées (`assert`, `require`, `suite`)
 - **gomock** : génération de mocks par interface
+- `go test -race ./...` : toujours en CI pour détecter les data races
 - `t.Parallel()` pour accélérer les tests indépendants
 - `testcontainers-go` pour les tests d'intégration avec vrais services
