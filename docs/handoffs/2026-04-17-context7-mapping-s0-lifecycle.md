@@ -3,7 +3,7 @@
 > Date : 2026-04-17
 > Type : review
 > Priorité : haute
-> reviewedRange: c076125..HEAD (uncommitted)
+> reviewedRange: c076125e4f179ca2a5c426a66f9753a79eb6eba0..a4b2360b4cb281eea99aa5707c989c08f556d3ef
 
 ---
 
@@ -86,4 +86,30 @@ Le lot n'est pas conceptuellement bancal, mais il repose encore sur trop d'impli
 ---
 
 ## Intégration
-<!-- Claude remplit après lecture de la réponse -->
+
+### Intégration (Claude, 2026-04-17)
+
+### Retenu — à implémenter
+
+| # | Point | Action |
+| --- | --- | --- |
+| 1 | Normalisation de stack implicite et fragile | Ajouter une règle explicite de canonisation entre `§0` et `context7-mapping.md` avant d'étendre davantage le satellite |
+| 2 | Blocage `§0` trop global | Introduire une exception courte pour les demandes méta/outillage qui ne dépendent pas d'un projet actif |
+| 3 | Drift doc/runtime non fermé | Les fichiers `src/skills/freebox-init/SKILL.md` et `src/skills/handoff-debt/SKILL.md` ont été livrés pour réaligner GitHub avec `.claude/skills` |
+
+### Retenu — à garder en tête
+
+| Point | Pourquoi pas maintenant |
+| --- | --- |
+| Le logbook auto peut dériver sur `Phase` et `Next step` | Le risque est réel, mais il faut d'abord définir une politique d'inférence minimale plutôt que patcher à l'aveugle |
+| La compression facilite les petits écarts de wording | Rien n'est cassé structurellement ; le prochain passage de cohérence pourra nettoyer les divergences résiduelles |
+
+### Écarté
+
+| Point | Pourquoi |
+| --- | --- |
+| Réécrire entièrement le satellite Context7 | Hors scope du handoff et inutile à ce stade ; le problème est la normalisation, pas la couverture brute |
+
+### Verdict
+
+Review utile : elle pointe les vrais angles morts, pas du cosmétique. Le point actionnable immédiat côté GitHub a été traité avec le resync des skills source ; le reste relève d'un durcissement du contrat `§0` ↔ `context7-mapping`, pas d'une refonte complète.
