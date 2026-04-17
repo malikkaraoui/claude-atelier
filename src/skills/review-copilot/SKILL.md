@@ -37,6 +37,8 @@ ls -lt docs/handoffs/*.md 2>/dev/null | head -1
 
 ### Étape 3 — Générer le handoff
 
+**reviewedRange** : utiliser des SHA complets (`git rev-parse`). `sha-from` = dernier handoff OU `HEAD~N` résolu. `sha-to` = `HEAD` au moment du commit du handoff. Jamais de brouillon, jamais de `..HEAD (uncommitted)`.
+
 Créer le fichier `docs/handoffs/YYYY-MM-DD-<sujet-slug>.md` avec
 le format suivant :
 
@@ -70,11 +72,11 @@ le format suivant :
 ## Réponse de : Copilot/GPT
 
 **INSTRUCTION POUR LE LLM QUI REPOND :**
-Tu DOIS écrire ta réponse directement dans **ce même fichier `.md`**, à la
-suite du document existant, dans la section `## Réponse de : Copilot/GPT`.
-Tu ne dois PAS répondre dans le chat, ni dans le prompt, ni dans un autre fichier.
-Ce document est le vase communicant entre GPT et Claude. Utilise Edit/Write.
-Quand tu as fini, dis : "J'ai répondu dans [chemin du fichier]."
+1. Tu DOIS écrire ta réponse directement dans **ce même fichier `.md`**, section `## Réponse de : Copilot/GPT`.
+2. Tu ne dois PAS répondre dans le chat, ni dans un autre fichier.
+3. **INTERDIT DE MODIFIER DU CODE SOURCE.** Tu es reviewer, pas développeur. Ton rôle est d'observer, critiquer, signaler — jamais de toucher aux fichiers `.js`, `.ts`, `.json`, `.sh`, `.md` hors de ce handoff. Si tu vois un bug, décris-le. Ne le corrige pas.
+4. **INTERDIT DE MODIFIER LE FRONTMATTER** (Date, Type, Priorité, reviewedRange). Ces champs sont ancrés par Claude. Les changer casse la CI.
+5. Quand tu as fini, dis : "J'ai répondu dans [chemin du fichier]."
 
 ---
 

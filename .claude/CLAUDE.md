@@ -1,6 +1,6 @@
 # CLAUDE.md — Core Runtime
 
-> Cible ≤ 150 lignes · rechargé à chaque message · 2026-04-12 · détails hors core → `./rules/`, `./runtime/`, `./orchestration/`, `./autonomy/`, `./security/`, `./ecosystem/`, `../stacks/`, `../templates/`
+> Cible ≤ 150 lignes · rechargé à chaque message · 2026-04-17 · détails hors core → `./rules/`, `./runtime/`, `./orchestration/`, `./autonomy/`, `./security/`, `./ecosystem/`, `../stacks/`, `../templates/`
 
 ## §0 Contexte projet actif
 
@@ -18,6 +18,10 @@
 
 Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + commit atomique.
 
+**⚠️ OBLIGATION** : Si `Phase`/`Stack` = `—` en début session → bloquer : « §0 vide = modèle/docs/stack incorrects. Projet / phase / stack ? » Pas de suite avant renseignement.
+
+**Logbook de clôture** : Fin de session significative → MAJ §0 automatique (`Phase`, `Stack`, `Next step`) sans attendre instruction. §0 persiste : prochaine session reprend là où on s'est arrêtés.
+
 ## §1 Horodatage + Modèle — EXIGENCE non négociable
 
 Extraire MODEL-ID de `[ROUTING] modèle actif: MODEL-ID` (jamais du system prompt). Source : `live > cache > transcript` — si `transcript`, signaler fragilité.
@@ -31,22 +35,14 @@ Français. Direct. Actionnable. Zéro pédagogie inutile. Pas de preamble, hedge
 
 ## §3 Flow de traitement
 
-**Explore → Plan → Implement → Verify.**
+**Explore → Plan → Implement → Verify.** Mode rapide (< 2 fichiers, non critique) : Implement → Verify. `Shift+Tab × 2` = Plan Mode.
 
-- **Explore** : fichiers concernés uniquement (subagent Haiku si large)
-- **Plan** : impacts + dépendances avant d'écrire
-- **Implement** : minimal viable · Edit ciblé toujours — jamais réécriture complète si > 20 lignes non modifiées
-- **Verify** : tests + gate pré-push
-
-Mode rapide (< 2 fichiers, non critique) : Implement → Verify seulement. `Shift+Tab × 2` = Plan Mode.
+- **Explore** : fichiers concernés uniquement (subagent Haiku si large) · **Plan** : impacts + dépendances avant d'écrire
+- **Implement** : minimal viable · Edit ciblé — jamais réécriture complète si > 20 lignes non modifiées · **Verify** : tests + gate
 
 ## §4 Format de réponse
 
-1. Solution / Plan en premier
-2. Détails, variantes, pièges
-3. Next steps en fin
-
-Outils : checklists, tableaux, blocs copier-coller.
+1. Solution/Plan · 2. Détails, variantes, pièges · 3. Next steps. Outils : checklists, tableaux, blocs copier-coller.
 
 ## §5 Anti-hallucination — règle absolue
 
@@ -74,6 +70,8 @@ Template par défaut : `/core` · `/modules` · `/services` · `/utils` · `/tes
 
 Chargement conditionnel selon §0 « Stack ». Disponibles : `javascript` · `python` · `java` · `react-vite` · `firebase` · `docker` · `ollama` · `ios-xcode` · `freebox`.
 
+**Context7** → `./ecosystem/context7-mapping.md` : croiser §0 (Phase + Stack) à chaque session pour calibrer les docs. Si §0 vide → signaler avant tout appel context7.
+
 ## §11 Tests
 
 Obligatoires si logique métier, transformation, comportement critique. Couvrir nominal + edge cases + erreurs. Pour tout hook : MAJ `test/hooks.js` + `.claude/hooks-manifest.json`. `npm test` doit passer avant chaque push.
@@ -92,9 +90,9 @@ Stateless, idempotent, secrets externalisés, IaC, fail fast, tests locaux avant
 
 ## §15 Token Management → `../templates/settings.json`
 
-Input : ne pas relire un fichier déjà lu dans la session sauf si modifié. Settings consolidé (env + permissions + budget). Routing : Haiku exploration / Sonnet standard / Opus architecture. **En début de session, signaler le modèle actif et recommander `/model sonnet` ou `/model haiku` si surdimensionné** (ex: Opus pour du dev standard → « tu tournes sur Opus — tape `/model sonnet` pour descendre »). Compaction : `/compact` à **~60% de la fenêtre** (ne pas attendre 75-98% — résumé agressif garantit perte d'info). Déclencher aussi après explore, après feature, avant switch.
-**QMD-first** : pour tout fichier `.md` du projet, utiliser `mcp__qmd__get` ou `mcp__qmd__query` avant `Read`. `Read` sur un `.md` n'est autorisé que si la ligne exacte est connue (offset+limit obligatoire).
-**Auto-métriques** : `model-metrics.sh` émet `[METRICS]` à chaque message — mécanique, pas à ta discrétion. Lire la pastille, l'inclure en §1. Si l'utilisateur demande explicitement un switch ("passe sur haiku", "monte sur opus") : exécuter immédiatement `python3 scripts/switch_model.py <model> [pane]` sans attendre de proposition.
+Input : ne relire que si modifié. Routing : Haiku exploration / Sonnet dev / Opus archi. Début session : signaler modèle, proposer switch si surdimensionné (ex: Opus→dev → « tape `/model sonnet` »). `/compact` à **~60% fenêtre** — pas 75-98%. Déclencher aussi après explore, feature, switch.
+**QMD-first** : pour tout `.md`, utiliser `mcp__qmd__get`/`mcp__qmd__query` avant `Read`. `Read` sur `.md` uniquement si ligne exacte connue (offset+limit obligatoire).
+**Auto-métriques** : `model-metrics.sh` → `[METRICS]` — mécanique. Inclure en §1. Switch explicite → `python3 scripts/switch_model.py <model> [pane]` immédiat.
 
 ## §16 Orchestration → `./orchestration/`
 
@@ -114,7 +112,7 @@ Charger uniquement les MCPs nécessaires. Lister dans §0. Purger en fin de sess
 
 ## §20 Mémoire & Évolution
 
-Ce fichier évolue sur instruction explicite. Immuables sans validation : §5, §21, §22.
+Évolue sur instruction explicite. Immuables sans validation : §5, §21, §22.
 
 | Événement | Section |
 | --- | --- |
