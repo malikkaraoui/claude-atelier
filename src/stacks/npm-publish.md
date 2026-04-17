@@ -30,14 +30,19 @@ pour l'à-peu-près :
 ```text
 npm version patch/minor/major
     ↓  crée commit + tag git automatiquement
-git push && git push --tags
+    ↓  postversion: git push && git push --tags (automatique)
     ↓  tag v* déclenche GitHub Actions
-Lint + version check
+Lint + version check (tag == package.json)
     ↓  si tout passe
-npm publish --access public (via NPM_TOKEN)
-    ↓
+npm publish --access public (via NPM_TOKEN, CI uniquement)
+    ↓  garde idempotente: version déjà publiée → skip sans erreur
 registre npmjs.org mis à jour
 ```
+
+> ⚠️ **Règle absolue** : ne jamais éditer `package.json` version à la main.
+> Toujours passer par `npm version patch/minor/major` — seule commande qui
+> synchronise package.json + commit + tag en une opération atomique.
+> La CI est le **seul publisher** — jamais `npm publish` en local.
 
 ## Versionning sémantique
 
