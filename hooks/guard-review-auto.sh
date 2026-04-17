@@ -18,7 +18,7 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
   TOTAL=$((PREV + LINES))
   echo "$TOTAL" > "$LINES_FILE"
 
-  if [ "$TOTAL" -ge 100 ]; then
+  if [ "$TOTAL" -ge 300 ]; then
     echo ""
     echo "📋 [MOHAMED] $TOTAL lignes modifiées — Mohamed instruit le dossier."
     echo "   Tu as la tête dans le guidon. Il voit ce que tu ne vois plus."

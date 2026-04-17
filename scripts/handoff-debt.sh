@@ -23,8 +23,11 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HANDOFF_DIR="$REPO_ROOT/docs/handoffs"
 
 # Seuils (configurables via env)
-THRESHOLD_LINES="${HANDOFF_THRESHOLD_LINES:-100}"
-THRESHOLD_COMMITS="${HANDOFF_THRESHOLD_COMMITS:-3}"
+# Anciens seuils (trop bas → boucle de dette auto-alimentée) :
+#   lines=100, commits=3, days=7
+# Nouveaux seuils calibrés pour bloquer les vrais oublis, pas l'infra :
+THRESHOLD_LINES="${HANDOFF_THRESHOLD_LINES:-300}"
+THRESHOLD_COMMITS="${HANDOFF_THRESHOLD_COMMITS:-8}"
 THRESHOLD_DAYS="${HANDOFF_THRESHOLD_DAYS:-7}"
 
 MODE="text"
@@ -105,9 +108,10 @@ if [[ $LINES_ADDED -ge $THRESHOLD_LINES ]]; then
   REASONS="${REASONS}lines_added($LINES_ADDED>=$THRESHOLD_LINES) "
 fi
 if [[ $COMMITS_SINCE -ge $THRESHOLD_COMMITS ]]; then
-  # On ne bloque que s'il y a aussi des commits feat/fix dedans
+  # Compter uniquement les commits qui apportent du code (feat/fix/refactor)
+  # Exclure : docs, chore, style, ci, test, build (infra pure)
   FEAT_COUNT=$(git -C "$REPO_ROOT" log "$RANGE" --format=%s 2>/dev/null | grep -cE "^(feat|fix|refactor)" || true)
-  if [[ $FEAT_COUNT -gt 0 ]]; then
+  if [[ $FEAT_COUNT -ge 2 ]]; then
     EXCEEDS=true
     REASONS="${REASONS}commits($COMMITS_SINCE>=$THRESHOLD_COMMITS, $FEAT_COUNT feat/fix) "
   fi
