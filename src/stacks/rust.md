@@ -31,6 +31,7 @@ figure: Roxane
 
 - `cargo-audit` : scan CVE des dépendances (base RustSec)
 - `cargo-deny` : licences, advisories, sources autorisées
+- `cargo vet` : vérification des crates par des auditeurs de confiance (supply chain)
 - `miri` : détection UB dans le code unsafe
 - Pas de `unsafe` sans review ; minimiser la surface unsafe
 - `#[forbid(unsafe_code)]` sur les crates qui n'en ont pas besoin
