@@ -3,7 +3,7 @@
 > Date : 2026-04-17
 > Type : review
 > Priorité : moyenne
-> reviewedRange: fd4b8d50bec06273e84165a8684c72d83f627dd7..521a76e17e5237c1c99145179cd28c3804aa63a6
+> reviewedRange: fd4b8d50bec06273e84165a8684c72d83f627dd7..706892ced5edd1687fd6aa5427e4ddbb14f9c24e
 
 ---
 
@@ -46,16 +46,18 @@ Extension massive des satellites de stack dans l'atelier claude-atelier. L'objec
 
 ### Fichiers à lire
 
-- `src/stacks/c.md` — Nouveau (Clara)
-- `src/stacks/cpp.md` — Nouveau (Célia)
-- `src/stacks/rust.md` — Nouveau (Roxane)
-- `src/stacks/go.md` — Nouveau (Gaëlle)
-- `src/stacks/php.md` — Nouveau (Phoebe)
-- `src/stacks/csharp.md` — Nouveau (Carmen)
-- `src/stacks/python.md` — Amélioré
-- `src/stacks/java.md` — Amélioré
-- `src/stacks/javascript.md` — Amélioré
-- `hooks/routing-check.sh` (lignes 230-310)
+```text
+src/stacks/c.md
+src/stacks/cpp.md
+src/stacks/rust.md
+src/stacks/go.md
+src/stacks/php.md
+src/stacks/csharp.md
+src/stacks/python.md
+src/stacks/java.md
+src/stacks/javascript.md
+hooks/routing-check.sh
+```
 
 ### Contraintes / hors scope
 
