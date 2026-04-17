@@ -89,6 +89,8 @@ ANTHROPIC_BASE_URL=http://localhost:4000
 
 Si le fichier n'existe pas, le créer. Si la ligne existe déjà, signaler qu'elle est déjà configurée.
 
+> **Comportement** : si `.env.local` existe déjà, seule la ligne `ANTHROPIC_BASE_URL` est ajoutée ou mise à jour — le reste du fichier est préservé tel quel. Aucune autre variable n'est touchée.
+
 > **Note** : ne jamais écrire `.env.local` dans `.claude/` — il va à la racine du projet.
 
 ### Étape 8 — Healthcheck

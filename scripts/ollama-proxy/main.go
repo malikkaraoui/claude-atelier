@@ -23,6 +23,7 @@ import (
 	"os"
 	"strings"
 	"time"
+
 )
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -124,10 +125,13 @@ func extractText(content interface{}) string {
 		var parts []string
 		for _, block := range v {
 			if m, ok := block.(map[string]interface{}); ok {
-				if m["type"] == "text" {
+				blockType, _ := m["type"].(string)
+				if blockType == "text" {
 					if t, ok := m["text"].(string); ok {
 						parts = append(parts, t)
 					}
+				} else if blockType != "" {
+					log.Printf("[warn] skipping non-text block type=%s (not supported in MVP)", blockType)
 				}
 			}
 		}
@@ -187,13 +191,18 @@ func makeHandler(cfg Config) http.HandlerFunc {
 			return
 		}
 
-		// Resolve model: use first matching preset or fall back to last
-		ollamaModel := cfg.Presets[len(cfg.Presets)-1].Model
+		// Resolve model: use first matching preset or fall back to lightest (first)
+		ollamaModel := cfg.Presets[0].Model
+		matched := false
 		for _, p := range cfg.Presets {
 			if strings.Contains(anthropicReq.Model, p.Name) || anthropicReq.Model == p.Model {
 				ollamaModel = p.Model
+				matched = true
 				break
 			}
+		}
+		if !matched {
+			log.Printf("[warn] model %q unknown — fallback to %s (lightest preset)", anthropicReq.Model, ollamaModel)
 		}
 
 		system, messages := translateMessages(anthropicReq)
