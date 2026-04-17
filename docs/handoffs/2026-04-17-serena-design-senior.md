@@ -1,18 +1,40 @@
 # Handoff Review — Séréna (Design Senior) + MCP magic 21st.dev
 
-**Date** : 2026-04-17
-**Auteur** : Claude (Sonnet)
-**Destinataire** : Copilot / GPT
-**Scope** : 142+ lignes · 7 fichiers modifiés · 4 fichiers créés
+> Date : 2026-04-17
+> Type : review
+> Priorité : haute
+> reviewedRange: 914aa5126e091e5cb9db6809d82a5d8060b7da92..ef0b878404f13dbb26e2d6fdc7516f2e7bad1461
 
 ---
 
-## Contexte
+## De : Claude (Sonnet 4.6)
+
+### Contexte
 
 Ajout d'un responsable design dans claude-atelier : **Séréna**, chef designer senior.
 Elle s'active automatiquement quand l'utilisateur parle UI/UX/design/charte/landing page.
 Intégration du MCP **magic** (21st.dev) pour les composants UI premium, et du skill
 **UI/UX Pro Max** (upstream, non embarqué — option A délégation).
+
+### Question précise
+
+Le hook `detect-design-need.sh` et le skill Séréna sont-ils correctement intégrés dans le repo (throttle session-scoped, runtime sync, sécurité `.env`, packaging npm) ?
+
+### Fichiers à lire
+
+```text
+hooks/detect-design-need.sh
+src/skills/design-senior/SKILL.md
+src/templates/.env.example
+src/templates/.mcp.json
+bin/init.js
+.claude/hooks-manifest.json
+test/hooks.js
+```
+
+### Contraintes / hors scope
+
+Ne pas modifier l'architecture Séréna. Review uniquement — pas d'implémentation.
 
 ## Fichiers créés
 
