@@ -42,10 +42,22 @@ Si §0 est vide (`—`) → **ne pas charger context7**, signaler à Malik : « 
 | `Kotlin` | kotlin, ktor si API | — |
 | `Rust` | rust (docs.rs), tokio si async | — |
 | `Go` | — (stable, bien connu) | tout |
-| `C / C++` | — | tout |
-| `C#` | microsoft/dotnet si .NET 8+ | — |
+| `C` | — (stable) | tout |
+| `C++` | — sauf si Qt/Boost | framework spécifique |
+| `C#` | microsoft/dotnet si .NET 9+ | — |
 | `Objective-C` | — | tout |
 | `Swift` | swift, swiftui si UI | — |
+| `PHP` | — sauf si Laravel/Symfony | framework spécifique |
+| `Perl` | — (stable) | tout |
+| `SQL` | — (stable, spécifique au SGBD) | tout |
+| `R` | — sauf si Shiny/tidymodels | framework spécifique |
+| `Fortran` | — (stable) | tout |
+| `MATLAB` | — (documentation interne) | tout |
+| `Ada` | — (GNAT/SPARK docs internes) | tout |
+| `Assembly` | — | tout |
+| `Delphi` | — (documentation Embarcadero) | tout |
+| `Scratch` | — (scratch.mit.edu) | tout |
+| `Visual Basic` | microsoft/dotnet si .NET | — |
 
 ### Frameworks web
 

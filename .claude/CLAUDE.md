@@ -68,7 +68,7 @@ Template par défaut : `/core` · `/modules` · `/services` · `/utils` · `/tes
 
 ## §10 Standards par stack → `../stacks/`
 
-Chargement conditionnel selon §0 « Stack ». Disponibles : `javascript` · `python` · `java` · `react-vite` · `firebase` · `docker` · `ollama` · `ios-xcode` · `freebox`.
+Chargement conditionnel selon §0 « Stack ». Disponibles : `javascript` · `python` · `java` · `c` · `cpp` · `csharp` · `rust` · `go` · `php` · `perl` · `sql` · `r` · `fortran` · `matlab` · `ada` · `assembly` · `delphi` · `scratch` · `visual-basic` · `react-vite` · `firebase` · `docker` · `ollama` · `ios-xcode` · `freebox` · `npm-publish`.
 
 **Context7** → `./ecosystem/context7-mapping.md` : croiser §0 (Phase + Stack) à chaque session pour calibrer les docs. Si §0 vide → signaler avant tout appel context7.
 

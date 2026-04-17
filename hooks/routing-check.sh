@@ -246,6 +246,77 @@ if echo "$PROMPT" | grep -qiE "npm publish|npm version|npmjs|npm token|npm tag|r
   fi
 fi
 
+# C / C++ → Clara / Célia
+if echo "$PROMPT" | grep -qiE "gcc|g\+\+|clang\+\+|cmake|CMakeLists|makefile.*\.c|\.h file|valgrind|sanitizer|\.cpp|\.cxx|gdb"; then
+  if echo "$PROMPT" | grep -qiE "\.cpp|\.cxx|\.cc|\.hpp|c\+\+|clang\+\+|g\+\+|cmake.*cpp"; then
+    STACK_FILE="$REPO_ROOT/src/stacks/cpp.md"
+    if [ -f "$STACK_FILE" ]; then
+      echo "[CÉLIA] ⚙️ Chantier C++ détecté. Célia prend le relais — satellite chargé."
+      cat "$STACK_FILE"
+    fi
+  else
+    STACK_FILE="$REPO_ROOT/src/stacks/c.md"
+    if [ -f "$STACK_FILE" ]; then
+      echo "[CLARA] 🔧 Chantier C détecté. Clara prend le relais — satellite chargé."
+      cat "$STACK_FILE"
+    fi
+  fi
+fi
+
+# Rust → Roxane
+if echo "$PROMPT" | grep -qiE "cargo|rustc|\.rs file|crate|clippy|rustfmt|tokio|Cargo\.toml"; then
+  STACK_FILE="$REPO_ROOT/src/stacks/rust.md"
+  if [ -f "$STACK_FILE" ]; then
+    echo "[ROXANE] 🦀 Chantier Rust détecté. Roxane prend le relais — satellite chargé."
+    cat "$STACK_FILE"
+  fi
+fi
+
+# Go → Gaëlle
+if echo "$PROMPT" | grep -qiE "go\.mod|go\.sum|goroutine|golang|go build|go test|go run|\.go file"; then
+  STACK_FILE="$REPO_ROOT/src/stacks/go.md"
+  if [ -f "$STACK_FILE" ]; then
+    echo "[GAËLLE] 🦫 Chantier Go détecté. Gaëlle prend le relais — satellite chargé."
+    cat "$STACK_FILE"
+  fi
+fi
+
+# PHP → Phoebe
+if echo "$PROMPT" | grep -qiE "\.php|composer\.json|artisan|laravel|symfony|phpunit|phpstan|psalm"; then
+  STACK_FILE="$REPO_ROOT/src/stacks/php.md"
+  if [ -f "$STACK_FILE" ]; then
+    echo "[PHOEBE] 🐘 Chantier PHP détecté. Phoebe prend le relais — satellite chargé."
+    cat "$STACK_FILE"
+  fi
+fi
+
+# C# → Carmen
+if echo "$PROMPT" | grep -qiE "\.cs file|\.csproj|\.sln|dotnet|nuget|blazor|aspnet|csharp|c#"; then
+  STACK_FILE="$REPO_ROOT/src/stacks/csharp.md"
+  if [ -f "$STACK_FILE" ]; then
+    echo "[CARMEN] 🎵 Chantier C# détecté. Carmen prend le relais — satellite chargé."
+    cat "$STACK_FILE"
+  fi
+fi
+
+# Ada → Ada
+if echo "$PROMPT" | grep -qiE "\.adb|\.ads|gnat|spark|alire|ada 2022|ravenscar"; then
+  STACK_FILE="$REPO_ROOT/src/stacks/ada.md"
+  if [ -f "$STACK_FILE" ]; then
+    echo "[ADA] 👑 Chantier Ada détecté. Ada prend le relais — satellite chargé."
+    cat "$STACK_FILE"
+  fi
+fi
+
+# SQL → Selma
+if echo "$PROMPT" | grep -qiE "postgresql|postgres|mysql|sqlite|flyway|liquibase|\.sql file|migration sql|pgstat|pg_stat"; then
+  STACK_FILE="$REPO_ROOT/src/stacks/sql.md"
+  if [ -f "$STACK_FILE" ]; then
+    echo "[SELMA] 🗄️ Chantier SQL détecté. Selma prend le relais — satellite chargé."
+    cat "$STACK_FILE"
+  fi
+fi
+
 # ===== DIAGNOSTIC (throttled toutes les 30 min) =====
 RUN_DIAGNOSTIC=false
 if [ ! -f "$THROTTLE_FILE" ]; then
