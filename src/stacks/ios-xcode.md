@@ -36,15 +36,19 @@ Simulateur (iPhone / iPad / Apple TV)
 Xcode (seulement : signing, device, LLDB, Instruments, Archive)
 ```
 
-## Conventions Swift
+## Conventions Swift (6.x — avril 2026)
 
-- `async/await` — pas de Combine legacy sauf besoin explicite
+- `async/await` — **Observation** framework pour l'état (remplace Combine pour les cas simples)
 - Architecture **MVVM + Services** + local Swift Packages
 - Une Preview par View SwiftUI
 - Logique métier dans `Packages/CoreKit` (ou équivalent)
 - Tests unitaires dans `*Tests/`
 - `async let` pour la concurrence, `@MainActor` pour les mutations UI
 - `actor` pour les wrappers thread-safe (ex: FFI handles)
+- **Swift 6 strict concurrency** par défaut : `Sendable` protocol obligatoire
+- **Swift Testing** framework (nouveau) pour les tests neufs ; XCTest pour legacy
+- **SwiftData** préféré à Core Data pour les nouveaux projets
+- Combine réservé aux cas avancés (publishers custom, chaînes réactives complexes)
 
 ## Commandes Makefile standard
 
