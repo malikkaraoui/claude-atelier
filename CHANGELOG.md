@@ -15,6 +15,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.21.3] — 2026-04-17
+
+### Added — Extension 20 langages (16 nouveaux satellites)
+
+**16 nouveaux satellites** avec persona féminine, frontmatter YAML, 8 sections standard (60-100 lignes) :
+
+- Systèmes : `c.md` (Clara 🔧), `cpp.md` (Célia ⚙️), `rust.md` (Roxane 🦀), `assembly.md` (Astrid 🔩), `ada.md` (Ada 👑)
+- Managés : `csharp.md` (Carmen 🎵), `php.md` (Phoebe 🐘), `go.md` (Gaëlle 🦫), `perl.md` (Perla 🐪), `visual-basic.md` (Violette 💜)
+- Scientifique/spéciaux : `sql.md` (Selma 🗄️), `r.md` (Rosalie 📊), `fortran.md` (Florence 🔬), `matlab.md` (Mathilde 📐), `delphi.md` (Daphné 🏛️), `scratch.md` (Sofia 🧩)
+
+### Changed — Amélioration 4 satellites existants
+
+- **`python.md`** : uv (100x pip), free-threaded 3.13, bandit+pip-audit, pyright, hypothesis
+- **`java.md`** : Virtual Threads Java 21+, Structured Concurrency JEP 505/506, Testcontainers, Find Security Bugs
+- **`javascript.md`** : Biome (remplace ESLint+Prettier), Bun production-ready, Vitest, TypeScript 6, Node.js 22+
+- **`ios-xcode.md`** : Swift 6 strict concurrency, Swift Testing framework, SwiftData, Observation framework
+
+### Changed — Intégration
+
+- **`CLAUDE.md §10`** : 26 stacks listés (vs 10 avant)
+- **`routing-check.sh`** : détection auto C/C++, Rust, Go, PHP, C#, Ada + frameworks (gin/fiber/axum/actix)
+- **`context7-mapping.md`** : 14 nouvelles entrées langages
+- **`hooks-manifest.json`** : SHA resynchronisé
+
+### Fixed — Corrections post-review Copilot
+
+- Go : HPKE ≠ post-quantum (claim faux corrigé) + `go test -race` ajouté
+- Rust : `cargo vet` ajouté (supply chain)
+- C++ : "C++26 disponible" → "en finalisation, support compilateur partiel"
+- routing-check.sh : regex C# élargie (`\.cs\b` + `Program\.cs`)
+
 ### Changed — Mise en avant du « contexte dynamique du Context7 »
 
 - **README** : la promesse produit met maintenant en avant le **contexte dynamique du Context7** dans le hero, le tableau "Killer bundle" et les sections FR/EN.

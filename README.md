@@ -14,7 +14,7 @@
 
 ## ⚡ From vibes to rails — Claude Code, disciplined
 
-13 agents · 16 skills · mémoire persistante · Context7 dynamique · mode éco · verrou review
+29 agents · 16 skills · mémoire persistante · Context7 dynamique · mode éco · verrou review
 
 [![npm version](https://img.shields.io/npm/v/claude-atelier.svg?style=flat-square&color=CB3837)](https://www.npmjs.com/package/claude-atelier)
 [![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/claude-atelier)
@@ -390,20 +390,36 @@ Résultat : Claude ne peut pas publier proprement une feature lourde sans passer
 
 ### Satellites par stack
 
-Chargés conditionnellement selon le projet actif. Certains activent un agent nommé.
+26 satellites chargés conditionnellement selon le projet actif (`§10`). Détection automatique via `routing-check.sh`.
 
 | Stack | Fichier | Agent |
 | --- | --- | --- |
 | iOS / tvOS / iPadOS | `stacks/ios-xcode.md` | **Steve** 🍎 |
 | NPM Publish / Registry | `stacks/npm-publish.md` | **Isaac** 📦 |
 | Freebox API | `stacks/freebox.md` | **Xavier** 📡 |
-| JavaScript/TypeScript | `stacks/javascript.md` | **Nael** 🔷 |
+| JavaScript / TypeScript | `stacks/javascript.md` | **Nael** 🔷 |
 | Python | `stacks/python.md` | **Anthonio** 🐍 |
 | Java | `stacks/java.md` | **Marcel** ☕ |
 | React + Vite | `stacks/react-vite.md` | **Nicolas & Fazia** ⚡ |
 | Firebase | `stacks/firebase.md` | **Camille** 🔥 |
 | Docker | `stacks/docker.md` | **Pascal** 🐳 |
 | Ollama | `stacks/ollama.md` | **Jeffrey** 🦙 |
+| C | `stacks/c.md` | **Clara** 🔧 |
+| C++ | `stacks/cpp.md` | **Célia** ⚙️ |
+| Rust | `stacks/rust.md` | **Roxane** 🦀 |
+| Go | `stacks/go.md` | **Gaëlle** 🦫 |
+| PHP | `stacks/php.md` | **Phoebe** 🐘 |
+| C# / .NET | `stacks/csharp.md` | **Carmen** 🎵 |
+| Ada / SPARK | `stacks/ada.md` | **Ada** 👑 |
+| Assembly | `stacks/assembly.md` | **Astrid** 🔩 |
+| Perl | `stacks/perl.md` | **Perla** 🐪 |
+| Visual Basic | `stacks/visual-basic.md` | **Violette** 💜 |
+| SQL / PostgreSQL | `stacks/sql.md` | **Selma** 🗄️ |
+| R | `stacks/r.md` | **Rosalie** 📊 |
+| Fortran | `stacks/fortran.md` | **Florence** 🔬 |
+| MATLAB | `stacks/matlab.md` | **Mathilde** 📐 |
+| Delphi / Object Pascal | `stacks/delphi.md` | **Daphné** 🏛️ |
+| Scratch | `stacks/scratch.md` | **Sofia** 🧩 |
 
 ---
 
