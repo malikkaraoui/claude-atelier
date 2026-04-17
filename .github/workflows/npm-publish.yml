@@ -27,13 +27,19 @@ jobs:
           TAG_REF: ${{ github.ref }}
         run: |
           TAG_VERSION="${TAG_REF#refs/tags/v}"
-          PKG_VERSION=$(node -p "require('./package.json').version")
+          PKG_VERSION=$(jq -r '.version' package.json)
           if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
             echo "Tag v$TAG_VERSION does not match package.json version $PKG_VERSION"
             exit 1
           fi
 
       - name: Publish
-        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PKG_VERSION=$(jq -r '.version' package.json)
+          if npm view "claude-atelier@${PKG_VERSION}" version 2>/dev/null | grep -qF "${PKG_VERSION}"; then
+            echo "Version ${PKG_VERSION} already published — skipping."
+            exit 0
+          fi
+          npm publish --access public

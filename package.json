@@ -44,7 +44,7 @@
   "scripts": {
     "update-security": "node scripts/update-security.js",
     "preversion": "node scripts/gen-help.js && node scripts/version-gate.js",
-    "postversion": "git push && git push --tags && npm publish",
+    "postversion": "git push && git push --tags",
     "validate:handoffs": "node test/validate-handoff.js --all",
     "lint": "node test/lint-refs.js && node test/lint-length.js && node test/lint-hooks-manifest.js && node test/manifest-validator.js && node test/lint-npm-files.js && node test/lint-runtime-skills-sync.js",
     "lint:npm-files": "node test/lint-npm-files.js",
