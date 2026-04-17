@@ -9,7 +9,7 @@
  *   claude-atelier init --dry-run       # show what would be copied
  */
 
-import { existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, readdirSync, statSync, symlinkSync } from 'node:fs';
 import { dirname, join, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
@@ -25,6 +25,30 @@ const GREEN = '\x1b[0;32m';
 const YELLOW = '\x1b[0;33m';
 const CYAN = '\x1b[0;36m';
 const NC = '\x1b[0m';
+
+// ── Bridge .claude/skills/ → .github/skills/ (cross-agent standard) ──────────
+function bridgeSkillsToGithub(claudeSkillsDir, projectRoot) {
+  if (!existsSync(claudeSkillsDir)) return;
+
+  const githubSkillsDir = join(projectRoot, '.github', 'skills');
+  if (!existsSync(githubSkillsDir)) mkdirSync(githubSkillsDir, { recursive: true });
+
+  for (const entry of readdirSync(claudeSkillsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const skillMd = join(claudeSkillsDir, entry.name, 'SKILL.md');
+    if (!existsSync(skillMd)) continue;
+
+    const linkPath = join(githubSkillsDir, `${entry.name}.md`);
+    if (existsSync(linkPath)) continue;
+
+    // Symlink (Unix) with copy fallback (Windows)
+    try {
+      symlinkSync(relative(githubSkillsDir, skillMd), linkPath);
+    } catch (_) {
+      copyFileSync(skillMd, linkPath);
+    }
+  }
+}
 
 function parseArgs(argv) {
   const args = argv.slice(2).filter(a => a !== 'init');
@@ -271,6 +295,11 @@ export async function runInit(argv) {
       const claudeMd = join(target, 'CLAUDE.md');
       const { setupS0 } = await import('./setup-s0.js');
       await setupS0(claudeMd, process.cwd());
+    }
+
+    // Bridge .claude/skills/ → .github/skills/ (cross-agent standard)
+    if (!isGlobal) {
+      bridgeSkillsToGithub(join(target, 'skills'), process.cwd());
     }
 
     // Post-install checks : npm audit + package.json#files

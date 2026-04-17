@@ -17,7 +17,7 @@
 
 import {
   existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync,
-  readdirSync, statSync, cpSync,
+  readdirSync, statSync, cpSync, symlinkSync,
 } from 'node:fs';
 import { dirname, join, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -151,6 +151,29 @@ function copyDirRecursive(src, dest, dryRun, report, excludeDirs = []) {
   }
 }
 
+// ── Bridge .claude/skills/ → .github/skills/ (cross-agent standard) ──────────
+function bridgeSkillsToGithub(claudeSkillsDir, projectRoot) {
+  if (!existsSync(claudeSkillsDir)) return;
+
+  const githubSkillsDir = join(projectRoot, '.github', 'skills');
+  if (!existsSync(githubSkillsDir)) mkdirSync(githubSkillsDir, { recursive: true });
+
+  for (const entry of readdirSync(claudeSkillsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const skillMd = join(claudeSkillsDir, entry.name, 'SKILL.md');
+    if (!existsSync(skillMd)) continue;
+
+    const linkPath = join(githubSkillsDir, `${entry.name}.md`);
+    if (existsSync(linkPath)) continue;
+
+    try {
+      symlinkSync(relative(githubSkillsDir, skillMd), linkPath);
+    } catch (_) {
+      copyFileSync(skillMd, linkPath);
+    }
+  }
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export async function runUpdate(argv) {
   const opts = parseArgs(argv);
@@ -207,6 +230,11 @@ export async function runUpdate(argv) {
   if (backupPath) {
     console.log(`${DIM}Backup conservé : ${relative(process.cwd(), backupPath)}/${NC}`);
     console.log(`${DIM}Pour annuler : cp -r ${relative(process.cwd(), backupPath)}/ ${relative(process.cwd(), targetDir)}/${NC}\n`);
+  }
+
+  // Bridge .claude/skills/ → .github/skills/ (cross-agent standard)
+  if (!opts.global) {
+    bridgeSkillsToGithub(join(targetDir, 'skills'), process.cwd());
   }
 
   // Post-install checks : npm audit + package.json#files
