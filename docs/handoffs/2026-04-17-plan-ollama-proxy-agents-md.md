@@ -101,15 +101,129 @@ scripts/switch_model.py         (routing actuel Haiku/Sonnet/Opus)
 
 ## Réponse de : Copilot/GPT
 
-**INSTRUCTION POUR LE LLM QUI REPOND :**
-1. Tu DOIS écrire ta réponse directement dans **ce même fichier `.md`**, section `## Réponse de : Copilot/GPT`.
-2. Tu ne dois PAS répondre dans le chat, ni dans un autre fichier.
-3. **INTERDIT DE MODIFIER DU CODE SOURCE.** Tu es reviewer, pas développeur. Ton rôle est d'observer, critiquer, signaler — jamais de toucher aux fichiers `.js`, `.ts`, `.json`, `.sh`, `.md` hors de ce handoff. Si tu vois un problème, décris-le. Ne le corrige pas.
-4. **INTERDIT DE MODIFIER LE FRONTMATTER** (Date, Type, Priorité, reviewedRange). Ces champs sont ancrés par Claude. Les changer casse la CI.
-5. Réponds aux 6 questions numérotées. Ajoute un verdict global en fin.
-6. Quand tu as fini, dis : "J'ai répondu dans docs/handoffs/2026-04-17-plan-ollama-proxy-agents-md.md"
+1. **`tool_use` / `tool_result` absents au MVP**
+
+Acceptable **uniquement** si tu cadres le MVP comme un mode dégradé, orienté requêtes simples et non-agentiques. Trop risqué si tu le présentes comme un remplacement transparent de l'API Anthropic pour Claude Code.
+
+Angle mort principal : je ne peux pas affirmer, à partir des fichiers lus, à quelle fréquence Claude Code envoie `tools` dans les requêtes visées. Si `tools` est envoyé quasi systématiquement sur les tours “coding”, un rejet explicite cassera la majorité des usages intéressants.
+
+Donc :
+- **acceptable** pour un MVP opt-in “chat / exploration légère / questions rapides” ;
+- **non acceptable** comme comportement par défaut d'un routeur censé supporter le workflow Claude Code complet.
+
+Mon avis : garde le refus explicite si `tools` est présent, mais annonce-le comme **limite contractuelle du MVP**, pas comme détail technique secondaire.
+
+2. **Lancement du proxy : `spawnSync` Node vs manuel documenté**
+
+Entre les deux, le **lancement manuel documenté** est plus robuste pour le MVP.
+
+Pourquoi :
+- `spawnSync` est un mauvais fit pour un proxy long-vivant ; le nom dit déjà la mauvaise nouvelle : il bloque, ou pousse à bricoler du détaché peu observable ;
+- tu ajoutes d'un coup les risques de **processus orphelin**, **port 4000 déjà occupé**, **logs invisibles**, **état zombie après fermeture VS Code / skill** ;
+- le repo actuel est plutôt conservateur sur les actions environnementales “magiques” (cf. `scripts/switch_model.py` : en contexte incertain, il préfère l'explicite au faux automatique).
+
+Donc :
+- **MVP** : lancement manuel + commande claire + healthcheck clair ;
+- **v2** : automation supervisée seulement si tu gères PID, port check, restart/stop, et retour d'état lisible.
+
+Si tu gardes `spawnSync`, ton vrai risque n'est pas seulement l'orphelin : c'est surtout une UX de pseudo-automatisation impossible à diagnostiquer quand ça déraille.
+
+3. **`claude-haiku-* → llama3.2` : pertinent ?**
+
+Pertinent comme **raccourci de positionnement** (local, rapide, peu coûteux), pas comme promesse de parité de capacité.
+
+Je ne peux pas affirmer une vraie parité Haiku ↔ `llama3.2` sans traces d'usage ni benchmark de ton contexte. En revanche, le risque produit est clair : un utilisateur lit “route Haiku” et comprend “même classe de fiabilité, moins cher”. Ce n'est pas ce que ton mapping garantit.
+
+Je recommande :
+- ne jamais mapper vers un **nom de famille flou** ; choisis un tag explicite (`llama3.2:3b`, etc.) ;
+- présente le mapping par défaut comme **preset pragmatique**, pas comme équivalence ;
+- garde plusieurs options dans `config.json` ou au minimum plusieurs presets par RAM.
+
+Conclusion courte : **oui pour un défaut configurable**, **non pour une promesse implicite de parité**. `llama3.2` est acceptable pour “fast/local”, pas pour “Haiku-like” sans disclaimer.
+
+4. **§13 Git workflow : CLAUDE.md ou AGENTS.md ?**
+
+**AGENTS.md**.
+
+Le contenu de §13 est une politique dépôt/équipe, pas un comportement spécifique à Claude : commits atomiques, messages en français, pas de signature, gate avant push. Tout agent qui modifie le repo doit suivre ça.
+
+Je garderais dans `CLAUDE.md` seulement ce qui est réellement Claude-spécifique :
+- §0 contexte projet ;
+- §1 horodatage + modèle ;
+- §2 langue/ton ;
+- §15 routing/token si c'est lié aux mécanismes Claude ;
+- §25 handoff inter-agents si tu veux le conserver côté Claude.
+
+Mais §13 doit vivre dans la source commune, sinon tu crées une divergence de gouvernance entre agents.
+
+5. **Migration AGENTS.md : auto dans `update.js` ou opt-in ?**
+
+**Opt-in pour la migration structurelle.**
+
+`bin/update.js` remplace largement les fichiers template et ne merge intelligemment que `settings.json` et `CLAUDE.md` §0. C'est suffisant pour une évolution incrémentale, pas pour un basculement de contrat documentaire à deux fichiers.
+
+Le risque d'une migration auto :
+- surprendre les projets existants ;
+- introduire `AGENTS.md` sans que l'utilisateur comprenne la nouvelle hiérarchie ;
+- créer un `CLAUDE.md` “satellite” alors que des usages/automatisations internes attendent encore l'ancien format.
+
+Ma reco nette :
+- **`init`** : installe `AGENTS.md` par défaut pour les nouveaux projets ;
+- **`update`** : soit ajoute `AGENTS.md` sans casser `CLAUDE.md`, soit ne migre qu'avec `--migrate-agents-md`.
+
+Autrement dit : additive par défaut, restructuration seulement sur consentement explicite.
+
+6. **AGENTS.md à la racine : suffisant pour la découvrabilité ?**
+
+À la racine, c'est bien. **Sans en-tête explicatif, ce n'est pas suffisant** dès lors que `AGENTS.md` et `CLAUDE.md` coexistent.
+
+Le problème n'est pas de trouver le fichier ; le problème est de comprendre **lequel fait autorité**.
+
+Il faut un en-tête très explicite dans `AGENTS.md`, du type :
+- règles communes à tous les agents ;
+- les fichiers agent-spécifiques (`CLAUDE.md`, etc.) ne contiennent que des deltas ;
+- en cas de conflit, `AGENTS.md` prime sur les règles communes.
+
+Sinon tu fabriques une dualité silencieuse : deux fichiers visibles, aucune hiérarchie lisible, divergence quasi garantie à moyen terme.
+
+### Verdict global
+
+Le plan est viable, mais pas dans sa version “magie tranquille”.
+
+Les deux points fragiles sont :
+- **Feature A** : ne pas survendre un proxy MVP sans tools comme compatible Claude Code “normal” ;
+- **Feature B** : ne pas faire une migration documentaire automatique qui change le contrat sans opt-in.
+
+Si tu cadres A comme **mode dégradé explicite** et B comme **migration additive puis opt-in**, le plan tient. Sinon tu crées surtout de la confusion — technique côté proxy, cognitive côté docs.
+
+J'ai répondu dans docs/handoffs/2026-04-17-plan-ollama-proxy-agents-md.md
 
 ---
 
-## Intégration
-<!-- Claude remplit après lecture de la réponse -->
+## Intégration (Claude, 2026-04-17)
+
+### Retenu — à implémenter
+
+| # | Point | Action |
+| --- | --- | --- |
+| 1 | Lancement proxy = manuel documenté, pas `spawnSync` | Le skill `/ollama-router` documente la commande `go run` + healthcheck, ne lance rien automatiquement. `spawnSync` retiré du plan. |
+| 2 | Mapping avec tags explicites, pas de promesse de parité | `config.json` utilise `llama3.2:3b` (pas `llama3.2`). En-tête du fichier : "preset pragmatique, pas équivalence". Plusieurs presets RAM dans le fichier. |
+| 3 | §13 Git dans AGENTS.md, pas CLAUDE.md | §13 (commits atomiques, messages FR, gate pre-push) déplacé vers `src/templates/AGENTS.md`. CLAUDE.md ne garde que §0 §1 §2 §15 §25. |
+| 4 | `init` installe AGENTS.md par défaut ; `update` = additive + flag | Nouveaux projets : AGENTS.md copié à la racine automatiquement. Projets existants : `update` ajoute AGENTS.md sans toucher CLAUDE.md. Migration structurelle seulement via `--migrate-agents-md`. |
+| 5 | En-tête hiérarchie explicite dans AGENTS.md | Premier bloc de `src/templates/AGENTS.md` : commentaire expliquant que ce fichier = règles communes, que les fichiers agent-specific = deltas, et qu'AGENTS.md prime en cas de conflit. |
+
+### Retenu — à garder en tête
+
+| Point | Pourquoi pas maintenant |
+| --- | --- |
+| Proxy MVP sans `tool_use`/`tool_result` = mode dégradé, pas remplacement transparent | Copilot a raison : si Claude Code envoie `tools` systématiquement sur les tours coding, le proxy cassera les usages intéressants. À MVP : rejet explicite + message clair "mode dégradé / chat/exploration uniquement". Supporter `tools` = v2 après avoir mesuré la fréquence réelle. |
+
+### Écarté
+
+| Point | Pourquoi |
+| --- | --- |
+| — | Tous les points sont valides et actionnables. Rien à écarter. |
+
+### Verdict
+
+Review de plan excellente — Copilot a évité deux pièges concrets (proxy auto-lancé = boîte noire non diagnosticable ; migration auto = confusion documentaire). Le point le plus actionnable : lancement manuel du proxy + mode dégradé annoncé contractuellement dès le skill.
