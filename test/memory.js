@@ -12,7 +12,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -344,6 +344,113 @@ test('--graph shows 1-hop neighbors', () => {
     ok(readResult.status === 0, `read should exit 0: ${readResult.stderr}`);
     ok(readResult.stdout.includes('GRAPH'), 'output should mention GRAPH mode');
     ok(readResult.stdout.includes('cache'), 'output should include neighbor node');
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Test: memory-migrate.js import from .md files
+// ─────────────────────────────────────────────────────────────
+console.log('\n── memory-migrate.js ──');
+
+test('memory-migrate.js parses nodes from markdown frontmatter', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-migrate-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+  const mdDir = resolve(tmpDir, 'notes');
+
+  try {
+    // Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    // Create markdown files with YAML frontmatter
+    mkdirSync(mdDir, { recursive: true });
+
+    writeFileSync(resolve(mdDir, 'routing.md'), `---
+type: concept
+description: Request routing engine
+---
+# Routing
+
+This is a routing concept node.
+`);
+
+    writeFileSync(resolve(mdDir, 'cache.md'), `---
+type: concept
+description: Caching layer
+---
+# Cache
+
+This is a caching concept.
+`);
+
+    // Migrate
+    const migrateResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-migrate.js'), mdDir, '--db', dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+
+    ok(migrateResult.status === 0, `migrate should exit 0: ${migrateResult.stderr}`);
+
+    // Verify nodes in DB
+    const db = openDb(dbPath);
+    try {
+      const routing = db.prepare(`SELECT * FROM nodes WHERE name = ?`).get('routing');
+      const cache = db.prepare(`SELECT * FROM nodes WHERE name = ?`).get('cache');
+
+      ok(routing, 'routing node should exist');
+      ok(cache, 'cache node should exist');
+      ok(routing.type === 'concept', `routing type should be concept, got ${routing.type}`);
+      ok(routing.description.includes('routing'), 'routing description should contain word');
+    } finally {
+      closeDb(db);
+    }
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('memory-migrate.js skips files without frontmatter', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-migrate-skip-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+  const mdDir = resolve(tmpDir, 'notes');
+
+  try {
+    // Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    // Create markdown file WITHOUT frontmatter
+    mkdirSync(mdDir, { recursive: true });
+
+    writeFileSync(resolve(mdDir, 'no-frontmatter.md'), `# Just a note
+
+No type specified here.
+`);
+
+    // Migrate
+    const migrateResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-migrate.js'), mdDir, '--db', dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+
+    ok(migrateResult.status === 0, `migrate should exit 0`);
+
+    // Verify node does NOT exist
+    const db = openDb(dbPath);
+    try {
+      const found = db.prepare(`SELECT * FROM nodes WHERE name = ?`).get('no-frontmatter');
+      ok(!found, 'file without frontmatter should not create node');
+    } finally {
+      closeDb(db);
+    }
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
   }
