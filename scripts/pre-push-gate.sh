@@ -26,7 +26,9 @@ if git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
     LOCAL=$(git rev-parse HEAD 2>/dev/null)
     REMOTE=$(git rev-parse '@{u}' 2>/dev/null || echo "$LOCAL")
     BASE=$(git merge-base "$LOCAL" "$REMOTE" 2>/dev/null || echo "$LOCAL")
-    if [[ "$LOCAL" != "$REMOTE" && "$BASE" == "$LOCAL" ]]; then
+    if [[ "$LOCAL" == "$REMOTE" ]]; then
+        : # Déjà synchronisé, rien à faire
+    elif [[ "$BASE" == "$LOCAL" ]]; then
         # Remote ahead, local behind → rebase simple
         echo -e "${YELLOW}[SYNC]${NC} Remote a des commits non intégrés — rebase automatique..."
         if ! git pull --rebase --quiet; then
@@ -35,8 +37,10 @@ if git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
             exit 1
         fi
         echo -e "${GREEN}[SYNC]${NC} Rebase OK — local à jour avec remote."
-    elif [[ "$LOCAL" != "$REMOTE" && "$BASE" != "$LOCAL" ]]; then
-        # Divergence : local ET remote ont avancé
+    elif [[ "$BASE" == "$REMOTE" ]]; then
+        : # Local ahead (fast-forward possible), rien à faire
+    else
+        # Divergence réelle : local ET remote ont chacun des commits
         echo -e "${RED}[FAIL]${NC} Branches divergentes (local et remote ont chacun des commits)."
         echo -e "         Fais 'git pull --rebase' manuellement avant de relancer."
         exit 1
