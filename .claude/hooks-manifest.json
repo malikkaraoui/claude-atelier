@@ -66,7 +66,7 @@
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       },
-      "sha256": "1d66d3d569f475bc"
+      "sha256": "67dd9f4fd57de0ec"
     },
     {
       "name": "guard-no-sign",

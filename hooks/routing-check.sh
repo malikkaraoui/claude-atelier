@@ -264,7 +264,7 @@ if echo "$PROMPT" | grep -qiE "gcc|g\+\+|clang\+\+|cmake|CMakeLists|makefile.*\.
 fi
 
 # Rust → Roxane
-if echo "$PROMPT" | grep -qiE "cargo|rustc|\.rs file|crate|clippy|rustfmt|tokio|Cargo\.toml"; then
+if echo "$PROMPT" | grep -qiE "cargo|rustc|\.rs file|crate|clippy|rustfmt|tokio|Cargo\.toml|axum|actix-web|serde_json|tauri|leptos|diesel|sqlx.*rust"; then
   STACK_FILE="$REPO_ROOT/src/stacks/rust.md"
   if [ -f "$STACK_FILE" ]; then
     echo "[ROXANE] 🦀 Chantier Rust détecté. Roxane prend le relais — satellite chargé."
@@ -273,7 +273,7 @@ if echo "$PROMPT" | grep -qiE "cargo|rustc|\.rs file|crate|clippy|rustfmt|tokio|
 fi
 
 # Go → Gaëlle
-if echo "$PROMPT" | grep -qiE "go\.mod|go\.sum|goroutine|golang|go build|go test|go run|\.go file"; then
+if echo "$PROMPT" | grep -qiE "go\.mod|go\.sum|goroutine|golang|go build|go test|go run|\.go file|gin-gonic|go-fiber|fiber\.New|ent\.NewClient|cosmtrek/air|go-chi|echo framework go"; then
   STACK_FILE="$REPO_ROOT/src/stacks/go.md"
   if [ -f "$STACK_FILE" ]; then
     echo "[GAËLLE] 🦫 Chantier Go détecté. Gaëlle prend le relais — satellite chargé."
@@ -291,7 +291,7 @@ if echo "$PROMPT" | grep -qiE "\.php|composer\.json|artisan|laravel|symfony|phpu
 fi
 
 # C# → Carmen
-if echo "$PROMPT" | grep -qiE "\.cs file|\.csproj|\.sln|dotnet|nuget|blazor|aspnet|csharp|c#"; then
+if echo "$PROMPT" | grep -qiE "\.cs\b|Program\.cs|\.csproj|\.sln|dotnet|nuget|blazor|aspnet|csharp|c#"; then
   STACK_FILE="$REPO_ROOT/src/stacks/csharp.md"
   if [ -f "$STACK_FILE" ]; then
     echo "[CARMEN] 🎵 Chantier C# détecté. Carmen prend le relais — satellite chargé."
