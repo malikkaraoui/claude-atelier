@@ -227,6 +227,44 @@ if [ ! -f "$SESSION_REVIEW_FLAG" ] && [ -d "$REPO_ROOT/.git" ]; then
   fi
 fi
 
+# ===== OLLAMA STATUS (chaque message) =====
+OLLAMA_STATUS=""
+if command -v ollama &>/dev/null; then
+  OLLAMA_HEALTH=$(curl -s --max-time 1 http://localhost:11434/api/tags 2>/dev/null || echo "")
+  if [ -n "$OLLAMA_HEALTH" ]; then
+    # Compter les modèles LLM (exclure embed models)
+    OLLAMA_MODELS=$(echo "$OLLAMA_HEALTH" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    models = [m['name'] for m in d.get('models', []) if 'embed' not in m['name']]
+    print(','.join(models[:3]))
+except: print('')
+" 2>/dev/null)
+    HAS_EMBED=$(echo "$OLLAMA_HEALTH" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    has = any('nomic-embed' in m['name'] for m in d.get('models', []))
+    print('yes' if has else 'no')
+except: print('no')
+" 2>/dev/null)
+    if [ -n "$OLLAMA_MODELS" ]; then
+      OLLAMA_STATUS="🦙✅ ollama ($OLLAMA_MODELS)"
+      if [ "$HAS_EMBED" = "yes" ]; then
+        OLLAMA_STATUS="$OLLAMA_STATUS +embed"
+      fi
+    else
+      OLLAMA_STATUS="🦙⚠️ ollama (aucun modele LLM)"
+    fi
+  else
+    OLLAMA_STATUS="🦙❌ ollama (eteint → ollama serve)"
+  fi
+else
+  OLLAMA_STATUS="🦙❌ ollama (non installe → /ollama-router)"
+fi
+echo "[$OLLAMA_STATUS]"
+
 # ===== DÉTECTION STACK (chaque message) =====
 # iOS / Xcode → Steve
 if echo "$PROMPT" | grep -qiE "xcode|ios|tvos|ipados|swiftui|swift|simctl|xcodebuild|iphone|ipad|app store|testflight|make run|make tvrun"; then
