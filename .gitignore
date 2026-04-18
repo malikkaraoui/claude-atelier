@@ -66,3 +66,8 @@ workflow-vscode-xcode.md
 .claude/shell-snapshots/
 watchdog-report-*.txt
 .claude/worktrees/
+
+# Memory SQLite database (local, not tracked)
+.claude/memory.db
+.claude/memory.db-wal
+.claude/memory.db-shm
