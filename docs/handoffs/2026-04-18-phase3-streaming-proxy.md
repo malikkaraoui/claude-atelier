@@ -3,7 +3,7 @@
 > Date : 2026-04-18
 > Type : review
 > Priorité : moyenne
-> reviewedRange: 432e69889d4411e69939783c101fde8bae68e6dc..ca720dea9057c75757ead6ca254986d804bbbc67
+> reviewedRange: 432e69889d4411e69939783c101fde8bae68e6dc..7269db7503eeb88fc4aa61b7932091bf58582677
 
 ---
 
@@ -42,11 +42,13 @@ Points spécifiques à examiner :
 
 ### Fichiers à lire
 
-- `scripts/ollama-proxy/main.go` — proxy complet (focus : `handleStreamingRequest`, `writeSSE`, `translateResponse`)
-- `scripts/ollama-proxy/main_test.go` — 5 tests Go (mocks NDJSON → assertions SSE)
-- `scripts/ollama-proxy/go.mod` — module Go
-- `hooks/routing-check.sh` — version string (ligne ~211)
-- `test/hooks.js` — section Go tests intégrés (lignes ~522-552)
+```text
+scripts/ollama-proxy/main.go       — proxy complet (focus : handleStreamingRequest, writeSSE, translateResponse)
+scripts/ollama-proxy/main_test.go  — 5 tests Go (mocks NDJSON → assertions SSE)
+scripts/ollama-proxy/go.mod        — module Go
+hooks/routing-check.sh             — version string (ligne ~211)
+test/hooks.js                      — section Go tests intégrés (lignes ~522-552)
+```
 
 ### Contraintes / hors scope
 

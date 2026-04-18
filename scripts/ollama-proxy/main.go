@@ -458,6 +458,7 @@ func handleStreamingRequest(w http.ResponseWriter, cfg Config, anthropicReq Anth
 	var accText strings.Builder
 	var finalChunk OllamaResponse
 	outputTokens := 0
+	gotDone := false
 
 	for scanner.Scan() {
 		line := scanner.Bytes()
@@ -481,7 +482,25 @@ func handleStreamingRequest(w http.ResponseWriter, cfg Config, anthropicReq Anth
 			}
 		} else {
 			finalChunk = chunk
+			gotDone = true
 		}
+	}
+
+	// EOF before done:true or scanner error → stream was truncated
+	if !gotDone || scanner.Err() != nil {
+		errMsg := "stream truncated: ollama closed connection before done:true"
+		if scanner.Err() != nil {
+			errMsg = fmt.Sprintf("stream error: %s", scanner.Err().Error())
+		}
+		log.Printf("[PROXY] %s", errMsg)
+		cbStop, _ := json.Marshal(map[string]interface{}{"type": "content_block_stop", "index": 0})
+		writeSSE(w, "content_block_stop", string(cbStop))
+		errData, _ := json.Marshal(map[string]interface{}{
+			"type":  "error",
+			"error": map[string]string{"type": "api_error", "message": errMsg},
+		})
+		writeSSE(w, "error", string(errData))
+		return
 	}
 
 	// thinking fallback: emit as delta if content was empty

@@ -166,3 +166,27 @@ func TestHandleStreamingRequestWithToolUse(t *testing.T) {
 		t.Error("expected stop_reason tool_use in message_delta")
 	}
 }
+
+func TestHandleStreamingRequestTruncated(t *testing.T) {
+	// Simulate Ollama closing connection before done:true
+	ollama := mockOllamaStream([]string{
+		`{"model":"test","message":{"role":"assistant","content":"partial"},"done":false}`,
+		// no done:true chunk — connection closes here
+	})
+	defer ollama.Close()
+
+	cfg := Config{OllamaURL: ollama.URL, Port: "0", Model: "test"}
+	anthropicReq := AnthropicRequest{Model: "claude-sonnet", Stream: true}
+	ollamaBody, _ := json.Marshal(OllamaRequest{Model: "test", Stream: true})
+
+	rec := httptest.NewRecorder()
+	handleStreamingRequest(rec, cfg, anthropicReq, ollamaBody, "test")
+	body := rec.Body.String()
+
+	if !strings.Contains(body, `"error"`) {
+		t.Error("expected SSE error event on truncated stream")
+	}
+	if strings.Contains(body, "message_stop") {
+		t.Error("truncated stream should not emit message_stop")
+	}
+}
