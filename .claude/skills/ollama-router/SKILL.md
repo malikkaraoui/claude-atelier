@@ -67,25 +67,26 @@ Si le pull prend longtemps (> 10 GB), annoncer : « Pull en cours de `llama3.1:7
 
 **Si aucun modèle n'était installé au départ**, tout est transparent : détection RAM → pull preset → pull embeddings → tout est prêt.
 
-### Étape 5 — Vérifier config.json
-
-Lire `scripts/ollama-proxy/config.json`. Confirmer que le preset choisi est présent.
-Si besoin, proposer une modification du `config.json`.
-
-### Étape 6 — Documenter le lancement manuel
-
-**Le proxy ne se lance PAS automatiquement.** Afficher la commande exacte :
+### Étape 5 — Vérifier et installer Go si absent
 
 ```bash
-# Terminal dédié (garder ouvert)
-cd scripts/ollama-proxy
-go run main.go
+go version
 ```
 
-Variables d'environnement optionnelles :
+Si Go absent : `brew install go` (macOS) ou `curl -fsSL https://go.dev/dl/go1.26.linux-amd64.tar.gz | sudo tar -C /usr/local -xzf -` (Linux).
+
+### Étape 6 — Mettre à jour config.json et lancer le proxy
+
+1. Écrire le modèle choisi dans `scripts/ollama-proxy/config.json` (champ `"model"`)
+2. **Lancer le proxy automatiquement** en background :
+
 ```bash
-PORT=4001 go run main.go          # port alternatif
+cd scripts/ollama-proxy && go run main.go &>/tmp/ollama-proxy.log &
+sleep 3
 ```
+
+3. Vérifier les logs : `head -10 /tmp/ollama-proxy.log`
+4. Si le port 4000 est occupé : `PORT=4001 go run main.go &>/tmp/ollama-proxy.log &`
 
 ### Étape 7 — Écrire ANTHROPIC_BASE_URL
 
@@ -129,9 +130,10 @@ Rappeler le mode dégradé :
 
 ## Règles
 
-- **Automatiser au maximum** : ne demander à l'utilisateur que s'il y a un vrai choix à faire
-- Installer Ollama si absent, le lancer si éteint, pull les modèles si manquants — tout ça sans poser de question
-- Ne jamais lancer `go run` ou `go build` automatiquement — documenter seulement
+- **Automatiser TOUT** : détecter, installer, lancer, configurer — l'utilisateur exprime le besoin, Jeffrey branche
+- Installer Ollama si absent, Go si absent, lancer si éteint, pull les modèles si manquants — zéro question
+- Lancer le proxy en background automatiquement (`go run main.go &`)
+- Écrire `.env.local` automatiquement
 - Ne jamais modifier les fichiers Go sans instruction explicite
-- Si Go absent (`go version` échoue) → signaler avant l'étape 6
 - `.env.local` à la racine uniquement, jamais dans `.claude/`
+- **Ordre de détection complet** : Ollama → Go → modèles → proxy → .env.local → healthcheck — tout dans un seul flow
