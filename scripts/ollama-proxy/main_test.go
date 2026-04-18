@@ -167,6 +167,97 @@ func TestHandleStreamingRequestWithToolUse(t *testing.T) {
 	}
 }
 
+// ── Triage ────────────────────────────────────────────────────────────────────
+
+func mockOllamaClassifier(answer string) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		resp := OllamaResponse{
+			Model:   "test",
+			Message: OllamaRespMsg{Role: "assistant", Content: answer},
+			Done:    true,
+		}
+		json.NewEncoder(w).Encode(resp)
+	}))
+}
+
+func TestClassifyRequestLocal(t *testing.T) {
+	ollama := mockOllamaClassifier("LOCAL")
+	defer ollama.Close()
+
+	cfg := Config{OllamaURL: ollama.URL, Model: "test"}
+	req := AnthropicRequest{
+		Messages: []AnthropicMessage{{Role: "user", Content: "change the color to red"}},
+	}
+	if got := classifyRequest(cfg, req); got != triageLocal {
+		t.Errorf("expected triageLocal, got %v", got)
+	}
+}
+
+func TestClassifyRequestForward(t *testing.T) {
+	ollama := mockOllamaClassifier("ANTHROPIC")
+	defer ollama.Close()
+
+	cfg := Config{OllamaURL: ollama.URL, Model: "test"}
+	req := AnthropicRequest{
+		Messages: []AnthropicMessage{{Role: "user", Content: "design a distributed event-sourcing architecture"}},
+	}
+	if got := classifyRequest(cfg, req); got != triageForward {
+		t.Errorf("expected triageForward, got %v", got)
+	}
+}
+
+func TestClassifyRequestToolResultAlwaysForward(t *testing.T) {
+	// Even if Ollama says LOCAL, tool_result → always forward (heuristic wins)
+	ollama := mockOllamaClassifier("LOCAL")
+	defer ollama.Close()
+
+	cfg := Config{OllamaURL: ollama.URL, Model: "test"}
+	req := AnthropicRequest{
+		Messages: []AnthropicMessage{
+			{
+				Role: "user",
+				Content: []interface{}{
+					map[string]interface{}{"type": "tool_result", "tool_use_id": "x", "content": "ok"},
+				},
+			},
+		},
+	}
+	if got := classifyRequest(cfg, req); got != triageForward {
+		t.Errorf("expected triageForward for tool_result, got %v", got)
+	}
+}
+
+func TestForwardToAnthropic(t *testing.T) {
+	// Mock Anthropic server
+	anthropic := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer sk-test" {
+			t.Error("expected Authorization header forwarded")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"type":"message","content":[{"type":"text","text":"hello"}]}`)
+	}))
+	defer anthropic.Close()
+
+	cfg := Config{AnthropicURL: anthropic.URL}
+	body := []byte(`{"model":"claude-sonnet","messages":[{"role":"user","content":"hi"}]}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+	req.Header.Set("Authorization", "Bearer sk-test")
+	req.Header.Set("anthropic-version", "2023-06-01")
+
+	rec := httptest.NewRecorder()
+	forwardToAnthropic(rec, req, cfg, body, "Bearer sk-test")
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "hello") {
+		t.Errorf("expected Anthropic response piped, got: %s", rec.Body.String())
+	}
+}
+
 func TestHandleStreamingRequestTruncated(t *testing.T) {
 	// Simulate Ollama closing connection before done:true
 	ollama := mockOllamaStream([]string{

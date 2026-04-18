@@ -15,6 +15,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -29,10 +30,13 @@ import (
 // ── Config ────────────────────────────────────────────────────────────────────
 
 type Config struct {
-	OllamaURL string        `json:"ollama_url"`
-	Port      string        `json:"port"`
-	Model     string        `json:"model"`
-	Presets   []ModelPreset `json:"presets"`
+	OllamaURL    string        `json:"ollama_url"`
+	Port         string        `json:"port"`
+	Model        string        `json:"model"`
+	Presets      []ModelPreset `json:"presets"`
+	Triage       bool          `json:"triage"`        // enable local/Anthropic triage routing
+	TriageModel  string        `json:"triage_model"`  // model for classification (defaults to Model)
+	AnthropicURL string        `json:"anthropic_url"` // default: https://api.anthropic.com
 }
 
 type ModelPreset struct {
@@ -43,9 +47,11 @@ type ModelPreset struct {
 
 func loadConfig() Config {
 	cfg := Config{
-		OllamaURL: "http://localhost:11434",
-		Port:      "4000",
-		Model:     "qwen3.5:4b",
+		OllamaURL:    "http://localhost:11434",
+		Port:         "4000",
+		Model:        "qwen3.5:4b",
+		Triage:       false,
+		AnthropicURL: "https://api.anthropic.com",
 		Presets: []ModelPreset{
 			{Name: "light", Model: "qwen3.5:4b", MaxRAM: 8},
 			{Name: "standard", Model: "qwen3.5:9b", MaxRAM: 16},
@@ -403,6 +409,166 @@ func translateResponse(ollamaResp OllamaResponse, model string) AnthropicRespons
 	}
 }
 
+// ── Triage: classify → LOCAL or ANTHROPIC ───────────────────────────────────
+
+type triageDecision int
+
+const (
+	triageLocal    triageDecision = iota // Ollama handles locally
+	triageForward                        // Forward to real Anthropic
+)
+
+// extractLastUserMessage returns the last user text message from the request.
+func extractLastUserMessage(req AnthropicRequest) string {
+	for i := len(req.Messages) - 1; i >= 0; i-- {
+		m := req.Messages[i]
+		if m.Role != "user" {
+			continue
+		}
+		switch v := m.Content.(type) {
+		case string:
+			return v
+		case []interface{}:
+			for _, b := range v {
+				if bm, ok := b.(map[string]interface{}); ok {
+					if bm["type"] == "text" {
+						if t, ok := bm["text"].(string); ok && t != "" {
+							return t
+						}
+					}
+				}
+			}
+		}
+	}
+	return ""
+}
+
+// hasToolResults returns true if any user message contains a tool_result block.
+// When Claude Code is in an agentic tool loop, only the real Anthropic model
+// can reliably continue the conversation.
+func hasToolResults(req AnthropicRequest) bool {
+	for _, m := range req.Messages {
+		blocks, ok := m.Content.([]interface{})
+		if !ok {
+			continue
+		}
+		for _, b := range blocks {
+			if bm, ok := b.(map[string]interface{}); ok {
+				if bm["type"] == "tool_result" {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// classifyRequest asks Ollama whether it can handle the request locally.
+// Falls back to triageLocal on any error (never breaks the proxy).
+func classifyRequest(cfg Config, req AnthropicRequest) triageDecision {
+	// Fast path: agentic tool loop in progress → always forward
+	if hasToolResults(req) {
+		log.Printf("[triage] tool_result detected → ANTHROPIC")
+		return triageForward
+	}
+
+	lastMsg := extractLastUserMessage(req)
+	if lastMsg == "" {
+		return triageLocal
+	}
+
+	classifyModel := cfg.TriageModel
+	if classifyModel == "" {
+		classifyModel = cfg.Model
+	}
+
+	thinkFalse := false
+	classifyReq := OllamaRequest{
+		Model: classifyModel,
+		Messages: []OllamaMessage{
+			{
+				Role: "user",
+				Content: "Réponds uniquement avec LOCAL ou ANTHROPIC, sans aucune explication.\n" +
+					"LOCAL = tu peux répondre seul (question simple, correction courte, explication basique).\n" +
+					"ANTHROPIC = trop complexe (architecture système, analyse multi-fichiers, raisonnement long, code critique).\n\n" +
+					"Demande : " + lastMsg,
+			},
+		},
+		Stream: false,
+		Think:  &thinkFalse,
+		Options: map[string]int{"num_predict": 5},
+	}
+
+	body, _ := json.Marshal(classifyReq)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Post(cfg.OllamaURL+"/api/chat", "application/json", bytes.NewReader(body))
+	if err != nil {
+		log.Printf("[triage] ollama unreachable, defaulting to LOCAL: %v", err)
+		return triageLocal
+	}
+	defer resp.Body.Close()
+
+	var ollamaResp OllamaResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ollamaResp); err != nil {
+		log.Printf("[triage] classify decode error, defaulting to LOCAL: %v", err)
+		return triageLocal
+	}
+
+	answer := strings.ToUpper(strings.TrimSpace(ollamaResp.Message.Content))
+	if strings.Contains(answer, "ANTHROPIC") {
+		log.Printf("[triage] → ANTHROPIC (Ollama: %q)", answer)
+		return triageForward
+	}
+	log.Printf("[triage] → LOCAL (Ollama: %q)", answer)
+	return triageLocal
+}
+
+// forwardToAnthropic pipes the original request body to the real Anthropic API
+// and streams the response back verbatim (works for both streaming and buffered).
+func forwardToAnthropic(w http.ResponseWriter, r *http.Request, cfg Config, body []byte, authHeader string) {
+	anthropicURL := cfg.AnthropicURL
+	if anthropicURL == "" {
+		anthropicURL = "https://api.anthropic.com"
+	}
+
+	proxyReq, err := http.NewRequest(http.MethodPost, anthropicURL+r.URL.Path, bytes.NewReader(body))
+	if err != nil {
+		http.Error(w, `{"type":"error","error":{"type":"api_error","message":"failed to create proxy request"}}`, http.StatusInternalServerError)
+		return
+	}
+
+	proxyReq.Header.Set("Content-Type", "application/json")
+	proxyReq.Header.Set("Authorization", authHeader)
+
+	// Forward Anthropic-specific headers if present
+	if v := r.Header.Get("anthropic-version"); v != "" {
+		proxyReq.Header.Set("anthropic-version", v)
+	} else {
+		proxyReq.Header.Set("anthropic-version", "2023-06-01")
+	}
+	if v := r.Header.Get("anthropic-beta"); v != "" {
+		proxyReq.Header.Set("anthropic-beta", v)
+	}
+
+	client := &http.Client{Timeout: 300 * time.Second}
+	resp, err := client.Do(proxyReq)
+	if err != nil {
+		http.Error(w, fmt.Sprintf(`{"type":"error","error":{"type":"api_error","message":"anthropic unreachable: %s"}}`, err.Error()), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Pipe headers + body back verbatim
+	for k, vs := range resp.Header {
+		for _, v := range vs {
+			w.Header().Add(k, v)
+		}
+	}
+	w.WriteHeader(resp.StatusCode)
+	io.Copy(w, resp.Body) //nolint:errcheck
+	log.Printf("[triage] Anthropic response piped: HTTP %d", resp.StatusCode)
+}
+
 // ── Streaming: Ollama NDJSON → Anthropic SSE ────────────────────────────────
 
 func writeSSE(w http.ResponseWriter, event, data string) {
@@ -596,6 +762,26 @@ func makeHandler(cfg Config) http.HandlerFunc {
 			return
 		}
 
+		// Triage: classify request → LOCAL (Ollama) or ANTHROPIC
+		if cfg.Triage {
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				// Claude Code sometimes sends the key as x-api-key
+				if key := r.Header.Get("x-api-key"); key != "" {
+					authHeader = "Bearer " + key
+				}
+			}
+			if authHeader == "" {
+				log.Printf("[triage] no auth header — cannot forward, routing to Ollama")
+			} else {
+				decision := classifyRequest(cfg, anthropicReq)
+				if decision == triageForward {
+					forwardToAnthropic(w, r, cfg, body, authHeader)
+					return
+				}
+			}
+		}
+
 		// Resolve model: use config.json "model" field as default
 		ollamaModel := cfg.Model
 		if ollamaModel == "" && len(cfg.Presets) > 0 {
@@ -675,7 +861,7 @@ func main() {
 	}
 
 	addr := "localhost:" + cfg.Port
-	log.Printf("[ollama-proxy] v0.3.0 — tool_use enabled")
+	log.Printf("[ollama-proxy] v0.4.0 — triage routing enabled=%v", cfg.Triage)
 	log.Printf("[ollama-proxy] listening on http://%s", addr)
 	log.Printf("[ollama-proxy] ollama backend: %s", cfg.OllamaURL)
 	log.Printf("[ollama-proxy] default model: %s", cfg.Model)

@@ -2,6 +2,9 @@
   "ollama_url": "http://localhost:11434",
   "port": "4000",
   "model": "qwen3.5:4b",
+  "triage": false,
+  "triage_model": "qwen3.5:4b",
+  "anthropic_url": "https://api.anthropic.com",
   "presets": [
     {
       "name": "light",
