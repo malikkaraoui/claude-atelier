@@ -9,6 +9,10 @@
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 THROTTLE_FILE="/tmp/claude-atelier-diagnostic-last"
 THROTTLE_SECONDS=1800  # 30 minutes
+CACHE_DIR="/tmp/claude-atelier-model-cache"
+LEGACY_MODEL_FILE="/tmp/claude-atelier-current-model"
+
+mkdir -p "$CACHE_DIR"
 
 # Lire le message utilisateur (JSON stdin) avec python3 pour un parsing fiable
 _RAW_INPUT=$(cat)
@@ -43,11 +47,53 @@ except: pass
 " 2>/dev/null)
 
 # ===== ROUTING (chaque message) =====
-MODEL_FILE="/tmp/claude-atelier-current-model"
 MODEL_SOURCE="inconnu"
+MODEL_CACHE_KIND=""
 
 normalize_model() {
   printf '%s' "$1" | sed 's/\[.*$//' | tr -d '\r\n'
+}
+
+cache_scope_key() {
+  if [ -n "$1" ]; then
+    printf '%s' "$1"
+    return
+  fi
+
+  if [ -n "$2" ]; then
+    printf '%s' "$2" | cksum | awk '{print $1}'
+    return
+  fi
+
+  printf 'global'
+}
+
+write_model_cache() {
+  local model="$1"
+  printf '%s\n' "$model" > "$MODEL_FILE"
+  printf '%s\n' "$model" > "$LEGACY_MODEL_FILE"
+}
+
+read_model_cache() {
+  local cached=""
+
+  if [ -f "$MODEL_FILE" ]; then
+    cached=$(cat "$MODEL_FILE" 2>/dev/null || echo "")
+    if [ -n "$cached" ]; then
+      MODEL_CACHE_KIND="session"
+      printf '%s' "$cached"
+      return
+    fi
+  fi
+
+  if [ "$CACHE_SCOPE" = "global" ] && [ -f "$LEGACY_MODEL_FILE" ]; then
+    cached=$(cat "$LEGACY_MODEL_FILE" 2>/dev/null || echo "")
+    if [ -n "$cached" ]; then
+      MODEL_CACHE_KIND="legacy"
+      printf '%s' "$cached"
+      return
+    fi
+  fi
 }
 
 TRANSCRIPT=$(echo "$_RAW_INPUT" | python3 -c "
@@ -58,43 +104,73 @@ try:
 except: pass
 " 2>/dev/null)
 
+CACHE_SCOPE=$(cache_scope_key "$SESSION_ID" "$TRANSCRIPT")
+MODEL_FILE="$CACHE_DIR/${CACHE_SCOPE}.model"
 MODEL=""
 
-# Priorité : live > transcript (message.model des réponses assistant) > cache.
+# Priorité : live > transcript > cache scoppé session > cache legacy global.
 # Le grep "Set model to" est abandonné — trop de faux positifs (code cité dans le transcript).
-# On lit le champ message.model de la dernière entrée type=assistant du JSONL.
+# On lit plusieurs schémas connus du transcript JSONL sans supposer un seul format.
 
 if [ -n "$LIVE_MODEL" ]; then
   MODEL=$(normalize_model "$LIVE_MODEL")
   MODEL_SOURCE="live"
-  printf '%s\n' "$MODEL" > "$MODEL_FILE"
+  write_model_cache "$MODEL"
 fi
 
 # Extraire le modèle réel de la dernière réponse assistant dans le transcript
 if [ -z "$MODEL" ] && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
   TRANSCRIPT_MODEL=$(python3 -c "
 import json, sys
+
+def candidates(node):
+    if not isinstance(node, dict):
+        return []
+    data = node.get('data', {}) if isinstance(node.get('data', {}), dict) else {}
+    message = node.get('message', {}) if isinstance(node.get('message', {}), dict) else {}
+    data_message = data.get('message', {}) if isinstance(data.get('message', {}), dict) else {}
+    return [
+        node.get('model', ''),
+        message.get('model', ''),
+        data.get('model', ''),
+        data_message.get('model', ''),
+    ]
+
+def assistant_like(node):
+    if not isinstance(node, dict):
+        return False
+    node_type = node.get('type', '')
+    if node_type in ('assistant', 'assistant.message'):
+        return True
+    data = node.get('data', {}) if isinstance(node.get('data', {}), dict) else {}
+    message = node.get('message', {}) if isinstance(node.get('message', {}), dict) else {}
+    data_message = data.get('message', {}) if isinstance(data.get('message', {}), dict) else {}
+    roles = [node.get('role', ''), data.get('role', ''), message.get('role', ''), data_message.get('role', '')]
+    return any(role == 'assistant' for role in roles)
+
 last = ''
 with open('$TRANSCRIPT') as f:
     for line in f:
         try:
             d = json.loads(line)
-            if d.get('type') == 'assistant':
-                m = d.get('message', {}).get('model', '')
-                if m: last = m
+            if assistant_like(d):
+                for m in candidates(d):
+                    if isinstance(m, str) and m:
+                        last = m
+                        break
         except: pass
 print(last)
 " 2>/dev/null)
   if [ -n "$TRANSCRIPT_MODEL" ]; then
     MODEL=$(normalize_model "$TRANSCRIPT_MODEL")
     MODEL_SOURCE="transcript"
-    printf '%s\n' "$MODEL" > "$MODEL_FILE"
+    write_model_cache "$MODEL"
   fi
 fi
 
 # Fallback cache (session-start)
 if [ -z "$MODEL" ]; then
-  CACHED=$(cat "$MODEL_FILE" 2>/dev/null || echo "")
+  CACHED=$(read_model_cache)
   if [ -n "$CACHED" ]; then
     MODEL=$(normalize_model "$CACHED")
     MODEL_SOURCE="cache"
@@ -114,8 +190,60 @@ case "$SWITCH_MODE" in
   *)   SWITCH_MODE="M" ;;
 esac
 
-# ===== HORODATAGE + MODÈLE (toujours en premier — machine time) =====
+# ===== OLLAMA STATUS (chaque message) =====
+OLLAMA_STATUS=""
+PROXY_CONFIG="$REPO_ROOT/scripts/ollama-proxy/config.json"
+ACTIVE_LLM=""
+if command -v ollama &>/dev/null; then
+  OLLAMA_HEALTH=$(curl -s --max-time 1 http://localhost:11434/api/tags 2>/dev/null || echo "")
+  if [ -n "$OLLAMA_HEALTH" ]; then
+    PROXY_RUNNING=$(curl -s --max-time 1 http://localhost:4000/health 2>/dev/null || echo "")
+    if [ -n "$PROXY_RUNNING" ]; then
+      if [ -f "$PROXY_CONFIG" ]; then
+        ACTIVE_LLM=$(python3 -c "
+import json
+try:
+    d = json.load(open('$PROXY_CONFIG'))
+    print(d.get('model', d.get('defaultModel', '')))
+except: print('')
+" 2>/dev/null)
+      fi
+      OLLAMA_STATUS="🦙✅ proxy:4000 → $ACTIVE_LLM (v0.2.0 tool_use actif)"
+    else
+      OLLAMA_MODELS=$(echo "$OLLAMA_HEALTH" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    models = [m['name'].split(':')[0] for m in d.get('models', []) if 'embed' not in m['name']]
+    print(','.join(dict.fromkeys(models).keys())[:60])
+except: print('')
+" 2>/dev/null)
+      HAS_EMBED=$(echo "$OLLAMA_HEALTH" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    has = any('nomic-embed' in m['name'] for m in d.get('models', []))
+    print('yes' if has else 'no')
+except: print('no')
+" 2>/dev/null)
+      EMBED_TAG=""
+      [ "$HAS_EMBED" = "yes" ] && EMBED_TAG=" +embed"
+      if [ -n "$OLLAMA_MODELS" ]; then
+        OLLAMA_STATUS="🦙🟡 ollama ready ($OLLAMA_MODELS)$EMBED_TAG — proxy off → /ollama-router"
+      else
+        OLLAMA_STATUS="🦙⚠️ ollama (aucun modele LLM) → /ollama-router"
+      fi
+    fi
+  else
+    OLLAMA_STATUS="🦙❌ ollama eteint → ollama serve"
+  fi
+else
+  OLLAMA_STATUS="🦙❌ non installe → /ollama-router"
+fi
+
+# ===== HORODATAGE + MODÈLE + OLLAMA (toujours en tête — machine time) =====
 echo "[HORODATAGE] $(date '+%Y-%m-%d %H:%M:%S') | $MODEL"
+echo "[OLLAMA] $OLLAMA_STATUS"
 echo "[SWITCH-MODE] $SWITCH_MODE"
 
 # ===== HANDOFF DEBT BANNER §25 (calculé depuis git, jamais JSON) =====
@@ -164,7 +292,7 @@ if [ "$MODEL" = "inconnu" ] || [ "$TIER" = "inconnu" ]; then
   echo "   Causes possibles :"
   echo "   1. Le hook SessionStart (session-model.sh) n'est pas configuré dans settings.json"
   echo "   2. VS Code n'a pas été redémarré après ajout du hook"
-  echo "   3. Le fichier /tmp/claude-atelier-current-model n'existe pas ou est vide"
+  echo "   3. Le cache scoppé de session (ou le fallback /tmp/claude-atelier-current-model) n'existe pas ou est vide"
   echo ""
   echo "   Action : fermer et rouvrir VS Code. Si le problème persiste, vérifier .claude/settings.json"
   echo ""
@@ -174,7 +302,11 @@ else
   echo "  Opus→archi/décision | Sonnet→dev quotidien | Haiku→exploration/lint"
 
   if [ "$MODEL_SOURCE" = "cache" ]; then
-    echo "  ⚠️  modèle issu du cache session-start — si tu as fait /model, attends le prochain message pour la mise à jour"
+    if [ "$MODEL_CACHE_KIND" = "session" ]; then
+      echo "  ⚠️  modèle issu du cache de session — si tu as fait /model, attends le prochain message live pour confirmation"
+    else
+      echo "  ⚠️  modèle issu du cache legacy global — fallback de compatibilité, à éviter en multi-session"
+    fi
   fi
 
   # Alerte si Opus sur tâche courante (message court = tâche simple)
@@ -236,61 +368,6 @@ if [ ! -f "$SESSION_REVIEW_FLAG" ] && [ -d "$REPO_ROOT/.git" ]; then
     fi
   fi
 fi
-
-# ===== OLLAMA STATUS (chaque message) =====
-OLLAMA_STATUS=""
-PROXY_CONFIG="$REPO_ROOT/scripts/ollama-proxy/config.json"
-ACTIVE_LLM=""
-if command -v ollama &>/dev/null; then
-  OLLAMA_HEALTH=$(curl -s --max-time 1 http://localhost:11434/api/tags 2>/dev/null || echo "")
-  if [ -n "$OLLAMA_HEALTH" ]; then
-    # Vérifier si le proxy est configuré et quel modèle est actif
-    PROXY_RUNNING=$(curl -s --max-time 1 http://localhost:4000/health 2>/dev/null || echo "")
-    if [ -n "$PROXY_RUNNING" ]; then
-      # Proxy actif — lire le modèle depuis config.json
-      if [ -f "$PROXY_CONFIG" ]; then
-        ACTIVE_LLM=$(python3 -c "
-import json
-try:
-    d = json.load(open('$PROXY_CONFIG'))
-    print(d.get('model', d.get('defaultModel', '')))
-except: print('')
-" 2>/dev/null)
-      fi
-      OLLAMA_STATUS="🦙✅ proxy:4000 → $ACTIVE_LLM (v0.2.0 tool_use actif)"
-    else
-      # Ollama tourne mais proxy pas actif
-      OLLAMA_MODELS=$(echo "$OLLAMA_HEALTH" | python3 -c "
-import sys, json
-try:
-    d = json.load(sys.stdin)
-    models = [m['name'].split(':')[0] for m in d.get('models', []) if 'embed' not in m['name']]
-    print(','.join(dict.fromkeys(models).keys())[:60])
-except: print('')
-" 2>/dev/null)
-      HAS_EMBED=$(echo "$OLLAMA_HEALTH" | python3 -c "
-import sys, json
-try:
-    d = json.load(sys.stdin)
-    has = any('nomic-embed' in m['name'] for m in d.get('models', []))
-    print('yes' if has else 'no')
-except: print('no')
-" 2>/dev/null)
-      EMBED_TAG=""
-      [ "$HAS_EMBED" = "yes" ] && EMBED_TAG=" +embed"
-      if [ -n "$OLLAMA_MODELS" ]; then
-        OLLAMA_STATUS="🦙🟡 ollama ready ($OLLAMA_MODELS)$EMBED_TAG — proxy off → /ollama-router"
-      else
-        OLLAMA_STATUS="🦙⚠️ ollama (aucun modele LLM) → /ollama-router"
-      fi
-    fi
-  else
-    OLLAMA_STATUS="🦙❌ ollama eteint → ollama serve"
-  fi
-else
-  OLLAMA_STATUS="🦙❌ non installe → /ollama-router"
-fi
-echo "[$OLLAMA_STATUS]"
 
 # ===== DÉTECTION STACK (chaque message) =====
 # iOS / Xcode → Steve

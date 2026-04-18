@@ -10,7 +10,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,18 +37,21 @@ function ok(cond, msg) {
   if (!cond) throw new Error(msg ?? 'assertion échouée');
 }
 
-function hook(name, stdinObj = {}) {
+function hook(name, stdinObj = {}, env = {}) {
   return spawnSync('bash', [`hooks/${name}`], {
     input: JSON.stringify(stdinObj),
     encoding: 'utf8',
     cwd: ROOT,
-    env: { ...process.env }
+    env: { ...process.env, ...env }
   });
 }
 
 function resetRoutingEnv() {
   try {
     rmSync('/tmp/claude-atelier-current-model');
+  } catch {}
+  try {
+    rmSync('/tmp/claude-atelier-model-cache', { recursive: true, force: true });
   } catch {}
   writeFileSync('/tmp/claude-atelier-diagnostic-last', `${Math.floor(Date.now() / 1000)}`);
 }
@@ -222,6 +225,18 @@ test("routing-check bascule sur le transcript si le modèle live est absent", ()
   rmSync(dir, { recursive: true, force: true });
 });
 
+test("routing-check accepte aussi le schéma assistant.message/data.message", () => {
+  resetRoutingEnv();
+  const dir = mkdtempSync(resolve(tmpdir(), 'claude-routing-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  writeFileSync(transcript, JSON.stringify({type:"assistant.message",data:{message:{role:"assistant",model:"claude-opus-4-6"}}}) + "\n");
+  const r = hook('routing-check.sh', { prompt: 'audit', transcript_path: transcript });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('[ROUTING] modèle actif: claude-opus-4-6 (Opus (archi))'), 'fallback transcript multi-schéma attendu');
+  ok(r.stdout.includes('[ROUTING] source modèle: transcript'), 'source transcript attendue');
+  rmSync(dir, { recursive: true, force: true });
+});
+
 test("routing-check accepte le format date claude-haiku-20240307 depuis le transcript", () => {
   resetRoutingEnv();
   const dir = mkdtempSync(resolve(tmpdir(), 'claude-routing-'));
@@ -240,7 +255,7 @@ test('routing-check signale quand il ne lui reste que le cache', () => {
   const r = hook('routing-check.sh', { prompt: 'bonjour' });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[ROUTING] source modèle: cache'), 'source cache attendue');
-  ok(r.stdout.includes('modèle issu du cache session-start'), 'warning cache attendu');
+  ok(r.stdout.includes('modèle issu du cache legacy global'), 'warning cache attendu');
 });
 
 test('routing-check alerte fort si aucun modèle n’est disponible', () => {
@@ -261,6 +276,27 @@ test('garde-fou #1 : session-model à compact sans model invalide le cache', () 
   ok(!cacheExists, 'cache supprimé post-compact sans model live');
 });
 
+test('session-model scope le cache par session et évite la contamination croisée', () => {
+  resetRoutingEnv();
+  hook('session-model.sh', { model: 'claude-opus-4-6', session_id: 'session-a' });
+  const sameSession = hook('routing-check.sh', { prompt: 'bonjour', session_id: 'session-a' });
+  const otherSession = hook('routing-check.sh', { prompt: 'bonjour', session_id: 'session-b' });
+  ok(sameSession.stdout.includes('[ROUTING] modèle actif: claude-opus-4-6 (Opus (archi))'), 'session A doit relire son cache');
+  ok(sameSession.stdout.includes('[ROUTING] source modèle: cache'), 'session A utilise son cache');
+  ok(otherSession.stdout.includes('🚨 [ROUTING] MODÈLE INCONNU'), 'session B ne doit pas hériter du cache de A');
+});
+
+test('compact sur une session n’invalide pas le cache d’une autre session', () => {
+  resetRoutingEnv();
+  hook('session-model.sh', { model: 'claude-opus-4-6', session_id: 'session-a' });
+  hook('session-model.sh', { model: 'claude-sonnet-4-6', session_id: 'session-b' });
+  hook('session-model.sh', { source: 'compact', session_id: 'session-a' });
+  const sessionA = hook('routing-check.sh', { prompt: 'bonjour', session_id: 'session-a' });
+  const sessionB = hook('routing-check.sh', { prompt: 'bonjour', session_id: 'session-b' });
+  ok(sessionA.stdout.includes('🚨 [ROUTING] MODÈLE INCONNU'), 'session A doit perdre son cache après compact');
+  ok(sessionB.stdout.includes('[ROUTING] modèle actif: claude-sonnet-4-6 (Sonnet (dev))'), 'session B garde son cache');
+});
+
 test("garde-fou #2 : routing-check transcript lit message.model (fix /model)", () => {
   resetRoutingEnv();
   writeFileSync('/tmp/claude-atelier-current-model', 'claude-opus-4-6\n');
@@ -273,6 +309,30 @@ test("garde-fou #2 : routing-check transcript lit message.model (fix /model)", (
   // transcript message.model (haiku) > cache (opus)
   ok(r.stdout.includes('[ROUTING] source mod\xe8le: transcript'), 'transcript doit primer sur cache');
   ok(readFileSync('/tmp/claude-atelier-current-model', 'utf8').trim() === 'claude-haiku-4-5', 'cache mis a jour');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('routing-check remonte Ollama dans l’entête quand le proxy répond', () => {
+  resetRoutingEnv();
+  const dir = mkdtempSync(resolve(tmpdir(), 'claude-ollama-'));
+  const binDir = resolve(dir, 'bin');
+  const ollamaBin = resolve(binDir, 'ollama');
+  const curlBin = resolve(binDir, 'curl');
+  mkdirSync(binDir, { recursive: true });
+  writeFileSync(ollamaBin, '#!/bin/sh\nexit 0\n');
+  writeFileSync(curlBin, `#!/bin/sh
+case "$*" in
+  *11434/api/tags*) printf '%s' '{"models":[{"name":"qwen3.5:4b"},{"name":"nomic-embed-text:latest"}]}' ;;
+  *4000/health*) printf '%s' '{"status":"ok"}' ;;
+  *) exit 1 ;;
+esac
+`);
+  chmodSync(ollamaBin, 0o755);
+  chmodSync(curlBin, 0o755);
+  const r = hook('routing-check.sh', { prompt: 'bonjour', model: 'claude-sonnet-4-6' }, { PATH: `${binDir}:${process.env.PATH}` });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('[OLLAMA] 🦙✅ proxy:4000 → qwen3.5:4b (v0.2.0 tool_use actif)'), 'ligne OLLAMA attendue dans l’entête');
+  ok(r.stdout.indexOf('[OLLAMA]') < r.stdout.indexOf('[ROUTING] modèle actif'), 'OLLAMA doit être dans l’entête, avant le routing');
   rmSync(dir, { recursive: true, force: true });
 });
 

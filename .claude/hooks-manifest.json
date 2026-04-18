@@ -32,41 +32,43 @@
       "file": "hooks/session-model.sh",
       "type": "SessionStart",
       "trigger": "session.start",
-      "purpose": "Capture le modèle actif au démarrage et le persiste dans /tmp pour les hooks suivants",
+      "purpose": "Capture le modèle actif au démarrage et le persiste dans un cache scoppé par session pour les hooks suivants",
       "inputs": [
         "model (from session JSON)"
       ],
       "outputs": [
-        "writes /tmp/claude-atelier-current-model"
+        "writes /tmp/claude-atelier-model-cache/<session>.model",
+        "writes /tmp/claude-atelier-current-model (fallback legacy)"
       ],
       "rule": "§1 Horodatage + Modèle",
-      "test": "test/hooks.js → session-model.sh (1 test)",
+      "test": "test/hooks.js → session-model.sh + routing-check.sh (garde-fous compact + cache scoppé)",
       "exitCodes": {
         "0": "always (silent capture)"
       },
-      "sha256": "fc355cc058c8698d"
+      "sha256": "c93a36c3fd711bc9"
     },
     {
       "name": "routing-check",
       "file": "hooks/routing-check.sh",
       "type": "UserPromptSubmit",
       "trigger": "every user prompt",
-      "purpose": "Injecte [HORODATAGE] + [ROUTING] + [OLLAMA STATUS] dans le contexte. Détecte modèle via transcript (prioritaire sur cache pour /model). Détecte la stack du projet. Diagnostic périodique (30 min throttle).",
+      "purpose": "Injecte [HORODATAGE] + [OLLAMA] + [ROUTING] dans le contexte. Détecte le modèle via live > transcript multi-schémas > cache scoppé session > cache legacy. Détecte la stack du projet. Diagnostic périodique (30 min throttle).",
       "inputs": [
         "prompt",
         "model (if available in hook JSON)",
         "transcript_path",
-        "current-model from /tmp"
+        "current-model cache from /tmp/claude-atelier-model-cache",
+        "legacy current-model from /tmp/claude-atelier-current-model"
       ],
       "outputs": [
-        "additionalContext: [HORODATAGE] + [ROUTING] + source modèle + warnings éventuels"
+        "additionalContext: [HORODATAGE] + [OLLAMA] + [ROUTING] + source modèle + warnings éventuels"
       ],
       "rule": "§1 + §15 + §10",
-      "test": "test/hooks.js → routing-check.sh (4 tests)",
+      "test": "test/hooks.js → routing-check.sh (live, transcript multi-schémas, cache scoppé, entête Ollama)",
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       },
-      "sha256": "0495b1bc55ce9f97"
+      "sha256": "bc5e904d535f8593"
     },
     {
       "name": "guard-no-sign",

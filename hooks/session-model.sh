@@ -15,12 +15,35 @@ set -eu
 # shellcheck source=/dev/null
 source "$(dirname "$0")/_parse-input.sh"
 
-CACHE_FILE=/tmp/claude-atelier-current-model
+cache_scope_key() {
+  if [ -n "${HOOK_SESSION_ID:-}" ]; then
+    printf '%s' "$HOOK_SESSION_ID"
+    return
+  fi
+
+  if [ -n "${HOOK_TRANSCRIPT_PATH:-}" ]; then
+    printf '%s' "$HOOK_TRANSCRIPT_PATH" | cksum | awk '{print $1}'
+    return
+  fi
+
+  printf 'global'
+}
+
+CACHE_DIR=/tmp/claude-atelier-model-cache
+LEGACY_CACHE_FILE=/tmp/claude-atelier-current-model
+CACHE_SCOPE=$(cache_scope_key)
+CACHE_FILE="$CACHE_DIR/${CACHE_SCOPE}.model"
+
+mkdir -p "$CACHE_DIR"
 
 if [ -n "${HOOK_MODEL:-}" ]; then
   # Vérité runtime disponible → écrire cache
   printf '%s\n' "$HOOK_MODEL" > "$CACHE_FILE"
+  printf '%s\n' "$HOOK_MODEL" > "$LEGACY_CACHE_FILE"
 elif [ "${HOOK_SOURCE:-}" = "compact" ]; then
   # Compact sans model live → invalider cache (force re-détection au prochain message)
   rm -f "$CACHE_FILE"
+  if [ "$CACHE_SCOPE" = "global" ]; then
+    rm -f "$LEGACY_CACHE_FILE"
+  fi
 fi

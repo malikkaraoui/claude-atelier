@@ -21,7 +21,7 @@ Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + comm
 
 ## §1 Horodatage + Modèle
 
-Le hook `routing-check.sh` injecte `[HORODATAGE] YYYY-MM-DD HH:MM:SS | model` à chaque message (heure machine, pas serveurs Anthropic).
+Le hook `routing-check.sh` injecte `[HORODATAGE] YYYY-MM-DD HH:MM:SS | model` puis `[OLLAMA] status` à chaque message (heure machine, pas serveurs Anthropic).
 **Ouvrir chaque réponse avec cette ligne exacte** : `[YYYY-MM-DD HH:MM:SS | model] PASTILLE` (🟢/🟠/🔴 depuis `[METRICS]`, omettre si absent). Si non disponible → `[date estimée | modèle inconnu]`.
 
 ## §2 Langue & Ton

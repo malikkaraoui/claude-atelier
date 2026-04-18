@@ -24,7 +24,7 @@ Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + comm
 
 ## §1 Horodatage + Modèle — EXIGENCE non négociable
 
-Extraire MODEL-ID de `[ROUTING] modèle actif: MODEL-ID` (jamais du system prompt). Source : `live > cache > transcript` — si `transcript`, signaler fragilité.
+Extraire MODEL-ID de `[ROUTING] modèle actif: MODEL-ID` (jamais du system prompt). Source : `live > transcript > cache scoppé session > cache legacy` — si `transcript`, signaler fragilité.
 **Réponse DOIT commencer par** : `` `[YYYY-MM-DD HH:MM:SS | MODEL-ID] PASTILLE MODE` ``. Pastille de `[METRICS]` (`⬆️`/`⬇️`/`🟢`). Mode de `[SWITCH-MODE]` (`A`=auto, `M`=manuel, défaut `M`).
 **Mode A** : flèche `⬆️`/`⬇️` → `python3 scripts/switch_model.py <model>` immédiat. **Mode M** : annoncer reco, attendre validation. Toggle : "passe en auto" → `echo A > /tmp/claude-atelier-switch-mode`.
 Horodatage hook = contexte, **pas** ta sortie. Modèle indispo → `[date | modèle inconnu]`.
