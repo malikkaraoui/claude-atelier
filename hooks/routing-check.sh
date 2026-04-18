@@ -229,19 +229,36 @@ fi
 
 # ===== OLLAMA STATUS (chaque message) =====
 OLLAMA_STATUS=""
+PROXY_CONFIG="$REPO_ROOT/scripts/ollama-proxy/config.json"
+ACTIVE_LLM=""
 if command -v ollama &>/dev/null; then
   OLLAMA_HEALTH=$(curl -s --max-time 1 http://localhost:11434/api/tags 2>/dev/null || echo "")
   if [ -n "$OLLAMA_HEALTH" ]; then
-    # Compter les modèles LLM (exclure embed models)
-    OLLAMA_MODELS=$(echo "$OLLAMA_HEALTH" | python3 -c "
+    # Vérifier si le proxy est configuré et quel modèle est actif
+    PROXY_RUNNING=$(curl -s --max-time 1 http://localhost:4000/health 2>/dev/null || echo "")
+    if [ -n "$PROXY_RUNNING" ]; then
+      # Proxy actif — lire le modèle depuis config.json
+      if [ -f "$PROXY_CONFIG" ]; then
+        ACTIVE_LLM=$(python3 -c "
+import json
+try:
+    d = json.load(open('$PROXY_CONFIG'))
+    print(d.get('model', d.get('defaultModel', '')))
+except: print('')
+" 2>/dev/null)
+      fi
+      OLLAMA_STATUS="🦙✅ proxy actif → $ACTIVE_LLM"
+    else
+      # Ollama tourne mais proxy pas actif
+      OLLAMA_MODELS=$(echo "$OLLAMA_HEALTH" | python3 -c "
 import sys, json
 try:
     d = json.load(sys.stdin)
-    models = [m['name'] for m in d.get('models', []) if 'embed' not in m['name']]
-    print(','.join(models[:3]))
+    models = [m['name'].split(':')[0] for m in d.get('models', []) if 'embed' not in m['name']]
+    print(','.join(dict.fromkeys(models).keys())[:60])
 except: print('')
 " 2>/dev/null)
-    HAS_EMBED=$(echo "$OLLAMA_HEALTH" | python3 -c "
+      HAS_EMBED=$(echo "$OLLAMA_HEALTH" | python3 -c "
 import sys, json
 try:
     d = json.load(sys.stdin)
@@ -249,19 +266,19 @@ try:
     print('yes' if has else 'no')
 except: print('no')
 " 2>/dev/null)
-    if [ -n "$OLLAMA_MODELS" ]; then
-      OLLAMA_STATUS="🦙✅ ollama ($OLLAMA_MODELS)"
-      if [ "$HAS_EMBED" = "yes" ]; then
-        OLLAMA_STATUS="$OLLAMA_STATUS +embed"
+      EMBED_TAG=""
+      [ "$HAS_EMBED" = "yes" ] && EMBED_TAG=" +embed"
+      if [ -n "$OLLAMA_MODELS" ]; then
+        OLLAMA_STATUS="🦙🟡 ollama ready ($OLLAMA_MODELS)$EMBED_TAG — proxy off → /ollama-router"
+      else
+        OLLAMA_STATUS="🦙⚠️ ollama (aucun modele LLM) → /ollama-router"
       fi
-    else
-      OLLAMA_STATUS="🦙⚠️ ollama (aucun modele LLM)"
     fi
   else
-    OLLAMA_STATUS="🦙❌ ollama (eteint → ollama serve)"
+    OLLAMA_STATUS="🦙❌ ollama eteint → ollama serve"
   fi
 else
-  OLLAMA_STATUS="🦙❌ ollama (non installe → /ollama-router)"
+  OLLAMA_STATUS="🦙❌ non installe → /ollama-router"
 fi
 echo "[$OLLAMA_STATUS]"
 

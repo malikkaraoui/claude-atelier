@@ -1,15 +1,15 @@
 ---
 name: ollama-router
 description: "Setup automatique Ollama de bout en bout : détecte → installe si absent → lance si éteint → détecte RAM → choisit preset → pull modèles manquants (+ nomic-embed-text) → configure proxy → écrit .env.local → healthcheck. Zéro question inutile."
-figure: Isaac
+figure: Jeffrey
 ---
 
 # Ollama Router
 
-> Isaac 🔌 branche la prise, teste le courant, vérifie que le signal passe.
-> Quand le proxy est prêt, il se lève et annonce : « La ligne est ouverte. »
+> Jeffrey 🦙 sort de sa poche un câble, le branche, et attend le premier signal.
+> Quand Ollama répond, il hoche la tête : « Local first. Always. »
 >
-> *"Un outil local non connecté est juste du silicium dormant."*
+> *"Un LLM local non connecté est juste du silicium dormant."*
 
 Configure le proxy Anthropic → Ollama pour utiliser un LLM local avec Claude Code.
 
@@ -119,8 +119,8 @@ Si le healthcheck échoue :
 ### Étape 9 — Confirmer
 
 ```
-Isaac 🔌 : « Proxy opérationnel. ANTHROPIC_BASE_URL pointe vers localhost:4000.
-Lance `claude` — les messages seront routés vers <modèle>. »
+Jeffrey 🦙 : « Proxy opérationnel. ANTHROPIC_BASE_URL pointe vers localhost:4000.
+Lance `claude` — les messages seront routés vers <modèle>. Local first. Always. »
 ```
 
 Rappeler le mode dégradé :
