@@ -30,11 +30,17 @@ Configure le proxy Anthropic → Ollama pour utiliser un LLM local avec Claude C
 ollama list
 ```
 
-Afficher la liste à l'utilisateur. Identifier les modèles présents.
+**Si aucun modèle LLM n'est installé** → passer directement à l'étape 3 (détection RAM + pull auto).
+**Si des modèles existent** → les lister et proposer le choix :
+
+> « Modèles disponibles : `mistral`, `llama3.1:8b`, `qwen3:8b`. Lequel utiliser pour le proxy ?
+> (ou Enter pour le preset auto basé sur ta RAM) »
+
+Si l'utilisateur choisit un modèle → l'utiliser. Sinon → preset auto (étape 3).
 
 ### Étape 3 — Détecter la RAM et choisir le preset automatiquement
 
-**Ne pas demander — détecter.**
+**Détection auto de la RAM :**
 
 ```bash
 # macOS
@@ -43,23 +49,23 @@ sysctl -n hw.memsize | awk '{print int($1/1073741824)}'
 grep MemTotal /proc/meminfo | awk '{print int($2/1048576)}'
 ```
 
-Appliquer automatiquement :
-- < 8 GB → preset `light` (`llama3.2:3b`)
-- 8–16 GB → preset `standard` (`mistral`)
-- \> 16 GB → preset `heavy` (`llama3.1:70b`)
+Preset selon la RAM :
+- < 8 GB → `llama3.2:3b` (léger, rapide)
+- 8–16 GB → `mistral` (bon compromis)
+- \> 16 GB → `llama3.1:70b` (lourd, plus capable)
 
 Annoncer le choix : « RAM détectée : X GB → preset `standard` (`mistral`). »
-Si l'utilisateur veut un autre modèle, il le dit — sinon on continue.
 
-### Étape 4 — Pull automatique si modèle manquant
+### Étape 4 — Pull automatique des modèles manquants
 
-Vérifier si le modèle choisi est dans `ollama list`. Si absent, **le pull directement** sans demander :
+Vérifier `ollama list` et **pull automatiquement** ce qui manque, sans demander :
 
-```bash
-ollama pull <modèle>
-```
+1. **Le modèle LLM choisi** (étape 2 ou 3) → `ollama pull <modèle>`
+2. **`nomic-embed-text`** → requis pour la mémoire 3 niveaux en mode FULL
 
-Aussi vérifier et pull `nomic-embed-text` s'il est absent (requis pour la mémoire 3 niveaux en mode FULL).
+Si le pull prend longtemps (> 10 GB), annoncer : « Pull en cours de `llama3.1:70b` (~40 GB) — ça peut prendre 30-60 min. »
+
+**Si aucun modèle n'était installé au départ**, tout est transparent : détection RAM → pull preset → pull embeddings → tout est prêt.
 
 ### Étape 5 — Vérifier config.json
 
