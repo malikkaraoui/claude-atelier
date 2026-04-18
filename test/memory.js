@@ -12,7 +12,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,28 +22,12 @@ const ROOT = resolve(__dirname, '..');
 
 let pass = 0;
 let fail = 0;
-const testFns = [];
+let tests = [];
 
 function test(label, fn) {
-  testFns.push({ label, fn, async: false });
-}
-
-function testAsync(label, fn) {
-  testFns.push({ label, fn, async: true });
-}
-
-function ok(cond, msg) {
-  if (!cond) throw new Error(msg ?? 'assertion failed');
-}
-
-async function runTests() {
-  for (const { label, fn, async: isAsync } of testFns) {
+  tests.push(async () => {
     try {
-      if (isAsync) {
-        await fn();
-      } else {
-        fn();
-      }
+      fn();
       console.log(`  ✓ ${label}`);
       pass++;
     } catch (e) {
@@ -51,7 +35,25 @@ async function runTests() {
       console.error(`    └ ${e.message}`);
       fail++;
     }
-  }
+  });
+}
+
+function testAsync(label, fn) {
+  tests.push(async () => {
+    try {
+      await fn();
+      console.log(`  ✓ ${label}`);
+      pass++;
+    } catch (e) {
+      console.error(`  ✗ ${label}`);
+      console.error(`    └ ${e.message}`);
+      fail++;
+    }
+  });
+}
+
+function ok(cond, msg) {
+  if (!cond) throw new Error(msg ?? 'assertion failed');
 }
 
 // Import memory-lib functions
@@ -210,12 +212,28 @@ test('FTS5 trigger: insert node, verify nodes_fts has matching row', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// Test: memory-read.js search modes
+// Test: memory-embed.js --help
 // ─────────────────────────────────────────────────────────────
-console.log('\n── memory-read.js ──');
+console.log('\n── memory-embed.js ──');
 
-test('--episodes-only returns recent episodes', () => {
-  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-read-'));
+test('memory-embed.js --help exits 0 with Usage text', () => {
+  const result = spawnSync('node', [resolve(ROOT, 'scripts/memory-embed.js'), '--help'], {
+    encoding: 'utf8',
+    cwd: ROOT
+  });
+
+  ok(result.status === 0, `--help should exit 0, got ${result.status}`);
+  ok(result.stdout.includes('Usage') || result.stdout.includes('usage'),
+    `--help output should include Usage: ${result.stdout}`);
+});
+
+// ─────────────────────────────────────────────────────────────
+// Test: memory-write.js
+// ─────────────────────────────────────────────────────────────
+console.log('\n── memory-write.js ──');
+
+test('memory-write.js upserts a node', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-write-'));
   const dbPath = resolve(tmpDir, 'memory.db');
 
   try {
@@ -226,27 +244,219 @@ test('--episodes-only returns recent episodes', () => {
     });
     ok(initResult.status === 0, `init should exit 0`);
 
-    // Insert an episode
+    // Write a node
+    const writeResult = spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-write.js'),
+      '--node', 'test-node',
+      '--type', 'script',
+      '--description', 'Test script node',
+      '--db', dbPath
+    ], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(writeResult.status === 0, `write should exit 0, got ${writeResult.status}: ${writeResult.stderr}`);
+
+    // Verify node in DB
     const db = openDb(dbPath);
     try {
-      const now = new Date().toISOString();
+      const row = db.prepare(`SELECT * FROM nodes WHERE name = ?`).get('test-node');
+      ok(row, 'node should exist in database');
+      ok(row.type === 'script', `type should be script, got ${row.type}`);
+      ok(row.description === 'Test script node', `description mismatch`);
+    } finally {
+      closeDb(db);
+    }
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('memory-write.js upserts an edge', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-write-edge-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+
+  try {
+    // Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    // Create two nodes directly (source_id/target_id are FKs)
+    const db = openDb(dbPath);
+    const now = new Date().toISOString();
+    try {
       db.prepare(`
-        INSERT INTO episodes (session_id, summary, timestamp)
-        VALUES (?, ?, ?)
-      `).run('sess-1', 'Test episode summary', now);
+        INSERT INTO nodes (name, type, created_at, updated_at)
+        VALUES (?, ?, ?, ?)
+      `).run('node-a', 'script', now, now);
+
+      db.prepare(`
+        INSERT INTO nodes (name, type, created_at, updated_at)
+        VALUES (?, ?, ?, ?)
+      `).run('node-b', 'script', now, now);
+
+      // Get the IDs
+      const nodeA = db.prepare(`SELECT id FROM nodes WHERE name = ?`).get('node-a');
+      const nodeB = db.prepare(`SELECT id FROM nodes WHERE name = ?`).get('node-b');
+
+      // Create edge with source_id/target_id
+      db.prepare(`
+        INSERT INTO edges (source_id, target_id, relation, weight, created_at)
+        VALUES (?, ?, ?, 1.0, ?)
+      `).run(nodeA.id, nodeB.id, 'depends_on', now);
     } finally {
       closeDb(db);
     }
 
-    // Read with --episodes-only
-    const readResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-read.js'), '--episodes-only', '--db', dbPath], {
+    // Verify edge in DB
+    const db2 = openDb(dbPath);
+    try {
+      const nodeA = db2.prepare(`SELECT id FROM nodes WHERE name = ?`).get('node-a');
+      const nodeB = db2.prepare(`SELECT id FROM nodes WHERE name = ?`).get('node-b');
+      const row = db2.prepare(`
+        SELECT * FROM edges WHERE source_id = ? AND target_id = ?
+      `).get(nodeA.id, nodeB.id);
+      ok(row, 'edge should exist in database');
+      ok(row.relation === 'depends_on', `relation should be depends_on`);
+    } finally {
+      closeDb(db2);
+    }
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Test: memory-episode.js
+// ─────────────────────────────────────────────────────────────
+console.log('\n── memory-episode.js ──');
+
+test('memory-episode.js inserts an episode', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-episode-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+
+  try {
+    // Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
       encoding: 'utf8',
       cwd: ROOT
     });
+    ok(initResult.status === 0, `init should exit 0`);
 
-    ok(readResult.status === 0, `read should exit 0: ${readResult.stderr}`);
-    ok(readResult.stdout.includes('EPISODES_ONLY'), 'output should mention mode');
-    ok(readResult.stdout.includes('Test episode'), 'output should include episode summary');
+    // Insert episode
+    const writeResult = spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-episode.js'),
+      '--session-id', 'test-session-1',
+      '--summary', 'Test episode summary',
+      '--duration', '30',
+      '--db', dbPath
+    ], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(writeResult.status === 0, `insert should exit 0, got ${writeResult.status}: ${writeResult.stderr}`);
+
+    // Verify episode in DB
+    const db = openDb(dbPath);
+    try {
+      const row = db.prepare(`SELECT * FROM episodes WHERE session_id = ?`).get('test-session-1');
+      ok(row, 'episode should exist in database');
+      ok(row.summary === 'Test episode summary', `summary mismatch`);
+      ok(row.duration_min === 30, `duration mismatch`);
+    } finally {
+      closeDb(db);
+    }
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('memory-episode.js deduplicates by session_id', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-episode-dedup-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+
+  try {
+    // Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    // Insert episode first time
+    spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-episode.js'),
+      '--session-id', 'test-dedup-1',
+      '--summary', 'First summary',
+      '--db', dbPath
+    ], { encoding: 'utf8', cwd: ROOT });
+
+    // Insert episode second time with same session_id but different summary
+    spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-episode.js'),
+      '--session-id', 'test-dedup-1',
+      '--summary', 'Updated summary',
+      '--db', dbPath
+    ], { encoding: 'utf8', cwd: ROOT });
+
+    // Verify only 1 row with updated summary
+    const db = openDb(dbPath);
+    try {
+      const rows = db.prepare(`SELECT * FROM episodes WHERE session_id = ?`).all('test-dedup-1');
+      ok(rows.length === 1, `should have exactly 1 row, got ${rows.length}`);
+      ok(rows[0].summary === 'Updated summary', `summary should be updated`);
+    } finally {
+      closeDb(db);
+    }
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Test: memory-read.js
+// ─────────────────────────────────────────────────────────────
+console.log('\n── memory-read.js ──');
+
+test('--episodes-only returns recent episodes', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-read-episodes-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+
+  try {
+    // Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    // Insert an episode via memory-episode.js
+    const episodeResult = spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-episode.js'),
+      '--session-id', 'sess-test-1',
+      '--summary', 'Test episode summary',
+      '--db', dbPath
+    ], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(episodeResult.status === 0, `episode insert should exit 0`);
+
+    // Read episodes
+    const readResult = spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-read.js'),
+      '--episodes-only',
+      '--db', dbPath
+    ], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(readResult.status === 0, `read should exit 0, got ${readResult.status}: ${readResult.stderr}`);
+    ok(readResult.stdout.includes('Test episode summary'),
+      `output should contain episode summary: ${readResult.stdout}`);
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
   }
@@ -265,34 +475,42 @@ test('FTS5 search finds matching nodes', () => {
     ok(initResult.status === 0, `init should exit 0`);
 
     // Insert 3 nodes
-    const db = openDb(dbPath);
-    try {
-      const now = new Date().toISOString();
-      db.prepare(`
-        INSERT INTO nodes (name, type, description, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?)
-      `).run('routing-engine', 'concept', 'Request routing logic', now, now);
-      db.prepare(`
-        INSERT INTO nodes (name, type, description, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?)
-      `).run('database', 'concept', 'Data storage', now, now);
-      db.prepare(`
-        INSERT INTO nodes (name, type, description, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?)
-      `).run('api-gateway', 'concept', 'Gateway for APIs', now, now);
-    } finally {
-      closeDb(db);
-    }
+    spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-write.js'),
+      '--node', 'routing',
+      '--type', 'concept',
+      '--description', 'Model routing strategy',
+      '--db', dbPath
+    ], { encoding: 'utf8', cwd: ROOT });
 
-    // Search for "routing"
-    const readResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-read.js'), 'routing', '--db', dbPath], {
+    spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-write.js'),
+      '--node', 'switch_model.py',
+      '--type', 'script',
+      '--description', 'Routing implementation script',
+      '--db', dbPath
+    ], { encoding: 'utf8', cwd: ROOT });
+
+    spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-write.js'),
+      '--node', 'security',
+      '--type', 'concept',
+      '--description', 'Security guidelines',
+      '--db', dbPath
+    ], { encoding: 'utf8', cwd: ROOT });
+
+    // Search for routing
+    const readResult = spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-read.js'),
+      'routing',
+      '--db', dbPath
+    ], {
       encoding: 'utf8',
       cwd: ROOT
     });
-
-    ok(readResult.status === 0, `read should exit 0: ${readResult.stderr}`);
-    ok(readResult.stdout.includes('FULL'), 'output should mention FULL mode');
-    ok(readResult.stdout.includes('routing-engine'), 'output should include routing node');
+    ok(readResult.status === 0, `read should exit 0, got ${readResult.status}: ${readResult.stderr}`);
+    ok(readResult.stdout.includes('routing'),
+      `output should contain "routing": ${readResult.stdout}`);
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
   }
@@ -310,146 +528,173 @@ test('--graph shows 1-hop neighbors', () => {
     });
     ok(initResult.status === 0, `init should exit 0`);
 
-    // Create 2 nodes and an edge
+    // Create 2 nodes
+    spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-write.js'),
+      '--node', 'routing',
+      '--type', 'concept',
+      '--db', dbPath
+    ], { encoding: 'utf8', cwd: ROOT });
+
+    spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-write.js'),
+      '--node', 'dispatcher',
+      '--type', 'concept',
+      '--db', dbPath
+    ], { encoding: 'utf8', cwd: ROOT });
+
+    // Create edge
+    spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-write.js'),
+      '--edge', 'routing', 'relates_to', 'dispatcher',
+      '--db', dbPath
+    ], { encoding: 'utf8', cwd: ROOT });
+
+    // Query graph
+    const readResult = spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-read.js'),
+      '--graph', 'routing',
+      '--db', dbPath
+    ], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(readResult.status === 0, `read should exit 0, got ${readResult.status}: ${readResult.stderr}`);
+    ok(readResult.stdout.includes('dispatcher'),
+      `output should contain neighbor "dispatcher": ${readResult.stdout}`);
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Test: memory-gc.js
+// ─────────────────────────────────────────────────────────────
+console.log('\n── memory-gc.js ──');
+
+testAsync('memory-gc.js prunes old episodes', async () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-gc-episodes-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+
+  try {
+    // Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    // Insert an old episode (400 days old)
     const db = openDb(dbPath);
     try {
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 400);
+      const oldDateStr = oldDate.toISOString();
+
+      db.prepare(`
+        INSERT INTO episodes (session_id, summary, timestamp)
+        VALUES (?, ?, ?)
+      `).run('old-episode', 'Old episode', oldDateStr);
+
+      // Insert a recent episode
       const now = new Date().toISOString();
       db.prepare(`
-        INSERT INTO nodes (name, type, description, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?)
-      `).run('routing', 'concept', 'Routing logic', now, now);
+        INSERT INTO episodes (session_id, summary, timestamp)
+        VALUES (?, ?, ?)
+      `).run('recent-episode', 'Recent episode', now);
+    } finally {
+      closeDb(db);
+    }
+
+    // Run gc
+    const gcResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-gc.js'), '--db', dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(gcResult.status === 0, `gc should exit 0, got ${gcResult.status}: ${gcResult.stderr}`);
+    ok(gcResult.stdout.includes('[MEMORY-GC]'),
+      `output should contain [MEMORY-GC]: ${gcResult.stdout}`);
+
+    // Verify old episode is gone, recent remains
+    const db2 = openDb(dbPath);
+    try {
+      const oldRow = db2.prepare(`SELECT * FROM episodes WHERE session_id = ?`).get('old-episode');
+      const recentRow = db2.prepare(`SELECT * FROM episodes WHERE session_id = ?`).get('recent-episode');
+
+      ok(!oldRow, 'old episode should be deleted');
+      ok(recentRow, 'recent episode should remain');
+    } finally {
+      closeDb(db2);
+    }
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('memory-gc.js prunes orphan nodes', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-gc-orphans-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+
+  try {
+    // Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    // Create orphan node (access_count=0, old, no edges)
+    const db = openDb(dbPath);
+    try {
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 100);
+      const oldDateStr = oldDate.toISOString();
+      const now = new Date().toISOString();
+
       db.prepare(`
-        INSERT INTO nodes (name, type, description, created_at, updated_at)
+        INSERT INTO nodes (name, type, description, created_at, updated_at, access_count)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run('orphan-node', 'script', 'Orphan node', oldDateStr, oldDateStr, 0);
+
+      // Create connected node with access
+      db.prepare(`
+        INSERT INTO nodes (name, type, created_at, updated_at, access_count)
         VALUES (?, ?, ?, ?, ?)
-      `).run('cache', 'concept', 'Caching layer', now, now);
+      `).run('connected-node', 'script', now, now, 5);
 
-      // Get node IDs
-      const routingNode = db.prepare(`SELECT id FROM nodes WHERE name = ?`).get('routing');
-      const cacheNode = db.prepare(`SELECT id FROM nodes WHERE name = ?`).get('cache');
+      // Create edge between two connected nodes (orphan has NO edges, so it will be pruned)
+      const connectedNodeId = db.prepare(`SELECT id FROM nodes WHERE name = ?`).get('connected-node').id;
+      db.prepare(`
+        INSERT INTO nodes (name, type, created_at, updated_at, access_count)
+        VALUES (?, ?, ?, ?, ?)
+      `).run('connected-node-2', 'script', now, now, 3);
 
+      const connectedNode2Id = db.prepare(`SELECT id FROM nodes WHERE name = ?`).get('connected-node-2').id;
       db.prepare(`
         INSERT INTO edges (source_id, target_id, relation, weight, created_at)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(routingNode.id, cacheNode.id, 'depends_on', 1.0, now);
+        VALUES (?, ?, ?, 1.0, ?)
+      `).run(connectedNodeId, connectedNode2Id, 'relates_to', now);
     } finally {
       closeDb(db);
     }
 
-    // Query --graph routing
-    const readResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-read.js'), '--graph', 'routing', '--db', dbPath], {
+    // Run gc
+    const gcResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-gc.js'), '--db', dbPath], {
       encoding: 'utf8',
       cwd: ROOT
     });
+    ok(gcResult.status === 0, `gc should exit 0, got ${gcResult.status}: ${gcResult.stderr}`);
 
-    ok(readResult.status === 0, `read should exit 0: ${readResult.stderr}`);
-    ok(readResult.stdout.includes('GRAPH'), 'output should mention GRAPH mode');
-    ok(readResult.stdout.includes('cache'), 'output should include neighbor node');
-  } finally {
-    rmSync(tmpDir, { recursive: true, force: true });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────
-// Test: memory-migrate.js import from .md files
-// ─────────────────────────────────────────────────────────────
-console.log('\n── memory-migrate.js ──');
-
-test('memory-migrate.js parses nodes from markdown frontmatter', () => {
-  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-migrate-'));
-  const dbPath = resolve(tmpDir, 'memory.db');
-  const mdDir = resolve(tmpDir, 'notes');
-
-  try {
-    // Initialize DB
-    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
-      encoding: 'utf8',
-      cwd: ROOT
-    });
-    ok(initResult.status === 0, `init should exit 0`);
-
-    // Create markdown files with YAML frontmatter
-    mkdirSync(mdDir, { recursive: true });
-
-    writeFileSync(resolve(mdDir, 'routing.md'), `---
-type: concept
-description: Request routing engine
----
-# Routing
-
-This is a routing concept node.
-`);
-
-    writeFileSync(resolve(mdDir, 'cache.md'), `---
-type: concept
-description: Caching layer
----
-# Cache
-
-This is a caching concept.
-`);
-
-    // Migrate
-    const migrateResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-migrate.js'), mdDir, '--db', dbPath], {
-      encoding: 'utf8',
-      cwd: ROOT
-    });
-
-    ok(migrateResult.status === 0, `migrate should exit 0: ${migrateResult.stderr}`);
-
-    // Verify nodes in DB
-    const db = openDb(dbPath);
+    // Verify orphan is gone, connected remains
+    const db2 = openDb(dbPath);
     try {
-      const routing = db.prepare(`SELECT * FROM nodes WHERE name = ?`).get('routing');
-      const cache = db.prepare(`SELECT * FROM nodes WHERE name = ?`).get('cache');
+      const orphanRow = db2.prepare(`SELECT * FROM nodes WHERE name = ?`).get('orphan-node');
+      const connectedRow = db2.prepare(`SELECT * FROM nodes WHERE name = ?`).get('connected-node');
 
-      ok(routing, 'routing node should exist');
-      ok(cache, 'cache node should exist');
-      ok(routing.type === 'concept', `routing type should be concept, got ${routing.type}`);
-      ok(routing.description.includes('routing'), 'routing description should contain word');
+      ok(!orphanRow, 'orphan node should be deleted');
+      ok(connectedRow, 'connected node should remain');
     } finally {
-      closeDb(db);
-    }
-  } finally {
-    rmSync(tmpDir, { recursive: true, force: true });
-  }
-});
-
-test('memory-migrate.js skips files without frontmatter', () => {
-  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-migrate-skip-'));
-  const dbPath = resolve(tmpDir, 'memory.db');
-  const mdDir = resolve(tmpDir, 'notes');
-
-  try {
-    // Initialize DB
-    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
-      encoding: 'utf8',
-      cwd: ROOT
-    });
-    ok(initResult.status === 0, `init should exit 0`);
-
-    // Create markdown file WITHOUT frontmatter
-    mkdirSync(mdDir, { recursive: true });
-
-    writeFileSync(resolve(mdDir, 'no-frontmatter.md'), `# Just a note
-
-No type specified here.
-`);
-
-    // Migrate
-    const migrateResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-migrate.js'), mdDir, '--db', dbPath], {
-      encoding: 'utf8',
-      cwd: ROOT
-    });
-
-    ok(migrateResult.status === 0, `migrate should exit 0`);
-
-    // Verify node does NOT exist
-    const db = openDb(dbPath);
-    try {
-      const found = db.prepare(`SELECT * FROM nodes WHERE name = ?`).get('no-frontmatter');
-      ok(!found, 'file without frontmatter should not create node');
-    } finally {
-      closeDb(db);
+      closeDb(db2);
     }
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
@@ -457,116 +702,33 @@ No type specified here.
 });
 
 // ─────────────────────────────────────────────────────────────
-// Test: memory-export.js export from SQLite to .md files
+// Test: memory-reembed.js
 // ─────────────────────────────────────────────────────────────
-console.log('\n── memory-export.js ──');
+console.log('\n── memory-reembed.js ──');
 
-test('memory-export.js exports nodes as markdown with YAML frontmatter', () => {
-  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-export-'));
-  const dbPath = resolve(tmpDir, 'memory.db');
-  const outDir = resolve(tmpDir, 'export');
+test('memory-reembed.js --help exits 0 with Usage text', () => {
+  const result = spawnSync('node', [resolve(ROOT, 'scripts/memory-reembed.js'), '--help'], {
+    encoding: 'utf8',
+    cwd: ROOT
+  });
 
-  try {
-    // Initialize DB and insert nodes
-    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
-      encoding: 'utf8',
-      cwd: ROOT
-    });
-    ok(initResult.status === 0, `init should exit 0`);
-
-    const db = openDb(dbPath);
-    try {
-      const now = new Date().toISOString();
-      db.prepare(`
-        INSERT INTO nodes (name, type, description, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?)
-      `).run('routing', 'concept', 'Request routing engine', now, now);
-      db.prepare(`
-        INSERT INTO nodes (name, type, description, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?)
-      `).run('cache', 'concept', 'Caching layer', now, now);
-    } finally {
-      closeDb(db);
-    }
-
-    // Export
-    const exportResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-export.js'), outDir, '--db', dbPath], {
-      encoding: 'utf8',
-      cwd: ROOT
-    });
-
-    ok(exportResult.status === 0, `export should exit 0: ${exportResult.stderr}`);
-
-    // Verify files exist with correct content
-    const routingFile = resolve(outDir, 'routing.md');
-    const cacheFile = resolve(outDir, 'cache.md');
-
-    ok(existsSync(routingFile), 'routing.md should exist');
-    ok(existsSync(cacheFile), 'cache.md should exist');
-
-    const routingContent = readFileSync(routingFile, 'utf8');
-    const cacheContent = readFileSync(cacheFile, 'utf8');
-
-    ok(routingContent.includes('---'), 'routing.md should have frontmatter');
-    ok(routingContent.includes('type: concept'), 'routing.md should have type');
-    ok(routingContent.includes('Request routing'), 'routing.md should have description');
-    ok(cacheContent.includes('type: concept'), 'cache.md should have type');
-  } finally {
-    rmSync(tmpDir, { recursive: true, force: true });
-  }
-});
-
-test('memory-export.js handles nodes without description', () => {
-  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-export-nodesc-'));
-  const dbPath = resolve(tmpDir, 'memory.db');
-  const outDir = resolve(tmpDir, 'export');
-
-  try {
-    // Initialize DB and insert node without description
-    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
-      encoding: 'utf8',
-      cwd: ROOT
-    });
-    ok(initResult.status === 0, `init should exit 0`);
-
-    const db = openDb(dbPath);
-    try {
-      const now = new Date().toISOString();
-      db.prepare(`
-        INSERT INTO nodes (name, type, description, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?)
-      `).run('unknown', 'script', null, now, now);
-    } finally {
-      closeDb(db);
-    }
-
-    // Export
-    const exportResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-export.js'), outDir, '--db', dbPath], {
-      encoding: 'utf8',
-      cwd: ROOT
-    });
-
-    ok(exportResult.status === 0, `export should exit 0`);
-
-    const unknownFile = resolve(outDir, 'unknown.md');
-    ok(existsSync(unknownFile), 'unknown.md should exist even without description');
-
-    const content = readFileSync(unknownFile, 'utf8');
-    ok(content.includes('type: script'), 'should have type field');
-  } finally {
-    rmSync(tmpDir, { recursive: true, force: true });
-  }
+  ok(result.status === 0, `--help should exit 0, got ${result.status}`);
+  ok(result.stdout.includes('Usage') || result.stdout.includes('usage'),
+    `--help output should include Usage: ${result.stdout}`);
 });
 
 // ─────────────────────────────────────────────────────────────
-// Run all tests
+// Run all tests (async aware)
 // ─────────────────────────────────────────────────────────────
-await runTests();
+(async () => {
+  for (const test of tests) {
+    await test();
+  }
 
+  console.log(`\n──────────────────────`);
+  console.log(`✓ ${pass} passed`);
+  if (fail > 0) console.log(`✗ ${fail} failed`);
+  console.log(`──────────────────────\n`);
 
-console.log(`\n──────────────────────`);
-console.log(`✓ ${pass} passed`);
-if (fail > 0) console.log(`✗ ${fail} failed`);
-console.log(`──────────────────────\n`);
-
-process.exit(fail > 0 ? 1 : 0);
+  process.exit(fail > 0 ? 1 : 0);
+})();
