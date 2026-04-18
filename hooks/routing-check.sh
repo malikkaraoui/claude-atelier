@@ -247,7 +247,7 @@ try:
 except: print('')
 " 2>/dev/null)
       fi
-      OLLAMA_STATUS="🦙✅ proxy actif → $ACTIVE_LLM"
+      OLLAMA_STATUS="🦙✅ proxy:4000 → $ACTIVE_LLM (embed actif, proxy MVP — pas de tool_use)"
     else
       # Ollama tourne mais proxy pas actif
       OLLAMA_MODELS=$(echo "$OLLAMA_HEALTH" | python3 -c "

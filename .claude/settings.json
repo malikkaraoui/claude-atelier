@@ -8,7 +8,7 @@
     "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1"
   },
   "permissions": {
-    "defaultMode": "default",
+    "defaultMode": "acceptEdits",
     "_comment_allow": "Liste blanche pour le mode 'acceptEdits' (nuit). Garde 'default' pour le dev interactif.",
     "allow": [
       "Read",
