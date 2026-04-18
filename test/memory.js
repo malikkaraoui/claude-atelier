@@ -718,6 +718,129 @@ test('memory-reembed.js --help exits 0 with Usage text', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// Test: Full flow (E2E)
+// ─────────────────────────────────────────────────────────────
+console.log('\n── full flow: e2e ──');
+
+testAsync('full flow: init → write → episode → read → gc → export', async () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-e2e-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+  const exportPath = resolve(tmpDir, 'export.json');
+
+  try {
+    // Step 1: Initialize DB
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0, got ${initResult.status}: ${initResult.stderr}`);
+    ok(existsSync(dbPath), 'database file should exist');
+
+    // Step 2: Write 4 nodes
+    const nodeNames = ['routing', 'security', 'switch_model.py', 'Malik'];
+    const nodeTypes = ['concept', 'concept', 'script', 'person'];
+    for (let i = 0; i < 4; i++) {
+      const writeResult = spawnSync('node', [
+        resolve(ROOT, 'scripts/memory-write.js'),
+        '--node', nodeNames[i],
+        '--type', nodeTypes[i],
+        '--description', `Description for ${nodeNames[i]}`,
+        '--db', dbPath
+      ], {
+        encoding: 'utf8',
+        cwd: ROOT
+      });
+      ok(writeResult.status === 0, `write node ${i + 1} should exit 0, got ${writeResult.status}`);
+    }
+
+    // Step 3: Write 1 edge
+    const edgeResult = spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-write.js'),
+      '--edge', 'routing', 'depends_on', 'switch_model.py',
+      '--db', dbPath
+    ], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(edgeResult.status === 0, `write edge should exit 0, got ${edgeResult.status}`);
+
+    // Step 4: Write 1 episode
+    const episodeResult = spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-episode.js'),
+      '--session-id', 'e2e-test-session',
+      '--summary', 'E2E test episode summary',
+      '--duration', '45',
+      '--db', dbPath
+    ], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(episodeResult.status === 0, `write episode should exit 0, got ${episodeResult.status}`);
+
+    // Step 5: Read with hybrid search (FTS5)
+    const readHybridResult = spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-read.js'),
+      'routing',
+      '--db', dbPath
+    ], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(readHybridResult.status === 0, `hybrid read should exit 0, got ${readHybridResult.status}`);
+    ok(readHybridResult.stdout.includes('routing'),
+      `hybrid read should mention routing: ${readHybridResult.stdout}`);
+
+    // Step 6: Read with graph search
+    const readGraphResult = spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-read.js'),
+      '--graph', 'routing',
+      '--db', dbPath
+    ], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(readGraphResult.status === 0, `graph read should exit 0, got ${readGraphResult.status}`);
+    ok(readGraphResult.stdout.includes('switch_model.py'),
+      `graph read should show neighbor switch_model.py: ${readGraphResult.stdout}`);
+
+    // Step 7: Run garbage collection
+    const gcResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-gc.js'), '--db', dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(gcResult.status === 0, `gc should exit 0, got ${gcResult.status}: ${gcResult.stderr}`);
+
+    // Step 8: Export database
+    const exportResult = spawnSync('node', [
+      resolve(ROOT, 'scripts/memory-export.js'),
+      '--db', dbPath,
+      '--output', exportPath
+    ], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(exportResult.status === 0, `export should exit 0, got ${exportResult.status}: ${exportResult.stderr}`);
+    ok(existsSync(exportPath), 'export file should exist');
+
+    // Step 9: Verify DB integrity
+    const db = openDb(dbPath);
+    try {
+      const nodeCount = db.prepare(`SELECT COUNT(*) as count FROM nodes`).get();
+      const edgeCount = db.prepare(`SELECT COUNT(*) as count FROM edges`).get();
+      const episodeCount = db.prepare(`SELECT COUNT(*) as count FROM episodes`).get();
+
+      ok(nodeCount.count === 4, `should have 4 nodes, got ${nodeCount.count}`);
+      ok(edgeCount.count === 1, `should have 1 edge, got ${edgeCount.count}`);
+      ok(episodeCount.count === 1, `should have 1 episode, got ${episodeCount.count}`);
+    } finally {
+      closeDb(db);
+    }
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // Run all tests (async aware)
 // ─────────────────────────────────────────────────────────────
 (async () => {
