@@ -1,20 +1,21 @@
 {
   "ollama_url": "http://localhost:11434",
   "port": "4000",
+  "model": "qwen3.5:4b",
   "presets": [
     {
       "name": "light",
-      "model": "llama3.2:3b",
+      "model": "qwen3.5:4b",
       "max_ram_gb": 8
     },
     {
       "name": "standard",
-      "model": "mistral",
+      "model": "qwen3.5:9b",
       "max_ram_gb": 16
     },
     {
       "name": "heavy",
-      "model": "llama3.1:70b",
+      "model": "qwen3.5:35b",
       "max_ram_gb": 0
     }
   ]
