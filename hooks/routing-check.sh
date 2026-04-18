@@ -65,8 +65,9 @@ except: pass
 
 MODEL=""
 
-# Priorité : live > cache > transcript (garde-fou #2 anti-corruption post-compact).
-# Seule la source `live` écrit le cache — transcript trop fragile après compaction.
+# Priorité : live > transcript (détecte /model) > cache (session-start).
+# Le transcript capture les changements `/model` en cours de session — source fiable.
+# Le cache seul est stale si `/model` a eu lieu après session-start.
 
 if [ -n "$LIVE_MODEL" ]; then
   MODEL=$(normalize_model "$LIVE_MODEL")
@@ -74,20 +75,26 @@ if [ -n "$LIVE_MODEL" ]; then
   printf '%s\n' "$MODEL" > "$MODEL_FILE"
 fi
 
+# Toujours vérifier le transcript pour un changement `/model` récent
+if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
+  LAST_MODEL_CHANGE=$(grep -Eo "$MODEL_PATTERN" "$TRANSCRIPT" 2>/dev/null | tail -1 | sed 's/^Set model to //')
+  if [ -n "$LAST_MODEL_CHANGE" ]; then
+    TRANSCRIPT_MODEL=$(normalize_model "$LAST_MODEL_CHANGE")
+    if [ -z "$MODEL" ] || [ "$TRANSCRIPT_MODEL" != "$MODEL" ]; then
+      MODEL="$TRANSCRIPT_MODEL"
+      MODEL_SOURCE="transcript"
+      # MAJ cache — `/model` explicite = source fiable, pas une corruption
+      printf '%s\n' "$MODEL" > "$MODEL_FILE"
+    fi
+  fi
+fi
+
+# Fallback cache (session-start) si ni live ni transcript
 if [ -z "$MODEL" ]; then
   CACHED=$(cat "$MODEL_FILE" 2>/dev/null || echo "")
   if [ -n "$CACHED" ]; then
     MODEL=$(normalize_model "$CACHED")
     MODEL_SOURCE="cache"
-  fi
-fi
-
-if [ -z "$MODEL" ] && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
-  LAST_MODEL_CHANGE=$(grep -Eo "$MODEL_PATTERN" "$TRANSCRIPT" 2>/dev/null | tail -1 | sed 's/^Set model to //')
-  if [ -n "$LAST_MODEL_CHANGE" ]; then
-    MODEL=$(normalize_model "$LAST_MODEL_CHANGE")
-    MODEL_SOURCE="transcript"
-    # Pas d'écriture cache — source fragile, ne doit pas contaminer la lecture suivante.
   fi
 fi
 
@@ -164,7 +171,7 @@ else
   echo "  Opus→archi/décision | Sonnet→dev quotidien | Haiku→exploration/lint"
 
   if [ "$MODEL_SOURCE" = "cache" ]; then
-    echo "  ⚠️  modèle issu du cache session-start — fiable seulement si aucun /model n'a eu lieu entre-temps"
+    echo "  ⚠️  modèle issu du cache session-start — si tu as fait /model, attends le prochain message pour la mise à jour"
   fi
 
   # Alerte si Opus sur tâche courante (message court = tâche simple)
@@ -247,7 +254,7 @@ try:
 except: print('')
 " 2>/dev/null)
       fi
-      OLLAMA_STATUS="🦙✅ proxy:4000 → $ACTIVE_LLM (embed actif, proxy MVP — pas de tool_use)"
+      OLLAMA_STATUS="🦙✅ proxy:4000 → $ACTIVE_LLM (v0.2.0 tool_use actif)"
     else
       # Ollama tourne mais proxy pas actif
       OLLAMA_MODELS=$(echo "$OLLAMA_HEALTH" | python3 -c "
@@ -403,7 +410,7 @@ if [ "$RUN_DIAGNOSTIC" = true ]; then
   fi
 
   # 2. §0 CLAUDE.md
-  CLAUDE_MD="$REPO_ROOT/src/fr/CLAUDE.md"
+  CLAUDE_MD="$REPO_ROOT/.claude/CLAUDE.md"
   if [ -f "$CLAUDE_MD" ]; then
     EMPTY_S0=$(grep -c "| — |" "$CLAUDE_MD" 2>/dev/null || echo 0)
     if [ "$EMPTY_S0" -ge 3 ]; then

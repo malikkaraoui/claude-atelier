@@ -124,9 +124,9 @@ Jeffrey 🦙 : « Proxy opérationnel. ANTHROPIC_BASE_URL pointe vers localhost:
 Lance `claude` — les messages seront routés vers <modèle>. Local first. Always. »
 ```
 
-Rappeler le mode dégradé :
-> **Limitation MVP** : les requêtes avec `tools` (tool_use / tool_result) retournent 501.
-> Si Claude Code échoue avec une erreur 501, c'est que le contexte exige un vrai modèle Anthropic.
+Rappeler les capacités :
+> **v0.2.0** : tool_use / tool_result supportés — le proxy traduit les tools Anthropic → Ollama bidirectionnellement.
+> Si le LLM local ne supporte pas les tools (modèle trop petit), les appels tools échoueront silencieusement.
 
 ## Règles
 

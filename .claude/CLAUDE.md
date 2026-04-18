@@ -6,13 +6,13 @@
 
 | Clé | Valeur |
 | --- | --- |
-| Projet courant | — |
-| Phase | — |
-| Stack | — |
-| Repo | — |
-| Conventions | — |
-| Endpoints actifs | — |
-| Contraintes métier | — |
+| Projet courant | claude-atelier (framework Claude Code) |
+| Phase | Phase 2 — proxy tool_use mapping (Anthropic→OpenAI) |
+| Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
+| Repo | claude-atelier/Claude-instructions |
+| Conventions | FR commits, pas de signing, gate pré-push |
+| Endpoints actifs | proxy :4000 (Ollama), Ollama :11434 |
+| Contraintes métier | LLM local via Ollama, tool_use bidirectionnel |
 | MCPs actifs | qmd (moteur recherche .md hybride) |
 | Gate pré-push | `bash scripts/pre-push-gate.sh` |
 
