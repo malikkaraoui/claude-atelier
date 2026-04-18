@@ -1,6 +1,6 @@
 ---
 name: ollama-router
-description: "Configure et lance ollama-proxy pour router Claude Code vers un LLM local via Ollama. Détecte Ollama, liste les modèles disponibles, recommande le preset selon la RAM, pull si manquant, documente la commande de lancement, écrit ANTHROPIC_BASE_URL dans .env.local, vérifie le healthcheck."
+description: "Setup automatique Ollama de bout en bout : détecte → installe si absent → lance si éteint → détecte RAM → choisit preset → pull modèles manquants (+ nomic-embed-text) → configure proxy → écrit .env.local → healthcheck. Zéro question inutile."
 figure: Isaac
 ---
 
@@ -15,15 +15,14 @@ Configure le proxy Anthropic → Ollama pour utiliser un LLM local avec Claude C
 
 ## Procédure
 
-### Étape 1 — Détecter Ollama
+### Étape 1 — Détecter, installer et lancer Ollama
 
-```bash
-curl -s http://localhost:11434/api/tags | head -c 200
-```
+**Automatiser de bout en bout — ne rien demander à l'utilisateur si on peut agir.**
 
-Si Ollama ne répond pas :
-- « Ollama n'est pas en cours d'exécution. Lance `ollama serve` dans un autre terminal, puis relance `/ollama-router`. »
-- Arrêt ici.
+1. Vérifier si Ollama est installé : `which ollama`
+2. Si **pas installé** (macOS) : `brew install ollama` — si brew absent, `curl -fsSL https://ollama.com/install.sh | sh`
+3. Si **installé mais pas lancé** (`curl -s --max-time 3 http://localhost:11434/api/tags` échoue) : lancer `ollama serve &>/dev/null &` puis `sleep 2` et revérifier
+4. Si toujours pas de réponse après lancement → « Ollama ne démarre pas. Vérifier les logs : `ollama serve` en foreground. »
 
 ### Étape 2 — Lister les modèles disponibles
 
@@ -33,31 +32,34 @@ ollama list
 
 Afficher la liste à l'utilisateur. Identifier les modèles présents.
 
-### Étape 3 — Recommander le preset selon la RAM
+### Étape 3 — Détecter la RAM et choisir le preset automatiquement
 
-Poser la question :
+**Ne pas demander — détecter.**
 
-> « Quelle est ta RAM disponible ?
-> - < 8 GB → preset `light` (`llama3.2:3b`)
-> - 8–16 GB → preset `standard` (`mistral`)
-> - > 16 GB → preset `heavy` (`llama3.1:70b`) »
+```bash
+# macOS
+sysctl -n hw.memsize | awk '{print int($1/1073741824)}'
+# Linux
+grep MemTotal /proc/meminfo | awk '{print int($2/1048576)}'
+```
 
-Si l'utilisateur indique directement un modèle, l'utiliser tel quel.
+Appliquer automatiquement :
+- < 8 GB → preset `light` (`llama3.2:3b`)
+- 8–16 GB → preset `standard` (`mistral`)
+- \> 16 GB → preset `heavy` (`llama3.1:70b`)
 
-### Étape 4 — Tirer le modèle si manquant
+Annoncer le choix : « RAM détectée : X GB → preset `standard` (`mistral`). »
+Si l'utilisateur veut un autre modèle, il le dit — sinon on continue.
 
-Si le modèle recommandé n'est pas dans `ollama list` :
+### Étape 4 — Pull automatique si modèle manquant
+
+Vérifier si le modèle choisi est dans `ollama list`. Si absent, **le pull directement** sans demander :
 
 ```bash
 ollama pull <modèle>
 ```
 
-Exemples :
-```bash
-ollama pull llama3.2:3b    # preset light
-ollama pull mistral         # preset standard
-ollama pull llama3.1:70b   # preset heavy (long — prévoir 30-60 min)
-```
+Aussi vérifier et pull `nomic-embed-text` s'il est absent (requis pour la mémoire 3 niveaux en mode FULL).
 
 ### Étape 5 — Vérifier config.json
 
@@ -93,20 +95,20 @@ Si le fichier n'existe pas, le créer. Si la ligne existe déjà, signaler qu'el
 
 > **Note** : ne jamais écrire `.env.local` dans `.claude/` — il va à la racine du projet.
 
-### Étape 8 — Healthcheck
+### Étape 8 — Healthcheck automatique
 
-Une fois que l'utilisateur confirme que le proxy tourne :
+**Ne pas attendre de confirmation** — tester directement :
 
 ```bash
-curl -s http://localhost:4000/health
+curl -s --max-time 3 http://localhost:4000/health
 ```
 
 Réponse attendue : `{"status":"ok","proxy":"ollama","version":"0.1.0"}`
 
 Si le healthcheck échoue :
-- Vérifier que `go run main.go` tourne dans le bon répertoire
-- Vérifier que le port 4000 est libre (`lsof -i :4000`)
-- Proposer `PORT=4001 go run main.go` + adapter `ANTHROPIC_BASE_URL`
+- Vérifier que `go run main.go` tourne : `lsof -i :4000`
+- Si le port est libre, rappeler la commande de lancement
+- Si le port est occupé par autre chose, proposer `PORT=4001` + adapter `ANTHROPIC_BASE_URL`
 
 ### Étape 9 — Confirmer
 
@@ -121,8 +123,9 @@ Rappeler le mode dégradé :
 
 ## Règles
 
+- **Automatiser au maximum** : ne demander à l'utilisateur que s'il y a un vrai choix à faire
+- Installer Ollama si absent, le lancer si éteint, pull les modèles si manquants — tout ça sans poser de question
 - Ne jamais lancer `go run` ou `go build` automatiquement — documenter seulement
 - Ne jamais modifier les fichiers Go sans instruction explicite
-- Si Ollama absent → arrêt immédiat, message clair
 - Si Go absent (`go version` échoue) → signaler avant l'étape 6
 - `.env.local` à la racine uniquement, jamais dans `.claude/`
