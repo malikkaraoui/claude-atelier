@@ -457,6 +457,108 @@ No type specified here.
 });
 
 // ─────────────────────────────────────────────────────────────
+// Test: memory-export.js export from SQLite to .md files
+// ─────────────────────────────────────────────────────────────
+console.log('\n── memory-export.js ──');
+
+test('memory-export.js exports nodes as markdown with YAML frontmatter', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-export-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+  const outDir = resolve(tmpDir, 'export');
+
+  try {
+    // Initialize DB and insert nodes
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    const db = openDb(dbPath);
+    try {
+      const now = new Date().toISOString();
+      db.prepare(`
+        INSERT INTO nodes (name, type, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run('routing', 'concept', 'Request routing engine', now, now);
+      db.prepare(`
+        INSERT INTO nodes (name, type, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run('cache', 'concept', 'Caching layer', now, now);
+    } finally {
+      closeDb(db);
+    }
+
+    // Export
+    const exportResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-export.js'), outDir, '--db', dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+
+    ok(exportResult.status === 0, `export should exit 0: ${exportResult.stderr}`);
+
+    // Verify files exist with correct content
+    const routingFile = resolve(outDir, 'routing.md');
+    const cacheFile = resolve(outDir, 'cache.md');
+
+    ok(existsSync(routingFile), 'routing.md should exist');
+    ok(existsSync(cacheFile), 'cache.md should exist');
+
+    const routingContent = readFileSync(routingFile, 'utf8');
+    const cacheContent = readFileSync(cacheFile, 'utf8');
+
+    ok(routingContent.includes('---'), 'routing.md should have frontmatter');
+    ok(routingContent.includes('type: concept'), 'routing.md should have type');
+    ok(routingContent.includes('Request routing'), 'routing.md should have description');
+    ok(cacheContent.includes('type: concept'), 'cache.md should have type');
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('memory-export.js handles nodes without description', () => {
+  const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-export-nodesc-'));
+  const dbPath = resolve(tmpDir, 'memory.db');
+  const outDir = resolve(tmpDir, 'export');
+
+  try {
+    // Initialize DB and insert node without description
+    const initResult = spawnSync('bash', [resolve(ROOT, 'scripts/memory-init.sh'), dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+    ok(initResult.status === 0, `init should exit 0`);
+
+    const db = openDb(dbPath);
+    try {
+      const now = new Date().toISOString();
+      db.prepare(`
+        INSERT INTO nodes (name, type, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run('unknown', 'script', null, now, now);
+    } finally {
+      closeDb(db);
+    }
+
+    // Export
+    const exportResult = spawnSync('node', [resolve(ROOT, 'scripts/memory-export.js'), outDir, '--db', dbPath], {
+      encoding: 'utf8',
+      cwd: ROOT
+    });
+
+    ok(exportResult.status === 0, `export should exit 0`);
+
+    const unknownFile = resolve(outDir, 'unknown.md');
+    ok(existsSync(unknownFile), 'unknown.md should exist even without description');
+
+    const content = readFileSync(unknownFile, 'utf8');
+    ok(content.includes('type: script'), 'should have type field');
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // Run all tests
 // ─────────────────────────────────────────────────────────────
 await runTests();
