@@ -171,7 +171,7 @@ async function main() {
         // Check if node exists
         const node = db.prepare(`SELECT * FROM nodes WHERE name = ?`).get(graphNode);
         if (!node) {
-          console.log(`[MEMORY] Mode: GRAPH | Node: "${graphNode}" not found`);
+          console.log(`[MEMORY] Mode: ${runtimeMode} | Node: "${graphNode}" not found`);
           process.exit(0);
         }
 

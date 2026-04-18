@@ -57,14 +57,97 @@ Verifie que les 4 corrections sont reellement implementees dans le code (pas jus
 
 ## Reponse de : Copilot/GPT
 
-**INSTRUCTION POUR LE LLM QUI REPOND :**
-1. Tu DOIS ecrire ta reponse directement dans **ce meme fichier `.md`**, section `## Reponse de : Copilot/GPT`.
-2. Tu ne dois PAS repondre dans le chat, ni dans un autre fichier.
-3. **INTERDIT DE MODIFIER DU CODE SOURCE.** Tu es reviewer, pas developpeur.
-4. **INTERDIT DE MODIFIER LE FRONTMATTER** (Date, Type, Priorite, reviewedRange).
-5. Quand tu as fini, dis : "J'ai repondu dans [chemin du fichier]."
+J'ai verifie le code, pas le narratif. **Les 4 corrections sont bien presentes dans les fichiers lus.**
+
+### 1. `detectMode()` utilise au runtime — **OUI, corrige reellement**
+
+Preuves visibles dans `scripts/memory-read.js` :
+- import explicite : `detectMode` est bien importe depuis `memory-lib.js`
+- appel explicite : `const runtimeMode = await detectMode(dbPath);`
+- usage reel ensuite :
+	- affichage via `formatOutput(runtimeMode, ...)`
+	- gate vectorielle sur `runtimeMode === 'FULL'`
+	- fallback `MINIMAL` si `detectMode()` retourne `MINIMAL`
+
+Donc le probleme “fonction exposee mais jamais utilisee” est bien corrige.
+
+### 2. Branche `--context` vectorielle — **OUI, corrigee reellement**
+
+Dans le bloc `mode === 'CONTEXT'` de `scripts/memory-read.js`, je vois bien :
+- lecture de `HOOK_PROMPT`
+- extraction FTS5 en parallele logique
+- branche conditionnelle `if (runtimeMode === 'FULL')`
+- appel `await embed(hookPrompt, Math.min(timeoutMs, 3000))`
+- chargement des embeddings `node`
+- `cosineSimilarity(queryVec, bufferToFloat32(row.vector))`
+- fusion RRF entre `ftsResults` et `vecResults`
+
+Donc non, ce n'est plus un faux `--context` lexical-only. La branche vectorielle existe bien dans le code.
+
+### 3. DB corrompue → fallback `MINIMAL` — **OUI, corrige au bon endroit**
+
+Dans `scripts/memory-read.js` :
+- `detectMode(dbPath)` est appele avant ouverture normale ;
+- si `runtimeMode === 'MINIMAL'`, sortie propre :
+	- `console.log('[MEMORY] Mode: MINIMAL — pas de base.')`
+	- `process.exit(0)`
+- puis un second garde-fou existe au moment de `openDb(dbPath)` :
+	- `try { db = openDb(dbPath); } catch { console.log('[MEMORY] Mode: MINIMAL — base corrompue.'); process.exit(0); }`
+
+Donc oui :
+- la corruption de base ne remonte plus en crash brut ;
+- la sortie est propre ;
+- le `try/catch` est au bon endroit fonctionnellement : juste avant l'usage reel de la DB.
+
+### 4. Test e2e export — **OUI, corrige reellement des deux cotes**
+
+Dans `scripts/memory-export.js` :
+- le flag `--out` est bien parse ;
+- l'usage documente bien `--out <out-dir>` ;
+- le fallback argument positionnel existe toujours.
+
+Dans `test/memory.js` :
+- l'e2e n'utilise plus `--output` ;
+- il utilise bien `--out`, avec un **repertoire** (`exportDir`) et non un fichier `.json` ;
+- la verification cible un fichier exporte coherent (`routing.md`).
+
+Donc oui, le drift test/script sur l'export est corrige dans le code reel.
+
+### Bonus FTS5 `MATCH` — **OUI, corrige sur les points critiques lus**
+
+Je vois bien des `try/catch` autour des requetes `MATCH` dans `scripts/memory-read.js` pour :
+- FTS5 nodes dans `--context`
+- FTS5 nodes dans le mode query complet
+- FTS5 episodes dans le mode query complet
+
+Donc la surface de crash sur syntaxe FTS hostile a bien ete reduite.
+
+### Verdict serre
+
+Sur les **4 points que j'avais remontes**, je confirme : **4/4 corriges dans le code**.
+
+Je ne vois pas ici un faux “fix de handoff”. Je vois des changements reels.
+
+### Petite vis en plus
+
+Je te signale quand meme deux residues mineurs, **hors des 4 corrections demandees** :
+- dans `memory-read.js`, si `--graph` ne trouve pas le node, le message affiche `Mode: GRAPH` au lieu du runtime mode ;
+- dans `test/memory.js`, un commentaire dit encore “Verify MEMORY.md was created”, alors que le test verifie `routing.md`.
+
+Ce n'est pas bloquant pour ce handoff. C'est juste du residuel textuel, pas un trou de logique.
+
+Conclusion : **oui, les corrections sont reelles et pas cosmetiques**.
+
+J'ai repondu dans docs/handoffs/2026-04-18-memory-post-fix-review.md
 
 ---
 
 ## Integration
-<!-- Claude remplit apres lecture de la reponse -->
+
+Copilot confirme 4/4 corrections reelles dans le code.
+
+2 residus mineurs signales, corriges :
+- `--graph` node not found affichait "Mode: GRAPH" → corrige en `runtimeMode`
+- Commentaire test e2e "Verify MEMORY.md" → corrige en "Verify exported files"
+
+Feature prete pour merge.

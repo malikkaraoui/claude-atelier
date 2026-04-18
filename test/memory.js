@@ -821,8 +821,7 @@ testAsync('full flow: init → write → episode → read → gc → export', as
     });
     ok(exportResult.status === 0, `export should exit 0, got ${exportResult.status}: ${exportResult.stderr}`);
 
-    // Verify MEMORY.md was created in the export directory
-    // Verify at least one node was exported
+    // Verify exported files exist
     const routingMdPath = resolve(exportDir, 'routing.md');
     ok(existsSync(exportDir), 'export directory should exist');
     ok(existsSync(routingMdPath), 'routing.md should be exported');
