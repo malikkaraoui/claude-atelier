@@ -3,7 +3,7 @@
 > Date : 2026-04-18
 > Type : review
 > Priorite : haute
-> reviewedRange: 72f771ed5e2bc1885a6852fd31255951cabbd91a..24a475067aeb065f58a891ad977537c586e2db6d
+> reviewedRange: 72f771ed5e2bc1885a6852fd31255951cabbd91a..d8c990fd22a0e51ffef6165f678cec3842b5c714
 
 ---
 
@@ -142,7 +142,7 @@ J'ai repondu dans docs/handoffs/2026-04-18-memory-post-fix-review.md
 
 ---
 
-## Integration
+## Intégration
 
 Copilot confirme 4/4 corrections reelles dans le code.
 

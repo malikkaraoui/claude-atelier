@@ -181,7 +181,7 @@ J'ai repondu dans docs/handoffs/2026-04-18-memory-3-levels.md
 
 ---
 
-## Integration
+## Intégration
 
 4/4 points adresses dans le commit `72f771e` :
 
