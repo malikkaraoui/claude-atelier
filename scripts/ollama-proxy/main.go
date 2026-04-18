@@ -119,6 +119,7 @@ type OllamaRequest struct {
 	Messages []OllamaMessage `json:"messages"`
 	Tools    []OllamaTool    `json:"tools,omitempty"`
 	Stream   bool            `json:"stream"`
+	Think    *bool           `json:"think,omitempty"`   // disable thinking mode (qwen3.5)
 	Options  map[string]int  `json:"options,omitempty"`
 }
 
@@ -152,9 +153,17 @@ type OllamaFunction struct {
 }
 
 type OllamaResponse struct {
-	Model   string        `json:"model"`
-	Message OllamaMessage `json:"message"`
-	Done    bool          `json:"done"`
+	Model      string        `json:"model"`
+	Message    OllamaRespMsg `json:"message"`
+	Done       bool          `json:"done"`
+	DoneReason string        `json:"done_reason,omitempty"`
+}
+
+type OllamaRespMsg struct {
+	Role      string           `json:"role"`
+	Content   string           `json:"content"`
+	Thinking  string           `json:"thinking,omitempty"` // qwen3.5 thinking mode
+	ToolCalls []OllamaToolCall `json:"tool_calls,omitempty"`
 }
 
 // ── Translation: Anthropic → Ollama ─────────────────────────────────────────
@@ -346,11 +355,16 @@ func translateResponse(ollamaResp OllamaResponse, model string) AnthropicRespons
 	var contentBlocks []ContentBlock
 	stopReason := "end_turn"
 
-	// Add text content if present
-	if ollamaResp.Message.Content != "" {
+	// Add text content — fallback to thinking if content is empty (qwen3.5 thinking mode)
+	text := ollamaResp.Message.Content
+	if text == "" && ollamaResp.Message.Thinking != "" {
+		text = ollamaResp.Message.Thinking
+		log.Printf("[proxy] content empty, using thinking field (%d chars)", len(text))
+	}
+	if text != "" {
 		contentBlocks = append(contentBlocks, ContentBlock{
 			Type: "text",
-			Text: ollamaResp.Message.Content,
+			Text: text,
 		})
 	}
 
@@ -436,11 +450,13 @@ func makeHandler(cfg Config) http.HandlerFunc {
 		// Translate tools
 		ollamaTools := translateTools(anthropicReq.Tools)
 
+		thinkFalse := false
 		ollamaReq := OllamaRequest{
 			Model:    ollamaModel,
 			Messages: messages,
 			Tools:    ollamaTools,
 			Stream:   false,
+			Think:    &thinkFalse, // disable thinking mode for faster, cleaner responses
 		}
 		if anthropicReq.MaxTokens > 0 {
 			ollamaReq.Options = map[string]int{"num_predict": anthropicReq.MaxTokens}
