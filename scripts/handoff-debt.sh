@@ -27,7 +27,7 @@ HANDOFF_DIR="$REPO_ROOT/docs/handoffs"
 #   lines=100, commits=3, days=7
 # Nouveaux seuils calibrés pour bloquer les vrais oublis, pas l'infra :
 THRESHOLD_LINES="${HANDOFF_THRESHOLD_LINES:-300}"
-THRESHOLD_COMMITS="${HANDOFF_THRESHOLD_COMMITS:-8}"
+THRESHOLD_COMMITS="${HANDOFF_THRESHOLD_COMMITS:-12}"
 THRESHOLD_DAYS="${HANDOFF_THRESHOLD_DAYS:-7}"
 
 MODE="text"
