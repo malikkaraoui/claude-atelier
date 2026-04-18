@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -199,18 +200,45 @@ func extractSystemPrompt(system interface{}) string {
 	return ""
 }
 
-// toolUseCounter generates unique tool_use IDs within a request.
+// toolUseCounter generates unique tool_use IDs (atomic for goroutine safety).
 var toolUseCounter int64
 
 func genToolUseID() string {
-	toolUseCounter++
-	return fmt.Sprintf("toolu_proxy_%d_%d", time.Now().UnixNano(), toolUseCounter)
+	n := atomic.AddInt64(&toolUseCounter, 1)
+	return fmt.Sprintf("toolu_proxy_%d_%d", time.Now().UnixNano(), n)
+}
+
+// buildToolIDMap scans all messages to build a map of tool_use_id → tool_name.
+// This resolves the cross-message mapping that Claude Code relies on.
+func buildToolIDMap(messages []AnthropicMessage) map[string]string {
+	idMap := make(map[string]string)
+	for _, m := range messages {
+		blocks, ok := m.Content.([]interface{})
+		if !ok {
+			continue
+		}
+		for _, block := range blocks {
+			bm, ok := block.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if bm["type"] == "tool_use" {
+				id, _ := bm["id"].(string)
+				name, _ := bm["name"].(string)
+				if id != "" && name != "" {
+					idMap[id] = name
+				}
+			}
+		}
+	}
+	return idMap
 }
 
 // translateMessages converts Anthropic messages to Ollama format.
-// It handles text, tool_use, and tool_result content blocks.
+// Handles text, tool_use, tool_result blocks with correct ordering and is_error.
 func translateMessages(req AnthropicRequest) (system string, messages []OllamaMessage) {
 	system = extractSystemPrompt(req.System)
+	toolIDMap := buildToolIDMap(req.Messages)
 
 	for _, m := range req.Messages {
 		switch v := m.Content.(type) {
@@ -218,56 +246,32 @@ func translateMessages(req AnthropicRequest) (system string, messages []OllamaMe
 			messages = append(messages, OllamaMessage{Role: m.Role, Content: v})
 
 		case []interface{}:
-			// Content is an array of blocks — may contain text, tool_use, tool_result
-			var textParts []string
-			var toolCalls []OllamaToolCall
-			var toolResults []OllamaMessage
-
-			for _, block := range v {
-				bm, ok := block.(map[string]interface{})
-				if !ok {
-					continue
-				}
-				blockType, _ := bm["type"].(string)
-
-				switch blockType {
-				case "text":
-					if t, ok := bm["text"].(string); ok {
-						textParts = append(textParts, t)
-					}
-
-				case "tool_use":
-					// Assistant message with tool invocation
-					name, _ := bm["name"].(string)
-					input := bm["input"]
-					toolCalls = append(toolCalls, OllamaToolCall{
-						Type: "function",
-						Function: OllamaFunctionCall{
-							Index: len(toolCalls),
-							Name:  name,
-							Arguments: input,
-						},
-					})
-
-				case "tool_result":
-					// User message with tool result → becomes role:"tool" message
-					toolName := ""
-					// Extract tool name from tool_use_id by looking up in previous messages
-					// For now, we pass it as tool_name if available
-					if tn, ok := bm["tool_name"].(string); ok {
-						toolName = tn
-					}
-					content := extractToolResultContent(bm["content"])
-					toolResults = append(toolResults, OllamaMessage{
-						Role:     "tool",
-						Content:  content,
-						ToolName: toolName,
-					})
-				}
-			}
-
 			if m.Role == "assistant" {
-				// Assistant message: may have text + tool_calls
+				// Collect text + tool_calls together (single assistant message)
+				var textParts []string
+				var toolCalls []OllamaToolCall
+				for _, block := range v {
+					bm, ok := block.(map[string]interface{})
+					if !ok {
+						continue
+					}
+					switch bm["type"] {
+					case "text":
+						if t, ok := bm["text"].(string); ok {
+							textParts = append(textParts, t)
+						}
+					case "tool_use":
+						name, _ := bm["name"].(string)
+						toolCalls = append(toolCalls, OllamaToolCall{
+							Type: "function",
+							Function: OllamaFunctionCall{
+								Index:     len(toolCalls),
+								Name:      name,
+								Arguments: bm["input"],
+							},
+						})
+					}
+				}
 				msg := OllamaMessage{
 					Role:    "assistant",
 					Content: strings.Join(textParts, "\n"),
@@ -276,16 +280,37 @@ func translateMessages(req AnthropicRequest) (system string, messages []OllamaMe
 					msg.ToolCalls = toolCalls
 				}
 				messages = append(messages, msg)
+
 			} else if m.Role == "user" {
-				// User message: may have text blocks + tool_result blocks
-				if len(textParts) > 0 {
-					messages = append(messages, OllamaMessage{
-						Role:    "user",
-						Content: strings.Join(textParts, "\n"),
-					})
+				// Preserve block order: emit messages in sequence as they appear
+				for _, block := range v {
+					bm, ok := block.(map[string]interface{})
+					if !ok {
+						continue
+					}
+					switch bm["type"] {
+					case "text":
+						if t, ok := bm["text"].(string); ok && t != "" {
+							messages = append(messages, OllamaMessage{
+								Role:    "user",
+								Content: t,
+							})
+						}
+					case "tool_result":
+						toolUseID, _ := bm["tool_use_id"].(string)
+						toolName := toolIDMap[toolUseID] // resolve from earlier tool_use
+						content := extractToolResultContent(bm["content"])
+						// Propagate is_error: prefix content so LLM knows the tool failed
+						if isErr, ok := bm["is_error"].(bool); ok && isErr {
+							content = "[ERROR] " + content
+						}
+						messages = append(messages, OllamaMessage{
+							Role:     "tool",
+							Content:  content,
+							ToolName: toolName,
+						})
+					}
 				}
-				// tool_result blocks become separate role:"tool" messages
-				messages = append(messages, toolResults...)
 			}
 		}
 	}
