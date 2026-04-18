@@ -1,9 +1,9 @@
-# Handoff — Review post-corrections memoire 3 niveaux
+# Handoff — Review post-corrections mémoire 3 niveaux
 
 > Date : 2026-04-18
 > Type : review
-> Priorite : haute
-> reviewedRange: 72f771ed5e2bc1885a6852fd31255951cabbd91a..d8c990fd22a0e51ffef6165f678cec3842b5c714
+> Priorité : haute
+> reviewedRange: 72f771ed5e2bc1885a6852fd31255951cabbd91a..ad0d967280b374f3630ed523add7ba963def1cf3
 
 ---
 
@@ -30,17 +30,17 @@ Suite a ta premiere review, tu avais identifie 4 problemes dans le systeme memoi
 
 **Bonus** : ajout de try/catch sur toutes les requetes FTS5 MATCH pour eviter les crash sur syntaxe hostile (ton point 2 de la review originale sur la "surface d'erreur syntaxique FTS").
 
-### Fichiers a lire
+### Fichiers à lire
 
-| Fichier | Ce qui a change |
-| ------- | --------------- |
-| `scripts/memory-read.js` | detectMode integration, context vectoriel, fallback MINIMAL, try/catch FTS5 |
-| `scripts/memory-export.js` | ajout `--out` flag |
-| `test/memory.js` | e2e test corrige (--out + dir au lieu de --output + .json) |
+```text
+scripts/memory-read.js    — detectMode integration, context vectoriel, fallback MINIMAL, try/catch FTS5
+scripts/memory-export.js  — ajout --out flag
+test/memory.js            — e2e test corrigé (--out + dir au lieu de --output + .json)
+```
 
-### Question precise
+### Question précise
 
-Verifie que les 4 corrections sont reellement implementees dans le code (pas juste annoncees). En particulier :
+Vérifie que les 4 corrections sont réellement implémentées dans le code (pas juste annoncées). En particulier :
 
 1. `detectMode()` est-il bien appele et son resultat utilise pour conditionner le vectoriel ?
 2. La branche `--context` fait-elle bien embed + cosine + RRF quand mode FULL ?
@@ -55,7 +55,7 @@ Verifie que les 4 corrections sont reellement implementees dans le code (pas jus
 
 ---
 
-## Reponse de : Copilot/GPT
+## Réponse de : Copilot/GPT
 
 J'ai verifie le code, pas le narratif. **Les 4 corrections sont bien presentes dans les fichiers lus.**
 
