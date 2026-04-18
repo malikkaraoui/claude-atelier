@@ -182,4 +182,16 @@ J'ai repondu dans docs/handoffs/2026-04-18-memory-3-levels.md
 ---
 
 ## Integration
-<!-- Claude remplit apres lecture de la reponse -->
+
+4/4 points adresses dans le commit `72f771e` :
+
+| # | Constat Copilot | Correction |
+|---|----------------|------------|
+| 1 | `memory-read.js` n'utilise pas `detectMode()` | Integre : appel async au startup, mode runtime (FULL/LEXICAL/MINIMAL) affiche dans l'output |
+| 2 | `--context` pas de branche vectorielle | Ajoutee : si mode FULL, embed du prompt + cosine + fusion RRF avec FTS5 |
+| 3 | DB corrompue → pas de fallback MINIMAL | try/catch sur `openDb()` → `[MEMORY] Mode: MINIMAL — base corrompue.` + exit 0 |
+| 4 | Test e2e: `--output` vs arg positionnel | Corrige : ajout `--out` flag dans export.js, test mis a jour, verifie MEMORY.md |
+
+Remarque de Copilot sur le positionnement : la feature est P1 partielle avec recherche lexicale robuste + vectoriel en mode query CLI. Le mode CONTEXT a maintenant la branche vectorielle, mais la couverture de tests sur les cas degrades (FTS syntax error, JSON invalide) reste a renforcer en P2.
+
+20/20 tests passent.
