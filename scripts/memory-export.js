@@ -24,16 +24,19 @@ import { resolve, join } from 'path';
 
 function usage() {
   return `Usage: memory-export.js <out-dir> [--db <path>]
+    or: memory-export.js --out <out-dir> [--db <path>]
 
 Arguments:
   <out-dir>                Directory to write markdown files to
 
 Options:
+  --out <path>             Output directory (named option alternative)
   --db <path>              Custom database path (default: .claude/memory.db)
   --help                   Show this help message
 
 Example:
   memory-export.js ./docs --db ./memory.db
+  memory-export.js --out ./docs --db ./memory.db
 `;
 }
 
@@ -90,6 +93,9 @@ async function main() {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--db') {
       dbPath = args[i + 1];
+      i += 1;
+    } else if (args[i] === '--out') {
+      outDir = args[i + 1];
       i += 1;
     } else if (!args[i].startsWith('--')) {
       outDir = args[i];

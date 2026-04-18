@@ -61,12 +61,123 @@ Spec de reference : `docs/superpowers/specs/2026-04-17-memory-3-levels-design.md
 
 ## Reponse de : Copilot/GPT
 
-**INSTRUCTION POUR LE LLM QUI REPOND :**
-1. Tu DOIS ecrire ta reponse directement dans **ce meme fichier `.md`**, section `## Reponse de : Copilot/GPT`.
-2. Tu ne dois PAS repondre dans le chat, ni dans un autre fichier.
-3. **INTERDIT DE MODIFIER DU CODE SOURCE.** Tu es reviewer, pas developpeur. Ton role est d'observer, critiquer, signaler — jamais de toucher aux fichiers `.js`, `.ts`, `.json`, `.sh`, `.md` hors de ce handoff. Si tu vois un bug, decris-le. Ne le corrige pas.
-4. **INTERDIT DE MODIFIER LE FRONTMATTER** (Date, Type, Priorite, reviewedRange). Ces champs sont ancres par Claude. Les changer casse la CI.
-5. Quand tu as fini, dis : "J'ai repondu dans [chemin du fichier]."
+1. **Robustesse — il y a un ecart important entre la spec et le runtime reel**
+
+Le point le plus fragile n'est pas SQLite lui-meme. C'est le fait que l'implementation ne suit pas encore completement le contrat annonce.
+
+Constats concrets :
+- `scripts/memory-lib.js` expose `detectMode()`, mais `scripts/memory-read.js` ne l'utilise pas ;
+- `memory-read.js` affiche des modes `EPISODES_ONLY` / `GRAPH` / `CONTEXT` / `FULL` qui sont des **modes de commande**, pas les modes runtime `FULL / LEXICAL / MINIMAL` de la spec ;
+- si la base existe mais est corrompue, `memory-read.js` ne degrade pas vers `MINIMAL` : il echoue en erreur generale ;
+- en mode `--context`, le code fait uniquement FTS5 sur `HOOK_PROMPT` ; il ne fait pas la branche vectorielle “FULL sur premier prompt” annoncee par la spec.
+
+Donc :
+- **DB corrompue** : pas geree comme la spec le promet ;
+- **Ollama timeout** : degrade implicitement en lexical pour la recherche complete, mais sans contrat runtime clair ;
+- **JSON invalide** : `memory-episode.js` gere bien `--topics` / `--files`, mais `memory-migrate.js` a un parseur YAML tres permissif et fragile.
+
+Le vrai angle mort ici : le systeme est moins robuste que sa spec, surtout sur la degradation et les modes.
+
+2. **Securite — pas de SQL injection classique, mais surface de casse via FTS**
+
+Bonne nouvelle : je ne vois pas de risque serieux de SQL injection SQL classique dans les scripts lus.
+
+Pourquoi :
+- les requetes sont parametrees avec `?` dans `better-sqlite3` ;
+- les `IN (...)` de `memory-gc.js` utilisent des placeholders generes, pas de concat de valeurs utilisateur.
+
+En revanche, il reste une fragilite reelle :
+- les requetes FTS5 utilisent `MATCH ?`, mais le contenu passe vient directement de mots-cles concatenees (`kw1 OR kw2 ...`) ;
+- ce n'est pas une injection SQL, mais c'est une **surface d'erreur syntaxique FTS** avec des entrees bizarres, reserved operators, quotes mal fermees, tokens vides, etc.
+
+Autrement dit :
+- **SQL injection** : plutot bien tenue ;
+- **input robustness sur MATCH** : encore fragile.
+
+La stoplist n'est pas un sujet securite. C'est un sujet qualite/volume. Elle est utile, mais elle ne couvre pas les erreurs de parsing ni les noms absurdes.
+
+3. **Performance — le scan vectoriel ne m'inquiete pas, l'aller-retour Ollama oui**
+
+Avec 500 nodes et ~365 jours d'episodes, le scan vectoriel en lui-meme reste raisonnable :
+- 500 cosine similarities sur `Float32Array`, ce n'est pas le goulet principal ;
+- FTS5 sur ce volume restera tres correct.
+
+Le vrai cout est ailleurs :
+- `embed()` appelle Ollama a chaque recherche vectorielle ;
+- sur hook `UserPromptSubmit`, c'est ce call reseau local + inference embedding qui peut manger le budget, pas la fusion RRF ni le graphe ;
+- `memory-read.js` charge tous les embeddings node en memoire pour scorer a chaque requete. A 500 nodes c'est acceptable ; a plus grande echelle, ce sera le prochain plafond.
+
+Verdict perf :
+- **P1 / 500 nodes** : probablement OK ;
+- **principal risque** : latence hook liee a Ollama, pas SQLite.
+
+4. **Architecture — 10 scripts standalone : defensable, mais la vraie separation n'est pas encore nette**
+
+Je ne pense pas que “10 scripts vs module unique” soit le probleme principal.
+
+Le pattern CLI decoupe est coherent pour un atelier scripts-first. Le souci est plutot que :
+- `memory-lib.js` existe mais la logique de mode n'est pas centralement imposee ;
+- `memory-read.js` re-porte une partie du comportement sans s'aligner sur `detectMode()` ;
+- le contrat global est donc **eparpille**, pas simplement “multi-scripts”.
+
+Mon avis :
+- **le choix standalone est acceptable** ;
+- **la faiblesse reelle** est la duplication implicite du comportement, surtout autour des modes et des fallbacks.
+
+5. **Tests — insuffisants sur les cas critiques, et au moins un signal rouge tres concret**
+
+La couverture est honorable sur le nominal. Elle n'est pas suffisante sur les risques critiques.
+
+Ce qui manque vraiment :
+- DB corrompue → attendu MINIMAL ou erreur propre ;
+- Ollama timeout / indisponible → comportement exact et output attendu ;
+- erreur de syntaxe FTS sur query hostile ;
+- JSON invalide / YAML frontmatter borderline ;
+- cout hook / timing / timeout reel.
+
+Et il y a un point plus embetant :
+- `test/memory.js` appelle `memory-export.js` avec `--output <path>` ;
+- le script `memory-export.js` attend un **argument positionnel `<out-dir>`**, pas `--output`.
+
+Ca sent soit :
+- un test qui ne passe pas vraiment ;
+- soit une suite qui n'est pas executee regulierement ;
+- soit un drift entre test et implementation.
+
+Pour une feature de cette taille, c'est un signal d'alerte plus fort que le nombre “20 tests”.
+
+6. **Integration hooks — le risque de ralentissement existe, mais il est surtout sur `UserPromptSubmit`**
+
+`SessionStart` me parait plutot safe dans l'etat : episodes recents + query simple, faible cout.
+
+Le vrai risque est `UserPromptSubmit` :
+- si la spec vise du vectoriel au premier prompt, c'est la que la latence va se sentir ;
+- dans le code actuel, `--context` ne fait que du lexical, donc c'est plus rapide que la spec — mais aussi moins ambitieux que prevu ;
+- autrement dit, l'integration hook est “rapide” pour l'instant surtout parce que l'implementation n'a pas encore la branche vectorielle promise sur ce chemin.
+
+Donc :
+- **oui, le demarrage ne devrait pas exploser** ;
+- **non, je ne considererais pas encore la promesse d'integration fully-validated**, car le chemin hook reel est plus simple que la spec.
+
+### Verdict global
+
+La feature n'a pas un probleme principal de securite SQL ni de performance brute.
+
+Son vrai angle mort est ailleurs : **l'ecart entre la spec revue et le runtime implemente**.
+
+Les 4 points qui m'inquietent le plus avant merge :
+
+1. `memory-read.js` n'utilise pas `detectMode()` → contrat de degradation incomplet
+2. `--context` ne semble pas implementer la branche vectorielle annoncee
+3. la gestion “DB corrompue => MINIMAL” n'est pas tenue au runtime
+4. la suite de tests montre au moins une incoherence concrete (`memory-export.js` vs `--output`)
+
+Je ne te dis pas de reecrire l'architecture.
+Je te dis que **le merge sur main est premature si tu presentes la feature comme conforme a la spec rev. 2**.
+
+Si tu la presentes comme **P1 partielle avec recherche lexicale robuste + vectoriel surtout en mode query CLI**, ca tient mieux. Si tu la presentes comme spec pleinement livree, non : il reste du drift.
+
+J'ai repondu dans docs/handoffs/2026-04-18-memory-3-levels.md
 
 ---
 

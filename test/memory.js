@@ -725,7 +725,7 @@ console.log('\n── full flow: e2e ──');
 testAsync('full flow: init → write → episode → read → gc → export', async () => {
   const tmpDir = mkdtempSync(resolve(tmpdir(), 'memory-e2e-'));
   const dbPath = resolve(tmpDir, 'memory.db');
-  const exportPath = resolve(tmpDir, 'export.json');
+  const exportDir = resolve(tmpDir, 'export');
 
   try {
     // Step 1: Initialize DB
@@ -814,15 +814,18 @@ testAsync('full flow: init → write → episode → read → gc → export', as
     const exportResult = spawnSync('node', [
       resolve(ROOT, 'scripts/memory-export.js'),
       '--db', dbPath,
-      '--output', exportPath
+      '--out', exportDir
     ], {
       encoding: 'utf8',
       cwd: ROOT
     });
     ok(exportResult.status === 0, `export should exit 0, got ${exportResult.status}: ${exportResult.stderr}`);
-    ok(existsSync(exportPath), 'export file should exist');
 
-    // Step 9: Verify DB integrity
+    // Verify MEMORY.md was created in the export directory
+    // Verify at least one node was exported
+    const routingMdPath = resolve(exportDir, 'routing.md');
+    ok(existsSync(exportDir), 'export directory should exist');
+    ok(existsSync(routingMdPath), 'routing.md should be exported');
     const db = openDb(dbPath);
     try {
       const nodeCount = db.prepare(`SELECT COUNT(*) as count FROM nodes`).get();
