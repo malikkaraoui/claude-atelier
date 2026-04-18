@@ -50,11 +50,6 @@ normalize_model() {
   printf '%s' "$1" | sed 's/\[.*$//' | tr -d '\r\n'
 }
 
-# Pattern strict : uniquement des vrais noms de modèles Claude (évite d'empoisonner
-# via le texte "Set model to ..." cité dans un message utilisateur du transcript).
-# Match claude-{opus|sonnet|haiku}-X.Y[...] — pas de slashes, pas de ponctuation.
-MODEL_PATTERN='Set model to claude-(opus|sonnet|haiku)-[0-9][0-9A-Za-z-]*(\[[0-9A-Za-z-]+\])?'
-
 TRANSCRIPT=$(echo "$_RAW_INPUT" | python3 -c "
 import sys, json
 try:
@@ -65,9 +60,9 @@ except: pass
 
 MODEL=""
 
-# Priorité : live > transcript (détecte /model) > cache (session-start).
-# Le transcript capture les changements `/model` en cours de session — source fiable.
-# Le cache seul est stale si `/model` a eu lieu après session-start.
+# Priorité : live > transcript (message.model des réponses assistant) > cache.
+# Le grep "Set model to" est abandonné — trop de faux positifs (code cité dans le transcript).
+# On lit le champ message.model de la dernière entrée type=assistant du JSONL.
 
 if [ -n "$LIVE_MODEL" ]; then
   MODEL=$(normalize_model "$LIVE_MODEL")
@@ -75,21 +70,29 @@ if [ -n "$LIVE_MODEL" ]; then
   printf '%s\n' "$MODEL" > "$MODEL_FILE"
 fi
 
-# Toujours vérifier le transcript pour un changement `/model` récent
-if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
-  LAST_MODEL_CHANGE=$(grep -Eo "$MODEL_PATTERN" "$TRANSCRIPT" 2>/dev/null | tail -1 | sed 's/^Set model to //')
-  if [ -n "$LAST_MODEL_CHANGE" ]; then
-    TRANSCRIPT_MODEL=$(normalize_model "$LAST_MODEL_CHANGE")
-    if [ -z "$MODEL" ] || [ "$TRANSCRIPT_MODEL" != "$MODEL" ]; then
-      MODEL="$TRANSCRIPT_MODEL"
-      MODEL_SOURCE="transcript"
-      # MAJ cache — `/model` explicite = source fiable, pas une corruption
-      printf '%s\n' "$MODEL" > "$MODEL_FILE"
-    fi
+# Extraire le modèle réel de la dernière réponse assistant dans le transcript
+if [ -z "$MODEL" ] && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
+  TRANSCRIPT_MODEL=$(python3 -c "
+import json, sys
+last = ''
+with open('$TRANSCRIPT') as f:
+    for line in f:
+        try:
+            d = json.loads(line)
+            if d.get('type') == 'assistant':
+                m = d.get('message', {}).get('model', '')
+                if m: last = m
+        except: pass
+print(last)
+" 2>/dev/null)
+  if [ -n "$TRANSCRIPT_MODEL" ]; then
+    MODEL=$(normalize_model "$TRANSCRIPT_MODEL")
+    MODEL_SOURCE="transcript"
+    printf '%s\n' "$MODEL" > "$MODEL_FILE"
   fi
 fi
 
-# Fallback cache (session-start) si ni live ni transcript
+# Fallback cache (session-start)
 if [ -z "$MODEL" ]; then
   CACHED=$(cat "$MODEL_FILE" 2>/dev/null || echo "")
   if [ -n "$CACHED" ]; then

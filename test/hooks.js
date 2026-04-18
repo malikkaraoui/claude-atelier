@@ -210,11 +210,11 @@ test('routing-check préfère le modèle live au cache stale', () => {
   ok(readFileSync('/tmp/claude-atelier-current-model', 'utf8').trim() === 'claude-opus-4-6', 'cache mis à jour');
 });
 
-test('routing-check bascule sur le transcript si le modèle live est absent', () => {
+test("routing-check bascule sur le transcript si le modèle live est absent", () => {
   resetRoutingEnv();
   const dir = mkdtempSync(resolve(tmpdir(), 'claude-routing-'));
   const transcript = resolve(dir, 'session.jsonl');
-  writeFileSync(transcript, '...\nSet model to claude-haiku-4-5\n...\n');
+  writeFileSync(transcript, JSON.stringify({type:"assistant",message:{role:"assistant",model:"claude-haiku-4-5",content:[{type:"text",text:"ok"}]}}) + "\n");
   const r = hook('routing-check.sh', { prompt: 'liste les fichiers', transcript_path: transcript });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[ROUTING] modèle actif: claude-haiku-4-5 (Haiku (exploration))'), 'fallback transcript attendu');
@@ -222,11 +222,11 @@ test('routing-check bascule sur le transcript si le modèle live est absent', ()
   rmSync(dir, { recursive: true, force: true });
 });
 
-test('routing-check accepte le format date claude-haiku-20240307 depuis le transcript', () => {
+test("routing-check accepte le format date claude-haiku-20240307 depuis le transcript", () => {
   resetRoutingEnv();
   const dir = mkdtempSync(resolve(tmpdir(), 'claude-routing-'));
   const transcript = resolve(dir, 'session.jsonl');
-  writeFileSync(transcript, '...\nSet model to claude-haiku-20240307\n...\n');
+  writeFileSync(transcript, JSON.stringify({type:"assistant",message:{role:"assistant",model:"claude-haiku-20240307",content:[{type:"text",text:"ok"}]}}) + "\n");
   const r = hook('routing-check.sh', { prompt: 'bonjour', transcript_path: transcript });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[ROUTING] modèle actif: claude-haiku-20240307 (Haiku (exploration))'), 'format date accepté');
@@ -261,15 +261,16 @@ test('garde-fou #1 : session-model à compact sans model invalide le cache', () 
   ok(!cacheExists, 'cache supprimé post-compact sans model live');
 });
 
-test("garde-fou #2 : routing-check transcript ecrase le cache (fix /model)", () => {
+test("garde-fou #2 : routing-check transcript lit message.model (fix /model)", () => {
   resetRoutingEnv();
   writeFileSync('/tmp/claude-atelier-current-model', 'claude-opus-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'claude-routing-'));
   const transcript = resolve(dir, 'session.jsonl');
-  writeFileSync(transcript, 'Set model to claude-haiku-4-5\n');
+  // JSONL avec une réponse assistant dont message.model = haiku
+  writeFileSync(transcript, JSON.stringify({type:"assistant",message:{role:"assistant",model:"claude-haiku-4-5",content:[{type:"text",text:"ok"}]}}) + "\n");
   const r = hook('routing-check.sh', { prompt: 'audit', transcript_path: transcript });
   ok(r.status === 0, 'exit 0');
-  // Priorite : transcript (haiku) > cache (opus) -- detecte /model mid-session
+  // transcript message.model (haiku) > cache (opus)
   ok(r.stdout.includes('[ROUTING] source mod\xe8le: transcript'), 'transcript doit primer sur cache');
   ok(readFileSync('/tmp/claude-atelier-current-model', 'utf8').trim() === 'claude-haiku-4-5', 'cache mis a jour');
   rmSync(dir, { recursive: true, force: true });
