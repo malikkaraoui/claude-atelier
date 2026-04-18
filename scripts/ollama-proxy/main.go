@@ -5,7 +5,6 @@
 // including tool_use / tool_result bidirectional mapping.
 //
 // Limitations :
-//   - streaming not supported — buffered response only
 //   - system prompt extracted from "system" field (not system messages)
 //
 // Usage:
@@ -15,6 +14,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -358,8 +358,8 @@ func translateResponse(ollamaResp OllamaResponse, model string) AnthropicRespons
 	// Add text content — fallback to thinking if content is empty (qwen3.5 thinking mode)
 	text := ollamaResp.Message.Content
 	if text == "" && ollamaResp.Message.Thinking != "" {
-		text = ollamaResp.Message.Thinking
-		log.Printf("[proxy] content empty, using thinking field (%d chars)", len(text))
+		log.Printf("[PROXY] fallback: thinking used as content (%d chars)", len(ollamaResp.Message.Thinking))
+		text = "[thinking fallback] " + ollamaResp.Message.Thinking
 	}
 	if text != "" {
 		contentBlocks = append(contentBlocks, ContentBlock{
@@ -401,6 +401,149 @@ func translateResponse(ollamaResp OllamaResponse, model string) AnthropicRespons
 			OutputTokens: 0,
 		},
 	}
+}
+
+// ── Streaming: Ollama NDJSON → Anthropic SSE ────────────────────────────────
+
+func writeSSE(w http.ResponseWriter, event, data string) {
+	fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event, data)
+	if f, ok := w.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+// handleStreamingRequest proxies a streaming request: Ollama NDJSON → Anthropic SSE.
+func handleStreamingRequest(w http.ResponseWriter, cfg Config, anthropicReq AnthropicRequest, ollamaBody []byte, ollamaModel string) {
+	client := &http.Client{Timeout: 300 * time.Second}
+	resp, err := client.Post(cfg.OllamaURL+"/api/chat", "application/json", strings.NewReader(string(ollamaBody)))
+	if err != nil {
+		http.Error(w, fmt.Sprintf(`{"type":"error","error":{"type":"api_error","message":"ollama unreachable: %s"}}`, err.Error()), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	msgID := fmt.Sprintf("msg_ollama_%d", time.Now().UnixNano())
+
+	// message_start
+	startMsg := map[string]interface{}{
+		"type": "message_start",
+		"message": map[string]interface{}{
+			"id":            msgID,
+			"type":          "message",
+			"role":          "assistant",
+			"content":       []interface{}{},
+			"model":         ollamaModel,
+			"stop_reason":   nil,
+			"stop_sequence": nil,
+			"usage":         map[string]int{"input_tokens": 0, "output_tokens": 0},
+		},
+	}
+	startData, _ := json.Marshal(startMsg)
+	writeSSE(w, "message_start", string(startData))
+	writeSSE(w, "ping", `{"type":"ping"}`)
+
+	// content_block_start (text index 0)
+	cbStart, _ := json.Marshal(map[string]interface{}{
+		"type":  "content_block_start",
+		"index": 0,
+		"content_block": map[string]string{"type": "text", "text": ""},
+	})
+	writeSSE(w, "content_block_start", string(cbStart))
+
+	scanner := bufio.NewScanner(resp.Body)
+	var accText strings.Builder
+	var finalChunk OllamaResponse
+	outputTokens := 0
+
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			continue
+		}
+		var chunk OllamaResponse
+		if err := json.Unmarshal(line, &chunk); err != nil {
+			continue
+		}
+		if !chunk.Done {
+			if chunk.Message.Content != "" {
+				accText.WriteString(chunk.Message.Content)
+				outputTokens++
+				delta, _ := json.Marshal(map[string]interface{}{
+					"type":  "content_block_delta",
+					"index": 0,
+					"delta": map[string]string{"type": "text_delta", "text": chunk.Message.Content},
+				})
+				writeSSE(w, "content_block_delta", string(delta))
+			}
+		} else {
+			finalChunk = chunk
+		}
+	}
+
+	// thinking fallback: emit as delta if content was empty
+	if accText.Len() == 0 && finalChunk.Message.Thinking != "" {
+		log.Printf("[PROXY] fallback: thinking used as content (%d chars)", len(finalChunk.Message.Thinking))
+		fallbackText := "[thinking fallback] " + finalChunk.Message.Thinking
+		accText.WriteString(fallbackText)
+		delta, _ := json.Marshal(map[string]interface{}{
+			"type":  "content_block_delta",
+			"index": 0,
+			"delta": map[string]string{"type": "text_delta", "text": fallbackText},
+		})
+		writeSSE(w, "content_block_delta", string(delta))
+	}
+
+	// content_block_stop (text)
+	cbStop, _ := json.Marshal(map[string]interface{}{"type": "content_block_stop", "index": 0})
+	writeSSE(w, "content_block_stop", string(cbStop))
+
+	stopReason := "end_turn"
+	nextIndex := 1
+
+	// tool_use blocks (tool_calls only available on final chunk)
+	for _, tc := range finalChunk.Message.ToolCalls {
+		stopReason = "tool_use"
+		toolID := genToolUseID()
+		inputJSON, _ := json.Marshal(tc.Function.Arguments)
+
+		tbStart, _ := json.Marshal(map[string]interface{}{
+			"type":  "content_block_start",
+			"index": nextIndex,
+			"content_block": map[string]interface{}{
+				"type":  "tool_use",
+				"id":    toolID,
+				"name":  tc.Function.Name,
+				"input": map[string]interface{}{},
+			},
+		})
+		writeSSE(w, "content_block_start", string(tbStart))
+
+		tbDelta, _ := json.Marshal(map[string]interface{}{
+			"type":  "content_block_delta",
+			"index": nextIndex,
+			"delta": map[string]string{"type": "input_json_delta", "partial_json": string(inputJSON)},
+		})
+		writeSSE(w, "content_block_delta", string(tbDelta))
+
+		tbStop, _ := json.Marshal(map[string]interface{}{"type": "content_block_stop", "index": nextIndex})
+		writeSSE(w, "content_block_stop", string(tbStop))
+		nextIndex++
+	}
+
+	// message_delta + message_stop
+	msgDelta, _ := json.Marshal(map[string]interface{}{
+		"type":  "message_delta",
+		"delta": map[string]interface{}{"stop_reason": stopReason, "stop_sequence": nil},
+		"usage": map[string]int{"output_tokens": outputTokens},
+	})
+	writeSSE(w, "message_delta", string(msgDelta))
+	writeSSE(w, "message_stop", `{"type":"message_stop"}`)
+
+	log.Printf("[proxy] stream %s → %s (%d chars, %s)", anthropicReq.Model, ollamaModel, accText.Len(), stopReason)
 }
 
 // ── HTTP handler ────────────────────────────────────────────────────────────
@@ -455,7 +598,7 @@ func makeHandler(cfg Config) http.HandlerFunc {
 			Model:    ollamaModel,
 			Messages: messages,
 			Tools:    ollamaTools,
-			Stream:   false,
+			Stream:   anthropicReq.Stream,
 			Think:    &thinkFalse, // disable thinking mode for faster, cleaner responses
 		}
 		if anthropicReq.MaxTokens > 0 {
@@ -463,11 +606,14 @@ func makeHandler(cfg Config) http.HandlerFunc {
 		}
 
 		ollamaBody, _ := json.Marshal(ollamaReq)
+		log.Printf("[proxy] → ollama %s (%d tools, %d messages, stream=%v)", ollamaModel, len(ollamaTools), len(messages), anthropicReq.Stream)
 
-		if log.Default().Writer() != nil {
-			log.Printf("[proxy] → ollama %s (%d tools, %d messages)", ollamaModel, len(ollamaTools), len(messages))
+		if anthropicReq.Stream {
+			handleStreamingRequest(w, cfg, anthropicReq, ollamaBody, ollamaModel)
+			return
 		}
 
+		// Buffered (non-streaming) path
 		client := &http.Client{Timeout: 120 * time.Second}
 		resp, err := client.Post(cfg.OllamaURL+"/api/chat", "application/json", strings.NewReader(string(ollamaBody)))
 		if err != nil {
@@ -510,7 +656,7 @@ func main() {
 	}
 
 	addr := "localhost:" + cfg.Port
-	log.Printf("[ollama-proxy] v0.2.0 — tool_use enabled")
+	log.Printf("[ollama-proxy] v0.3.0 — tool_use enabled")
 	log.Printf("[ollama-proxy] listening on http://%s", addr)
 	log.Printf("[ollama-proxy] ollama backend: %s", cfg.OllamaURL)
 	log.Printf("[ollama-proxy] default model: %s", cfg.Model)

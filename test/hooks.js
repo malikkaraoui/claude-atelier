@@ -331,8 +331,8 @@ esac
   chmodSync(curlBin, 0o755);
   const r = hook('routing-check.sh', { prompt: 'bonjour', model: 'claude-sonnet-4-6' }, { PATH: `${binDir}:${process.env.PATH}` });
   ok(r.status === 0, 'exit 0');
-  ok(r.stdout.includes('[OLLAMA] 🦙✅ proxy:4000 → qwen3.5:4b (v0.2.0 tool_use actif)'), 'ligne OLLAMA attendue dans l’entête');
-  ok(r.stdout.indexOf('[OLLAMA]') < r.stdout.indexOf('[ROUTING] modèle actif'), 'OLLAMA doit être dans l’entête, avant le routing');
+  ok(r.stdout.includes('[OLLAMA] 🦙✅ proxy:4000 → qwen3.5:4b (v0.3.0 streaming+tool_use)'), "ligne OLLAMA attendue dans l’entête");
+  ok(r.stdout.indexOf('[OLLAMA]') < r.stdout.indexOf('[ROUTING] modèle actif'), "OLLAMA doit être dans l’entête, avant le routing");
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -518,6 +518,41 @@ test('silencieux sur prompt sans rapport avec le design', () => {
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.trim() === '', 'aucune sortie');
 });
+
+// ─────────────────────────────────────────────────────────────
+// ollama-proxy — tests Go (go test)
+// ─────────────────────────────────────────────────────────────
+console.log('\n── ollama-proxy (Go) ──');
+
+{
+  const goCheck = spawnSync('go', ['version'], { encoding: 'utf8' });
+  if (goCheck.status !== 0) {
+    console.log('  ⚠ go non disponible — tests proxy ignorés');
+  } else {
+    const goTest = spawnSync('go', ['test', '-v', '.'], {
+      encoding: 'utf8',
+      cwd: resolve(ROOT, 'scripts/ollama-proxy'),
+    });
+    const lines = (goTest.stdout + goTest.stderr).split('\n');
+    for (const line of lines) {
+      if (line.startsWith('--- PASS')) {
+        console.log(`  ✓ ${line.replace('--- PASS: ', '')}`);
+        pass++;
+      } else if (line.startsWith('--- FAIL')) {
+        console.error(`  ✗ ${line.replace('--- FAIL: ', '')}`);
+        fail++;
+      } else if (line.startsWith('FAIL') && !line.startsWith('--- FAIL')) {
+        console.error(`  ✗ go test échoué : ${line}`);
+        fail++;
+      }
+    }
+    if (goTest.status !== 0 && !lines.some(l => l.startsWith('--- FAIL'))) {
+      console.error('  ✗ go test: exit non-zéro');
+      console.error(goTest.stderr);
+      fail++;
+    }
+  }
+}
 
 // ─────────────────────────────────────────────────────────────
 // Bilan

@@ -208,7 +208,7 @@ try:
 except: print('')
 " 2>/dev/null)
       fi
-      OLLAMA_STATUS="🦙✅ proxy:4000 → $ACTIVE_LLM (v0.2.0 tool_use actif)"
+      OLLAMA_STATUS="🦙✅ proxy:4000 → $ACTIVE_LLM (v0.3.0 streaming+tool_use)"
     else
       OLLAMA_MODELS=$(echo "$OLLAMA_HEALTH" | python3 -c "
 import sys, json
