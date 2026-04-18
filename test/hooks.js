@@ -261,7 +261,7 @@ test('garde-fou #1 : session-model à compact sans model invalide le cache', () 
   ok(!cacheExists, 'cache supprimé post-compact sans model live');
 });
 
-test('garde-fou #2 : routing-check en source transcript n’écrase PAS le cache', () => {
+test("garde-fou #2 : routing-check transcript ecrase le cache (fix /model)", () => {
   resetRoutingEnv();
   writeFileSync('/tmp/claude-atelier-current-model', 'claude-opus-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'claude-routing-'));
@@ -269,9 +269,9 @@ test('garde-fou #2 : routing-check en source transcript n’écrase PAS le cache
   writeFileSync(transcript, 'Set model to claude-haiku-4-5\n');
   const r = hook('routing-check.sh', { prompt: 'audit', transcript_path: transcript });
   ok(r.status === 0, 'exit 0');
-  // Nouvelle priorité : cache (opus) > transcript (haiku) donc source=cache et opus gagne
-  ok(r.stdout.includes('[ROUTING] source modèle: cache'), 'cache doit primer sur transcript');
-  ok(readFileSync('/tmp/claude-atelier-current-model', 'utf8').trim() === 'claude-opus-4-6', 'cache intact (pas écrasé)');
+  // Priorite : transcript (haiku) > cache (opus) -- detecte /model mid-session
+  ok(r.stdout.includes('[ROUTING] source mod\xe8le: transcript'), 'transcript doit primer sur cache');
+  ok(readFileSync('/tmp/claude-atelier-current-model', 'utf8').trim() === 'claude-haiku-4-5', 'cache mis a jour');
   rmSync(dir, { recursive: true, force: true });
 });
 
