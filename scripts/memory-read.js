@@ -17,7 +17,7 @@
  * 5. "query" (default): full hybrid search
  */
 
-import { openDb, closeDb, DB_PATH, embed, cosineSimilarity, bufferToFloat32 } from './memory-lib.js';
+import { openDb, closeDb, DB_PATH, detectMode, embed, cosineSimilarity, bufferToFloat32 } from './memory-lib.js';
 import { existsSync } from 'fs';
 
 const DEFAULT_TIMEOUT_MS = 5000;
@@ -47,8 +47,8 @@ Examples:
 `;
 }
 
-function formatOutput(mode, query, results) {
-  let output = `[MEMORY] Mode: ${mode}`;
+function formatOutput(runtimeMode, query, results) {
+  let output = `[MEMORY] Mode: ${runtimeMode}`;
   if (query) output += ` | Query: "${query}"`;
   output += '\n';
 
@@ -120,8 +120,10 @@ async function main() {
     }
   }
 
-  // If no DB exists, return MINIMAL mode
-  if (!existsSync(dbPath)) {
+  // Detect runtime mode (FULL/LEXICAL/MINIMAL)
+  const runtimeMode = await detectMode(dbPath);
+
+  if (runtimeMode === 'MINIMAL') {
     console.log('[MEMORY] Mode: MINIMAL — pas de base.');
     process.exit(0);
   }
@@ -129,9 +131,15 @@ async function main() {
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
 
+  let db;
   try {
-    const db = openDb(dbPath);
+    db = openDb(dbPath);
+  } catch {
+    console.log('[MEMORY] Mode: MINIMAL — base corrompue.');
+    process.exit(0);
+  }
 
+  try {
     try {
       const results = {
         concepts: [],
@@ -151,7 +159,7 @@ async function main() {
         }
 
         results.episodes = db.prepare(sql).all(...params);
-        console.log(formatOutput(mode, null, results));
+        console.log(formatOutput(runtimeMode, null, results));
 
       } else if (mode === 'GRAPH') {
         // Mode 3: Show 1-hop neighbors
@@ -186,7 +194,7 @@ async function main() {
         `).all(node.id);
 
         results.neighbors = [...outgoing, ...incoming];
-        console.log(formatOutput('GRAPH', graphNode, results));
+        console.log(formatOutput(runtimeMode, graphNode, results));
 
       } else if (mode === 'CONTEXT') {
         // Mode 4: Hook mode
@@ -197,25 +205,63 @@ async function main() {
           SELECT * FROM episodes ORDER BY timestamp DESC LIMIT 5
         `).all();
 
-        // FTS5 search on nodes
         if (hookPrompt) {
           const keywords = hookPrompt
             .split(/\s+/)
             .filter(w => w.length >= 3)
             .slice(0, 5);
 
+          // FTS5 search on nodes
+          let ftsResults = [];
           if (keywords.length > 0) {
             const ftsQuery = keywords.join(' OR ');
-            results.concepts = db.prepare(`
-              SELECT DISTINCT n.* FROM nodes n
-              JOIN nodes_fts fts ON n.rowid = fts.rowid
-              WHERE nodes_fts MATCH ?
-              LIMIT 10
-            `).all(ftsQuery);
+            try {
+              ftsResults = db.prepare(`
+                SELECT DISTINCT n.* FROM nodes n
+                JOIN nodes_fts fts ON n.rowid = fts.rowid
+                WHERE nodes_fts MATCH ?
+                LIMIT 20
+              `).all(ftsQuery);
+            } catch {
+              // FTS syntax error — skip
+            }
           }
+
+          // Vector search (mode FULL only)
+          let vecResults = [];
+          if (runtimeMode === 'FULL') {
+            const queryVec = await embed(hookPrompt, Math.min(timeoutMs, 3000));
+            if (queryVec) {
+              const allEmbeddings = db.prepare(`
+                SELECT n.id, n.name, n.type, e.vector FROM nodes n
+                LEFT JOIN embeddings e ON n.id = e.ref_id AND e.ref_type = 'node'
+                WHERE e.vector IS NOT NULL
+              `).all();
+
+              vecResults = allEmbeddings.map(row => ({
+                ...row,
+                similarity: cosineSimilarity(queryVec, bufferToFloat32(row.vector)),
+              })).sort((a, b) => b.similarity - a.similarity).slice(0, 20);
+            }
+          }
+
+          // RRF fusion
+          const rrfMap = new Map();
+          ftsResults.forEach((node, rank) => {
+            rrfMap.set(node.name, { ...node, rrf: 1 / (60 + rank) });
+          });
+          vecResults.forEach((node, rank) => {
+            const prev = rrfMap.get(node.name) || { ...node, rrf: 0 };
+            prev.rrf += 1 / (60 + rank);
+            rrfMap.set(node.name, prev);
+          });
+
+          results.concepts = Array.from(rrfMap.values())
+            .sort((a, b) => b.rrf - a.rrf)
+            .slice(0, 10);
         }
 
-        console.log(formatOutput('CONTEXT', hookPrompt, results));
+        console.log(formatOutput(runtimeMode, hookPrompt, results));
 
       } else if (mode === 'FULL' && query) {
         // Mode 5: Full hybrid search
@@ -229,17 +275,21 @@ async function main() {
         let lexResults = [];
         if (keywords.length > 0) {
           const ftsQuery = keywords.join(' OR ');
-          lexResults = db.prepare(`
-            SELECT DISTINCT n.* FROM nodes n
-            JOIN nodes_fts fts ON n.rowid = fts.rowid
-            WHERE nodes_fts MATCH ?
-            LIMIT 20
-          `).all(ftsQuery);
+          try {
+            lexResults = db.prepare(`
+              SELECT DISTINCT n.* FROM nodes n
+              JOIN nodes_fts fts ON n.rowid = fts.rowid
+              WHERE nodes_fts MATCH ?
+              LIMIT 20
+            `).all(ftsQuery);
+          } catch {
+            // FTS syntax error on hostile input — skip
+          }
         }
 
-        // Vector search (if Ollama available)
+        // Vector search (mode FULL only)
         let vecResults = [];
-        if (timeoutController.signal.aborted === false) {
+        if (runtimeMode === 'FULL' && timeoutController.signal.aborted === false) {
           const embedding = await embed(query, timeoutMs);
           if (embedding) {
             const allEmbeddings = db.prepare(`
@@ -311,18 +361,22 @@ async function main() {
         // Episode FTS5 search
         if (keywords.length > 0) {
           const ftsQuery = keywords.join(' OR ');
-          results.episodes = db.prepare(`
-            SELECT DISTINCT e.* FROM episodes e
-            JOIN episodes_fts fts ON e.rowid = fts.rowid
-            WHERE episodes_fts MATCH ?
-            ORDER BY e.timestamp DESC
-            LIMIT 5
-          `).all(ftsQuery);
+          try {
+            results.episodes = db.prepare(`
+              SELECT DISTINCT e.* FROM episodes e
+              JOIN episodes_fts fts ON e.rowid = fts.rowid
+              WHERE episodes_fts MATCH ?
+              ORDER BY e.timestamp DESC
+              LIMIT 5
+            `).all(ftsQuery);
+          } catch {
+            // FTS syntax error — skip
+          }
         }
 
-        console.log(formatOutput('FULL', query, results));
+        console.log(formatOutput(runtimeMode, query, results));
       } else {
-        console.log(formatOutput('FULL', null, { concepts: [], neighbors: [], episodes: [] }));
+        console.log(formatOutput(runtimeMode, null, { concepts: [], neighbors: [], episodes: [] }));
       }
 
     } finally {
