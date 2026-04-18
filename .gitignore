@@ -13,6 +13,9 @@ dist/
 build/
 *.tgz
 
+# Go binaries
+scripts/ollama-proxy/ollama-proxy
+
 # Env / Secrets (parano par défaut — voir src/fr/security/)
 .env
 .env.*
