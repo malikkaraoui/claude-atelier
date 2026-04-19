@@ -183,12 +183,18 @@ fi
 
 # ===== MODE SWITCH A/M (Auto ou Manuel) =====
 SWITCH_MODE_FILE="/tmp/claude-atelier-switch-mode"
-SWITCH_MODE=$(cat "$SWITCH_MODE_FILE" 2>/dev/null || echo "M")
-# Normaliser : seul A ou M accepté, défaut M
-case "$SWITCH_MODE" in
-  A|a) SWITCH_MODE="A" ;;
-  *)   SWITCH_MODE="M" ;;
-esac
+
+# ANTHROPIC_BASE_URL pointant sur le proxy local → Auto forcé (proxy actif)
+if echo "${ANTHROPIC_BASE_URL:-}" | grep -q "localhost:4000"; then
+  SWITCH_MODE="A"
+  echo "A" > "$SWITCH_MODE_FILE"
+else
+  SWITCH_MODE=$(cat "$SWITCH_MODE_FILE" 2>/dev/null || echo "M")
+  case "$SWITCH_MODE" in
+    A|a) SWITCH_MODE="A" ;;
+    *)   SWITCH_MODE="M" ;;
+  esac
+fi
 
 # ===== OLLAMA STATUS (chaque message) =====
 OLLAMA_STATUS=""
@@ -245,6 +251,11 @@ fi
 echo "[HORODATAGE] $(date '+%Y-%m-%d %H:%M:%S') | $MODEL"
 echo "[OLLAMA] $OLLAMA_STATUS"
 echo "[SWITCH-MODE] $SWITCH_MODE"
+
+# Suggestion proxy si mode M + CLI (pas VS Code)
+if [ "$SWITCH_MODE" = "M" ] && [ -z "${VSCODE_PID:-}" ] && [ "${TERM_PROGRAM:-}" != "vscode" ]; then
+  echo "  💡 CLI sans proxy → ANTHROPIC_BASE_URL=http://localhost:4000 claude (mode A : triage Ollama actif)"
+fi
 
 # ===== HANDOFF DEBT BANNER §25 (calculé depuis git, jamais JSON) =====
 DEBT_SCRIPT="$REPO_ROOT/scripts/handoff-debt.sh"

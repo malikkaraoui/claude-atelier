@@ -41,7 +41,7 @@ npx claude-atelier init
 | **Mémoire persistante intelligente** | Mémoire locale par projet + feedback user + règles de lecture/écriture → Claude reprend entre sessions sans repartir de zéro |
 | **Agents spécialisés** | 13 agents nommés + 16 slash commands → le bon spécialiste au bon moment |
 | **Verrou review avant push/release** | `git push` et `npm version` bloqués tant qu'un handoff §25 externe n'a pas été intégré |
-| **Mode éco visible en un clin d'œil** | Pastilles `⬆️ / 🟢 / ⬇️` et métriques runtime → tu vois immédiatement si le modèle est sous-régime ou sur-régime |
+| **Mode éco visible en un clin d'œil** | Pastilles `⬆️ / 🟢 / ⬇️` et métriques runtime → tu vois immédiatement si le modèle est sous-régime ou sur-régime. Indicateur `A`/`M` : auto-détection du proxy Ollama (`ANTHROPIC_BASE_URL=localhost:4000`) → mode A (triage local/Anthropic) ou M (Anthropic direct) |
 | **Arsenal tout-en-un** | Hooks, skills, scripts, sécurité, satellites par stack, onboarding : un seul package npm |
 
 Un vrai arsenal de qualité supérieure : coût, contexte, mémoire, review, sécurité et agents — sans bricolage éparpillé.
@@ -149,8 +149,9 @@ Les règles critiques ne sont pas dans un README. Elles sont dans des hooks qui 
 | Longueur de session (300KB/600KB) | `routing-check.sh` UserPromptSubmit | Chaque message |
 | Suggestion Haiku (prompt court + mots d'exploration) | `routing-check.sh` UserPromptSubmit | Chaque message |
 | Détection besoin design → propose Séréna | `detect-design-need.sh` UserPromptSubmit | Chaque message |
+| **Mode A/M auto** — détecte `ANTHROPIC_BASE_URL=localhost:4000` → bascule en Auto (proxy Ollama actif, triage local/Anthropic) ; en CLI sans proxy → suggère la commande de lancement | `routing-check.sh` UserPromptSubmit | Chaque message |
 
-**Bilan : 15 rails actifs.** Les règles purement de jugement (anti-hallucination, qualité code) restent du ressort du modèle.
+**Bilan : 16 rails actifs.** Les règles purement de jugement (anti-hallucination, qualité code) restent du ressort du modèle.
 
 ---
 
