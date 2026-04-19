@@ -14,6 +14,7 @@ import { dirname, join, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { execSync } from 'node:child_process';
+import { createInterface } from 'node:readline';
 import { showWelcome } from './welcome.js';
 import { runPostInstallChecks } from './post-install-checks.js';
 
@@ -58,6 +59,71 @@ function bridgeSkillsToGithub(claudeSkillsDir, projectRoot) {
   } else if (skipped > 0) {
     console.log(`${YELLOW}[SKIP]${NC} .github/skills/ — ${skipped} skill(s) déjà présents`);
   }
+}
+
+// ── Génère la section hooks avec chemins absolus résolus à l'install ─────────
+function generateHooksSection(hooksDir, scriptsDir) {
+  const h = name => `bash "${join(hooksDir, name)}"`;
+  const n = (name, ...args) => `node "${join(scriptsDir, name)}" ${args.join(' ')}`;
+  return {
+    SessionStart: [{
+      matcher: '',
+      hooks: [
+        { type: 'command', command: h('session-model.sh') },
+        { type: 'command', command: n('memory-read.js', '--episodes-only', '--timeout', '2000') },
+      ],
+    }],
+    UserPromptSubmit: [{
+      matcher: '',
+      hooks: [
+        { type: 'command', command: h('routing-check.sh') },
+        { type: 'command', command: h('model-metrics.sh') },
+        { type: 'command', command: h('detect-design-need.sh') },
+        { type: 'command', command: n('memory-read.js', '--context', '--timeout', '2000') },
+      ],
+    }],
+    PreToolUse: [
+      {
+        matcher: 'Read',
+        hooks: [{ type: 'command', command: h('guard-qmd-first.sh') }],
+      },
+      {
+        matcher: 'Bash',
+        hooks: [
+          { type: 'command', command: h('guard-no-sign.sh'), if: 'Bash(*git commit*)' },
+          { type: 'command', command: h('guard-commit-french.sh'), if: 'Bash(*git commit*)' },
+          { type: 'command', command: h('guard-tests-before-push.sh'), if: 'Bash(*git push*)' },
+        ],
+      },
+    ],
+    PostToolUse: [
+      {
+        matcher: 'Edit|Write',
+        hooks: [{ type: 'command', command: h('guard-hooks-reload.sh') }],
+      },
+      {
+        matcher: 'Bash',
+        hooks: [
+          { type: 'command', command: h('guard-review-auto.sh'), if: 'Bash(*git commit*)' },
+          { type: 'command', command: h('guard-anti-loop.sh') },
+        ],
+      },
+    ],
+  };
+}
+
+// ── Prompt oui/non interactif ─────────────────────────────────────────────────
+async function promptYesNo(question, defaultYes = true) {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const hint = defaultYes ? '[O/n]' : '[o/N]';
+  return new Promise(resolve => {
+    rl.question(`${question} ${hint} `, answer => {
+      rl.close();
+      const a = answer.trim().toLowerCase();
+      if (!a) return resolve(defaultYes);
+      resolve(a === 'o' || a === 'oui' || a === 'y' || a === 'yes');
+    });
+  });
 }
 
 function parseArgs(argv) {
@@ -198,18 +264,24 @@ export async function runInit(argv) {
     : join(process.cwd(), '.claude', 'skills');
   copyDirRecursive(srcSkills, destSkills, dryRun, copied);
 
-  // 3. Merge settings.json (don't overwrite existing)
+  // 3. Merge settings.json + inject hooks with resolved absolute paths
   const settingsTemplate = join(PKG_ROOT, 'src', 'templates', 'settings.json');
   const settingsDest = join(target, 'settings.json');
+  const hooksDir = isGlobal ? join(homedir(), '.claude', 'hooks') : join(process.cwd(), 'hooks');
+  const scriptsDir = isGlobal ? join(homedir(), '.claude', 'scripts') : join(process.cwd(), 'scripts');
   if (existsSync(settingsTemplate)) {
     if (dryRun) {
       if (existsSync(settingsDest)) {
-        copied.push(`${settingsDest} (merged with existing)`);
+        copied.push(`${settingsDest} (merged with existing + hooks injected)`);
       } else {
         copied.push(settingsDest);
       }
     } else {
       const merged = mergeSettings(settingsDest, settingsTemplate);
+      // Inject hooks only if not already present (preserves user customizations)
+      if (!merged.hooks) {
+        merged.hooks = generateHooksSection(hooksDir, scriptsDir);
+      }
       if (!existsSync(dirname(settingsDest))) {
         mkdirSync(dirname(settingsDest), { recursive: true });
       }
@@ -252,6 +324,16 @@ export async function runInit(argv) {
     ? join(homedir(), '.claude', 'scripts')
     : join(process.cwd(), 'scripts');
   copyDirRecursive(scriptsSrc, scriptsDest, dryRun, copied);
+
+  // 6b. Copy hooks/
+  const hooksSrc = join(PKG_ROOT, 'hooks');
+  const hooksDest = isGlobal
+    ? join(homedir(), '.claude', 'hooks')
+    : join(process.cwd(), 'hooks');
+  if (existsSync(hooksSrc)) {
+    if (!dryRun && !existsSync(hooksDest)) mkdirSync(hooksDest, { recursive: true });
+    copyDirRecursive(hooksSrc, hooksDest, dryRun, copied);
+  }
 
   // 7. Merge .mcp.json (MCP servers: qmd + magic)
   const mcpTemplate = join(PKG_ROOT, 'src', 'templates', '.mcp.json');
@@ -342,6 +424,62 @@ export async function runInit(argv) {
         console.log(`  ${CYAN}npm update claude-atelier${NC}\n`);
       }
     } catch (_) {}
+
+    // Propose hooks globaux (install projet uniquement)
+    if (!isGlobal) {
+      const globalSettingsPath = join(homedir(), '.claude', 'settings.json');
+      let globalAlreadyHasHooks = false;
+      if (existsSync(globalSettingsPath)) {
+        try {
+          const g = JSON.parse(readFileSync(globalSettingsPath, 'utf8'));
+          globalAlreadyHasHooks = !!g.hooks;
+        } catch (_) {}
+      }
+
+      if (!globalAlreadyHasHooks) {
+        console.log(`\n${CYAN}┌──────────────────────────────────────────────────────────────┐${NC}`);
+        console.log(`${CYAN}│  🚀  Hooks globaux  (~/.claude/settings.json)                │${NC}`);
+        console.log(`${CYAN}├──────────────────────────────────────────────────────────────┤${NC}`);
+        console.log(`${CYAN}│${NC}  Sans ça, Claude CLI (terminal) n'applique AUCUN rail hors   ${CYAN}│${NC}`);
+        console.log(`${CYAN}│${NC}  de ce projet. Avec les hooks globaux :                      ${CYAN}│${NC}`);
+        console.log(`${CYAN}│${NC}  • Entête §1 (heure + modèle + pastille) à chaque réponse   ${CYAN}│${NC}`);
+        console.log(`${CYAN}│${NC}  • Routing Haiku / Sonnet / Opus automatique                 ${CYAN}│${NC}`);
+        console.log(`${CYAN}│${NC}  • Guards git (no-sign, commits FR, tests avant push)        ${CYAN}│${NC}`);
+        console.log(`${CYAN}│${NC}  • Ollama status + mode A/M (proxy local ou Anthropic)       ${CYAN}│${NC}`);
+        console.log(`${CYAN}│${NC}  Modifie : ~/.claude/settings.json  (section hooks seulement)${CYAN}│${NC}`);
+        console.log(`${CYAN}│${NC}  Réversible : supprimez la clé "hooks" pour annuler.         ${CYAN}│${NC}`);
+        console.log(`${CYAN}└──────────────────────────────────────────────────────────────┘${NC}`);
+
+        const doGlobal = await promptYesNo(`\nConfigurer les hooks globaux ?`);
+        if (doGlobal) {
+          const globalHooksDir = join(homedir(), '.claude', 'hooks');
+          const globalScriptsDir = join(homedir(), '.claude', 'scripts');
+          if (!existsSync(globalHooksDir)) mkdirSync(globalHooksDir, { recursive: true });
+          if (!existsSync(globalScriptsDir)) mkdirSync(globalScriptsDir, { recursive: true });
+          copyDirRecursive(join(PKG_ROOT, 'hooks'), globalHooksDir, false, []);
+          copyDirRecursive(join(PKG_ROOT, 'scripts'), globalScriptsDir, false, []);
+          let globalSettings = {};
+          if (existsSync(globalSettingsPath)) {
+            try { globalSettings = JSON.parse(readFileSync(globalSettingsPath, 'utf8')); } catch (_) {}
+          }
+          globalSettings.hooks = generateHooksSection(globalHooksDir, globalScriptsDir);
+          if (!existsSync(dirname(globalSettingsPath))) {
+            mkdirSync(dirname(globalSettingsPath), { recursive: true });
+          }
+          writeFileSync(globalSettingsPath, JSON.stringify(globalSettings, null, 2) + '\n');
+          console.log(`\n${GREEN}[HOOKS GLOBAL]${NC} ~/.claude/settings.json mis à jour`);
+        } else {
+          console.log(`${YELLOW}[SKIP]${NC} Hooks globaux ignorés — ${CYAN}npx claude-atelier init --global${NC} plus tard.`);
+        }
+      }
+    }
+
+    // Message de redémarrage — TOUJOURS affiché
+    console.log(`\n${YELLOW}⚡ Redémarrez Claude Code pour activer les hooks :${NC}`);
+    console.log(`   Terminal : fermez et rouvrez  ${CYAN}claude${NC}`);
+    console.log(`   VS Code  : Cmd+Shift+P → ${CYAN}"Developer: Reload Window"${NC}`);
+    console.log(`   Sans redémarrage les hooks ne seront pas actifs.\n`);
+
   } else {
     console.log(`\n${YELLOW}DRY RUN complete.${NC} Remove --dry-run to install for real.\n`);
   }
