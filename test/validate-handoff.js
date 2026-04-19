@@ -9,6 +9,7 @@
  *   3. Section "### Fichiers à lire" liste au moins 1 fichier (bloc de code)
  *   4. Section "## Réponse de :" contient au moins 100 caractères de texte
  *      DISTINCT du contenu template (détecté par hash)
+ *      ET n'est PAS une auto-review Claude (bypass interdit)
  *   5. Section "## Intégration" contient au moins 100 caractères de texte
  *      DISTINCT du contenu template
  *
@@ -151,6 +152,12 @@ function validate(filePath) {
   const reponseClean = stripTemplateContent(reponse);
   if (reponseClean.length < 100) {
     errors.push(`## Réponse de : trop courte (${reponseClean.length} chars réels, min 100)`);
+  }
+  // Anti-bypass : auto-review Claude interdite — reviewer doit être externe
+  const reponseHeading = reponse.match(/^## Réponse de\s*:\s*(.*)$/m)?.[1]?.trim() || '';
+  const SELF_REVIEW_PATTERN = /\b(claude|sonnet|opus|haiku|auto-review|auto_review)\b/i;
+  if (reponseHeading && SELF_REVIEW_PATTERN.test(reponseHeading)) {
+    errors.push(`Auto-review Claude interdite ("${reponseHeading}") — utilise \`npx claude-atelier review-local\` pour une review Ollama`);
   }
 
   const integration = extractSection(content, 'Intégration');

@@ -19,6 +19,16 @@
       "name": "lint",
       "description": "Valide les références markdown et la longueur du core CLAUDE.md",
       "flags": []
+    },
+    {
+      "name": "features",
+      "description": "Tableau de contrôle des features (on/off par feature)",
+      "flags": ["--on <feature>", "--off <feature>", "--toggle <feature>", "--reset", "--global"]
+    },
+    {
+      "name": "review-local",
+      "description": "Review automatique d'un handoff via Ollama local (anti-bypass auto-review Claude)",
+      "flags": ["--model <nom>", "--handoff <path>", "--auto-integrate", "--list-models"]
     }
   ],
   "options": [
