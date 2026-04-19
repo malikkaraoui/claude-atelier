@@ -13,26 +13,30 @@
 
 2 features livrées :
 
-1. **`review-local`** (`bd8966f`) : nouvelle commande `npx claude-atelier review-local`. Appelle Ollama directement (`localhost:11434/api/chat`, streaming). Sélection interactive du modèle avec indice de qualité (haute/moyenne/basique). Injecte la réponse dans `## Réponse de :`. Commit automatique via `spawnSync`. Options : `--model`, `--handoff`, `--auto-integrate`, `--list-models`.
+1. **`review-local`** (`bd8966f`) : nouvelle commande `npx claude-atelier review-local`. Appelle Ollama directement (`localhost:11434/api/chat`, streaming). Sélection interactive du modèle avec indice de qualité (haute/moyenne/basique). Injecte la réponse dans `## Réponse de : Ollama/deepseek-v3.1:671b-cloud
 
-2. **Anti-bypass auto-review** (même commit) : `test/validate-handoff.js` détecte si `## Réponse de :` vient de Claude (pattern `claude|sonnet|opus|haiku|auto-review`). Si oui → reject avec message `"utilise npx claude-atelier review-local"`.
+> Reviewé le 2026-04-19 par Ollama/deepseek-v3.1:671b-cloud (review automatique — haute qualité)
 
-### Question précise
+### Analyse des questions
 
-(1) Le pattern `SELF_REVIEW_PATTERN = /\b(claude|sonnet|opus|haiku|auto-review|auto_review)\b/i` dans le validator est-il assez robuste ? Peut-il générer des faux positifs (nom de projet contenant "claude") ou des faux négatifs (auto-review déguisée) ? (2) La fonction `injectResponse()` dans `review-local.js` utilise `.replace(/## Réponse de :[\s\S]*?(?=\n---\n|\n## |$)/)` — ce regex peut-il rater ou corrompre le fichier si la section manque ou si le format est inhabituel ? (3) Le commit automatique via `gitAdd` + `gitCommit` dans `review-local.js` — que se passe-t-il si le repo root détecté est incorrect (CWD ≠ repo) ?
+**Question 1** : Le pattern anti-bypass est insuffisant. ❌ Il génère des faux positifs évidents (projets contenant "claude" ou "sonnet") et des faux négatifs (variations comme "Claude-3", "auto_reviewer"). Pattern trop naïf pour une protection sérieuse.
 
-### Fichiers à lire
+**Question 2** : Le regex d'injection est fragile. ⚠️ Il peut corrompre le fichier si la section cible est mal formée ou absente. L'absence de validation préalable et de fallback safe représente un risque d'écrasement de contenu.
 
-```
-bin/review-local.js             # commande complète (~375 lignes)
-test/validate-handoff.js        # lignes 150-162 (anti-bypass rule)
-```
+**Question 3** : Le commit automatique est dangereux. ❌ Aucune vérification du CWD vs repo git réel. Risque de commits dans le mauvais dépôt ou erreur silencieuse si pas de repo git. Comportement imprévisible en environnement complexe.
 
-### Contraintes
+### Verdict global
 
-- Ollama doit tourner (`ollama serve`) — pas de fallback si absent
-- Node.js ≥ 18 (fetch natif, ESM)
-- Streaming via `res.body.getReader()` — pas de dépendance externe
+Le code présente des failles techniques significatives dans les mécanismes de sécurité et de robustesse. L'implémentation actuelle n'est pas production-ready et nécessite des corrections urgentes.
+
+### Actions prioritaires
+
+- [ ] Remplacer le pattern anti-bypass par une vérification contextuelle plus intelligente (contenu + métadonnées)
+- [ ] Ajouter des validations de sécurité avant l'écriture fichier (backup, vérification format)
+- [ ] Implémenter une détection robuste du repo git avec fallback clair en cas d'erreur
+- [ ] Ajouter des tests unitaires pour les cas edge (fichiers malformés, CWD incorrect)
+- [ ] Documenter les limitations et risques actuels de la feature review-local
+
 
 ---
 
@@ -44,4 +48,12 @@ _À compléter via `npx claude-atelier review-local`_
 
 ## Intégration
 
-_À compléter après review_
+> Intégré le 2026-04-19 par review-local (squelette automatique — compléter manuellement)
+
+### Points retenus
+
+_À compléter après lecture de la review ci-dessus_
+
+### Actions concrètes
+
+_À compléter : reprendre les "Actions prioritaires" de la review et décider quoi retenir_
