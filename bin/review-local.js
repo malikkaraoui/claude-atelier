@@ -183,11 +183,30 @@ Réponds en français. Sois direct, factuel, sans pédagogie inutile.`;
 function injectResponse(content, responseText, modelName, autoIntegrate) {
   const now = new Date().toISOString().slice(0, 10);
   const header = `> Reviewé le ${now} par Ollama/${modelName} (review automatique — ${getQuality(modelName).tier} qualité)`;
+  const newResponse = `## Réponse de : Ollama/${modelName}\n\n${header}\n\n${responseText}\n`;
 
-  let updated = content.replace(
-    /## Réponse de :[\s\S]*?(?=\n---\n|\n## |$)/,
-    `## Réponse de : Ollama/${modelName}\n\n${header}\n\n${responseText}\n\n`
-  );
+  // Split sur les sections de niveau ## pour cibler précisément (évite les faux positifs dans le texte)
+  const parts = content.split(/^(?=## )/m);
+  let responseReplaced = false;
+  const updated = parts.map(part => {
+    if (part.startsWith('## Réponse de :') && !responseReplaced) {
+      responseReplaced = true;
+      return newResponse + '\n';
+    }
+    return part;
+  });
+
+  if (!responseReplaced) {
+    // Section absente → injecter avant ## Intégration
+    const integIdx = updated.findIndex(p => p.startsWith('## Intégration'));
+    if (integIdx !== -1) {
+      updated.splice(integIdx, 0, newResponse + '\n---\n\n');
+    } else {
+      updated.push('\n---\n\n' + newResponse);
+    }
+  }
+
+  let result = updated.join('');
 
   if (autoIntegrate) {
     const integration = `> Intégré le ${now} par review-local (squelette automatique — compléter manuellement)
@@ -200,13 +219,15 @@ _À compléter après lecture de la review ci-dessus_
 
 _À compléter : reprendre les "Actions prioritaires" de la review et décider quoi retenir_`;
 
-    updated = updated.replace(
-      /## Intégration[\s\S]*?$/,
-      `## Intégration\n\n${integration}\n`
-    );
+    const integParts = result.split(/^(?=## )/m);
+    result = integParts.map(part =>
+      part.startsWith('## Intégration')
+        ? `## Intégration\n\n${integration}\n`
+        : part
+    ).join('');
   }
 
-  return updated;
+  return result;
 }
 
 // ── Sélection interactive ─────────────────────────────────────────────────────
