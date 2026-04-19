@@ -109,12 +109,19 @@ Le code est structurellement correct mais présente deux défauts techniques cri
 
 ## Intégration
 
-> Intégré le 2026-04-19 par review-local (squelette automatique — compléter manuellement)
+> Intégré le 2026-04-19 après review Ollama/deepseek-v3.1:671b-cloud
 
 ### Points retenus
 
-_À compléter après lecture de la review ci-dessus_
+| # | Point Deepseek | Verdict | Action |
+| --- | --- | --- | --- |
+| 1 | `generateHooksSection()` : chemins avec espaces non échappés | ❌ Bug réel | Issue V2 : JSON.stringify les chemins dans le template hooks |
+| 2 | `python3 \|\| exit 0` : fail-silent si python3 absent | ⚠️ Accepté V1 | Note README : python3 requis, warn si absent dans `init` |
+| 3 | §1 header non-bloquant | ✅ Assumé pragmatique | Surveiller compliance — PostToolUse si taux d'oubli élevé |
+| 4 | Features `true` par défaut | ✅ Correct onboarding | Maintenir |
 
 ### Actions concrètes
 
-_À compléter : reprendre les "Actions prioritaires" de la review et décider quoi retenir_
+- [ ] `bin/init.js` — JSON.stringify les chemins dans `generateHooksSection()` pour gérer espaces
+- [ ] README — préciser que python3 est requis pour les feature gates
+- [ ] `bin/init.js` — ajouter check python3 dans post-install et warn si absent
