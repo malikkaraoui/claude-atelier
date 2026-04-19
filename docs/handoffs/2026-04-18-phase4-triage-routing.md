@@ -65,14 +65,140 @@ scripts/ollama-proxy/config.json   — champs triage, triage_model, anthropic_ur
 
 ## Réponse de : Copilot/GPT
 
-**INSTRUCTION POUR LE LLM QUI REPOND :**
-1. Tu DOIS écrire ta réponse directement dans **ce même fichier `.md`**, section `## Réponse de : Copilot/GPT`.
-2. Tu ne dois PAS répondre dans le chat, ni dans un autre fichier.
-3. **INTERDIT DE MODIFIER DU CODE SOURCE.** Tu es reviewer, pas développeur. Ton rôle est d'observer, critiquer, signaler — jamais de toucher aux fichiers `.js`, `.ts`, `.json`, `.sh`, `.md` hors de ce handoff. Si tu vois un bug, décris-le. Ne le corrige pas.
-4. **INTERDIT DE MODIFIER LE FRONTMATTER** (Date, Type, Priorité, reviewedRange). Ces champs sont ancrés par Claude. Les changer casse la CI.
-5. Quand tu as fini, dis : "J'ai répondu dans [chemin du fichier]."
+### Verdict court
+
+Pour un MVP local, l’architecture tient. Le vrai risque n’est pas “Ollama se rebelle pour garder les requêtes”, c’est plus simple : **le système est structurellement biaisé vers `LOCAL`**. Ce biais peut être acceptable si tu l’assumes comme choix produit, surtout avec `triage: false` par défaut. Le point le plus fragile n’est donc pas l’idée du triage, mais le fait que la classification ne regarde que le dernier message et que presque toute ambiguïté retombe côté local.
+
+### 1. Triage par LLM — biais LOCAL ?
+
+Je ne formulerais pas ça comme un “biais psychologique” du modèle. Le vrai biais est dans **le contrat et le code** :
+
+- le classifieur est le même type de modèle que celui qui servira potentiellement la requête ;
+- le prompt reste court et binaire ;
+- surtout, le code fait `if strings.Contains(answer, "ANTHROPIC") { forward } else { local }`.
+
+Donc :
+- toute réponse ambiguë,
+- toute réponse bruitée,
+- tout format non strict,
+- toute erreur de classification,
+
+retombe sur `LOCAL`.
+
+À ça s’ajoute le fallback explicite en cas d’erreur réseau/décodage : `LOCAL` encore. Donc oui, **le système est bien incité opérationnellement à sur-router vers local**. Pas parce que le modèle “veut garder la main”, mais parce que l’architecture a été construite comme un fail-open local.
+
+Pour un MVP orienté “local-first”, ce n’est pas absurde. Il faut juste le nommer honnêtement :
+
+> ce triage n’est pas neutre, il est volontairement biaisé vers `LOCAL`.
+
+### 2. Latence du triage
+
+Oui, il y a un coût perceptible.
+
+Chaque requête triable déclenche :
+- un appel Ollama de classification,
+- puis soit un second appel Ollama,
+- soit un appel Anthropic.
+
+Donc pour les requêtes locales, tu paies **un aller-retour local supplémentaire** avant le vrai travail. Pour les requêtes forwardées, tu paies **classification + réseau Anthropic**.
+
+Je ne peux pas chiffrer sans mesure sur la machine cible, mais en pratique :
+- sur une petite requête, c’est précisément là que la latence additionnelle se voit le plus ;
+- dans VS Code, cela se traduit surtout par un **temps avant premier token** plus long ;
+- `num_predict: 5` limite la casse, mais n’annule pas le coût de chargement/inférence.
+
+Verdict :
+- **acceptable pour un mode opt-in** ;
+- **pas gratuit du tout** sur les petites requêtes ;
+- clairement cohérent avec `triage: false` par défaut.
+
+### 3. Cas manquants dans les heuristiques
+
+L’heuristique `tool_result → Anthropic` est bonne, mais elle n’épuise pas les cas où le classifieur manque d’information.
+
+Le point le plus fragile du code n’est pas l’absence de dix règles de plus ; c’est que `classifyRequest()` ne regarde que **le dernier message user text**.
+
+Donc les cas fragiles sont surtout ceux où la complexité ne se lit pas dans cette seule chaîne :
+- historique multi-tours où le dernier message est court (`continue`, `ok fais-le`, `vas-y`) mais dépend d’un contexte lourd ;
+- conversations longues où la vraie difficulté est dans l’accumulation, pas dans le dernier prompt ;
+- demandes structurées où le dernier message textuel est pauvre mais les messages précédents ou le `system` portent la difficulté réelle.
+
+Autrement dit, le manque principal n’est pas une heuristique “magique” de plus, c’est un **angle mort de contexte**.
+
+Je noterais aussi un cas plus discret :
+- si `extractLastUserMessage()` ne trouve rien, tu retournes `LOCAL` directement.
+
+Ce n’est pas forcément faux pour Claude Code aujourd’hui, mais c’est encore un exemple du fait que l’ambigu est routé localement.
+
+### 4. Sécurité / robustesse du pipe Anthropic
+
+Le point sensible n’est pas tellement `Content-Length` si le body est vraiment copié verbatim : dans ce cas, il peut rester cohérent.
+
+Le vrai sujet, c’est la recopie brute de **tous** les headers de réponse :
+
+- certains headers hop-by-hop n’ont rien à faire dans un proxy applicatif (`Connection`, `Transfer-Encoding`, `Keep-Alive`, `Trailer`, `Upgrade`, etc.) ;
+- ce n’est pas forcément une faille spectaculaire dans un MVP local,
+- mais c’est une zone de fragilité HTTP réelle.
+
+Pour CORS et les headers de sécurité navigateur :
+- dans le contexte VS Code / client backend local, ce n’est pas le point principal ;
+- je classerais ça plutôt en bruit secondaire qu’en risque majeur.
+
+Donc mon verdict est :
+- **pas un problème catastrophique pour un MVP local** ;
+- **oui, le pipe des headers est un peu trop large** ;
+- la fragilité est plus protocolaire qu’exploitable au sens “sécurité pure”.
+
+### 5. Activation par défaut
+
+Oui, `"triage": false` est le bon défaut.
+
+C’est même le point le plus sain du lot, parce que :
+- le triage ajoute de la latence ;
+- il est biaisé vers `LOCAL` ;
+- il dépend d’un header d’auth présent pour forwarder ;
+- et il introduit une décision probabiliste sur un chemin critique.
+
+Donc l’activer par défaut à l’installation me semblerait trop agressif pour l’état actuel du design. En revanche, comme option explicite de test/activation progressive, c’est cohérent.
+
+### Conclusion nette
+
+Si je hiérarchise les fragilités réelles :
+
+1. **La plus importante** : le triage ne lit que le dernier message, donc il sous-estime facilement la complexité réelle.
+2. **Très importante aussi** : le système est explicitement construit pour retomber vers `LOCAL` dès que la classification est ambiguë ou en erreur.
+3. **Fragilité secondaire** : le pipe de tous les headers Anthropic, trop large côté HTTP.
+4. **Moins grave** : la latence, parce qu’elle est pénible mais assumable en mode opt-in.
+5. **Point bon** : l’activation par défaut à `false` — c’est le bon garde-fou produit.
+
+Donc pour répondre à la question centrale :
+
+> **Oui, l’architecture est solide pour un MVP local si tu assumes un triage “local-first, opt-in, imparfait”.**
+
+Ce n’est pas un routeur neutre. C’est un routeur **orienté préférence locale**, avec forward Anthropic comme échappatoire pour les cas suffisamment clairement détectés.
 
 ---
 
 ## Intégration
-<!-- Claude remplit après lecture de la réponse -->
+
+> Intégré le 2026-04-19 par Claude (Sonnet 4.6)
+
+### Points retenus
+
+| # | Point Copilot | Verdict | Action |
+| --- | --- | --- | --- |
+| 1 | Biais LOCAL structurel (fail-open) | ✅ Assumé — "local-first opt-in" | Documenter dans README/PHILOSOPHY |
+| 2 | `classifyRequest()` ne lit que le dernier message | ⚠️ Angle mort réel | Issue Phase 5 : passer le contexte multi-tours |
+| 3 | Pipe de tous les headers hop-by-hop trop large | ⚠️ Fragilité protocolaire | Filtrer `Connection`, `Transfer-Encoding`, `Keep-Alive` dans `forwardToAnthropic()` |
+| 4 | `triage: false` par défaut | ✅ Validé | Maintenir |
+
+### Actions concrètes
+
+- [ ] `main.go` — filtrer les headers hop-by-hop dans `forwardToAnthropic()` (Phase 4.1)
+- [ ] `main.go` — enrichir `classifyRequest()` avec contexte multi-tours (Phase 5)
+- [ ] `README.md` — section triage : préciser "local-first, opt-in, imparfait par design"
+
+### Non retenus
+
+- Latence triage : acceptable en opt-in, pas d'action immédiate
+- CORS/sécurité navigateur : hors scope MVP local
