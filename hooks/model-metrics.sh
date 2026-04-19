@@ -155,7 +155,9 @@ PYEOF
 
 if [ -n "$METRICS" ]; then
     echo "$METRICS"
-    # §1 — entête final avec pastille réelle (écrase le placeholder de routing-check.sh)
+    # §1 — entête final avec pastille réelle (seulement si feature header activée)
+    _FF="$(cd "$(dirname "$0")/.." && pwd)/.claude/features.json"
+    python3 -c "import json,sys,os; d=json.load(open(sys.argv[1])) if os.path.exists(sys.argv[1]) else {}; sys.exit(0 if d.get('header',True) else 1)" "$_FF" 2>/dev/null || exit 0
     _PASTILLE=$(printf '%s' "$METRICS" | grep -oE '(⬆️|⬇️|🟢)' | tail -1)
     _MMODEL=$(cat /tmp/claude-atelier-current-model 2>/dev/null | tr -d '\r\n')
     _MMODE=$(cat /tmp/claude-atelier-switch-mode 2>/dev/null | tr -d '\r\n')

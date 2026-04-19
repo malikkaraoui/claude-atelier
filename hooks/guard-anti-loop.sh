@@ -3,6 +3,9 @@
 
 source "$(dirname "$0")/_parse-input.sh"
 
+_FF="$(cd "$(dirname "$0")/.." && pwd)/.claude/features.json"
+python3 -c "import json,sys,os; d=json.load(open(sys.argv[1])) if os.path.exists(sys.argv[1]) else {}; sys.exit(0 if d.get(sys.argv[2],True) else 1)" "$_FF" "anti_loop" 2>/dev/null || exit 0
+
 LOOP_FILE="/tmp/claude-atelier-loop-detect"
 
 if [ -z "$HOOK_COMMAND" ]; then

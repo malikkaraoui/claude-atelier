@@ -425,6 +425,14 @@ export async function runInit(argv) {
       }
     } catch (_) {}
 
+    // Créer .claude/features.json (vide = tous défauts ON) si absent
+    const featuresDest = join(target, 'features.json');
+    if (!existsSync(featuresDest)) {
+      writeFileSync(featuresDest, '{}\n');
+      console.log(`${GREEN}[FEATURES]${NC} .claude/features.json créé — toutes les features actives par défaut`);
+      console.log(`  ${CYAN}npx claude-atelier features${NC} pour voir et modifier\n`);
+    }
+
     // Propose hooks globaux (install projet uniquement)
     if (!isGlobal) {
       const globalSettingsPath = join(homedir(), '.claude', 'settings.json');

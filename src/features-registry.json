@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "groups": {
+    "runtime": {
+      "label": "Runtime",
+      "features": ["header", "ollama_status", "model_routing_hints", "session_length_warning"]
+    },
+    "qualite": {
+      "label": "Qualité",
+      "features": ["review_copilot", "stack_detection", "design_detection", "diagnostic", "anti_loop"]
+    },
+    "guards_git": {
+      "label": "Guards Git",
+      "features": ["git_guard_sign", "git_guard_french", "git_guard_tests"]
+    }
+  },
+  "features": {
+    "header": {
+      "label": "Entête §1",
+      "description": "Heure + modèle + pastille en tête de chaque réponse",
+      "default": true
+    },
+    "ollama_status": {
+      "label": "Statut Ollama",
+      "description": "Statut du service Ollama local à chaque message",
+      "default": true
+    },
+    "model_routing_hints": {
+      "label": "Routing modèle",
+      "description": "Suggestions Haiku si exploration, alerte Opus sur tâche courte",
+      "default": true
+    },
+    "session_length_warning": {
+      "label": "Alerte longueur session",
+      "description": "Avertissement si contexte > 300KB / 600KB",
+      "default": true
+    },
+    "review_copilot": {
+      "label": "Review §25 auto",
+      "description": "Handoff review Copilot/GPT si feat terminée ou 100+ lignes",
+      "default": true
+    },
+    "stack_detection": {
+      "label": "Détection stack",
+      "description": "Active l'agent spécialisé (Steve, Gaëlle…) selon la stack",
+      "default": true
+    },
+    "design_detection": {
+      "label": "Détection design",
+      "description": "Propose Séréna si besoin UI/UX/design détecté",
+      "default": true
+    },
+    "diagnostic": {
+      "label": "Diagnostic périodique",
+      "description": "Vérification QMD / §0 / gate toutes les 30 min",
+      "default": true
+    },
+    "anti_loop": {
+      "label": "Anti-boucle",
+      "description": "Détecte 3 échecs consécutifs identiques et bloque",
+      "default": true
+    },
+    "git_guard_sign": {
+      "label": "Guard: no-sign",
+      "description": "Bloque git commit signé (Co-Authored-By / Signed-off-by)",
+      "default": true
+    },
+    "git_guard_french": {
+      "label": "Guard: commits FR",
+      "description": "Messages de commit en français obligatoires",
+      "default": true
+    },
+    "git_guard_tests": {
+      "label": "Guard: tests avant push",
+      "description": "npm test doit passer avant git push",
+      "default": true
+    }
+  }
+}

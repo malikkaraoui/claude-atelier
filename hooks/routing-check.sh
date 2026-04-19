@@ -7,6 +7,24 @@
 # V2 socket via cache nommé par session_id ou passage explicite de l'id à l'actionneur.
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# ===== FEATURES CONFIG =====
+_FEATS_FILE="$REPO_ROOT/.claude/features.json"
+_feat() {
+  python3 -c "
+import json, sys, os
+d = json.load(open(sys.argv[1])) if os.path.exists(sys.argv[1]) else {}
+sys.exit(0 if d.get(sys.argv[2], True) else 1)
+" "$_FEATS_FILE" "$1" 2>/dev/null && echo 1 || echo ""
+}
+_F_HEADER=$(_feat header)
+_F_OLLAMA=$(_feat ollama_status)
+_F_ROUTING=$(_feat model_routing_hints)
+_F_REVIEW=$(_feat review_copilot)
+_F_STACK=$(_feat stack_detection)
+_F_DIAG=$(_feat diagnostic)
+_F_SESSION=$(_feat session_length_warning)
+
 THROTTLE_FILE="/tmp/claude-atelier-diagnostic-last"
 THROTTLE_SECONDS=1800  # 30 minutes
 CACHE_DIR="/tmp/claude-atelier-model-cache"
@@ -200,7 +218,7 @@ fi
 OLLAMA_STATUS=""
 PROXY_CONFIG="$REPO_ROOT/scripts/ollama-proxy/config.json"
 ACTIVE_LLM=""
-if command -v ollama &>/dev/null; then
+if [ -n "$_F_OLLAMA" ] && command -v ollama &>/dev/null; then
   OLLAMA_HEALTH=$(curl -s --max-time 1 http://localhost:11434/api/tags 2>/dev/null || echo "")
   if [ -n "$OLLAMA_HEALTH" ]; then
     PROXY_RUNNING=$(curl -s --max-time 1 http://localhost:4000/health 2>/dev/null || echo "")
@@ -249,7 +267,7 @@ fi
 
 # ===== HORODATAGE + MODÈLE + OLLAMA (toujours en tête — machine time) =====
 echo "[HORODATAGE] $(date '+%Y-%m-%d %H:%M:%S') | $MODEL"
-echo "[OLLAMA] $OLLAMA_STATUS"
+[ -n "$_F_OLLAMA" ] && echo "[OLLAMA] $OLLAMA_STATUS"
 echo "[SWITCH-MODE] $SWITCH_MODE"
 
 # Suggestion proxy si mode M + CLI (pas VS Code)
@@ -259,7 +277,7 @@ fi
 
 # ===== HANDOFF DEBT BANNER §25 (calculé depuis git, jamais JSON) =====
 DEBT_SCRIPT="$REPO_ROOT/scripts/handoff-debt.sh"
-if [ -f "$DEBT_SCRIPT" ] && [ -d "$REPO_ROOT/.git" ]; then
+if [ -n "$_F_REVIEW" ] && [ -f "$DEBT_SCRIPT" ] && [ -d "$REPO_ROOT/.git" ]; then
   DEBT_JSON=$(bash "$DEBT_SCRIPT" --json 2>/dev/null || echo "")
   if [ -n "$DEBT_JSON" ]; then
     EXCEEDS=$(echo "$DEBT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('exceedsThreshold', False))" 2>/dev/null)
@@ -275,7 +293,7 @@ if [ -f "$DEBT_SCRIPT" ] && [ -d "$REPO_ROOT/.git" ]; then
 fi
 
 # ===== LONGUEUR DE SESSION =====
-if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
+if [ -n "$_F_SESSION" ] && [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
   SESSION_SIZE=$(stat -f %z "$TRANSCRIPT" 2>/dev/null || stat -c %s "$TRANSCRIPT" 2>/dev/null || echo 0)
   if [ "$SESSION_SIZE" -ge 600000 ]; then
     echo ""
@@ -320,21 +338,22 @@ else
     fi
   fi
 
-  # Alerte si Opus sur tâche courante (message court = tâche simple)
-  PROMPT_LEN=${#PROMPT}
-  if echo "$MODEL" | grep -qi "opus"; then
-    if [ "$PROMPT_LEN" -gt 0 ] && [ "$PROMPT_LEN" -lt 100 ]; then
-      echo "  ⚠️  Tu es sur Opus pour un message court. Sonnet suffirait → /model sonnet"
+  if [ -n "$_F_ROUTING" ]; then
+    # Alerte si Opus sur tâche courante (message court = tâche simple)
+    PROMPT_LEN=${#PROMPT}
+    if echo "$MODEL" | grep -qi "opus"; then
+      if [ "$PROMPT_LEN" -gt 0 ] && [ "$PROMPT_LEN" -lt 100 ]; then
+        echo "  ⚠️  Tu es sur Opus pour un message court. Sonnet suffirait → /model sonnet"
+      fi
     fi
-  fi
 
-  # Suggestion Haiku pour tâches légères / exploration
-  # Fix 5 : garde négatif pour éviter les faux positifs sur tâches complexes
-  if ! echo "$MODEL" | grep -qi "haiku"; then
-    if [ "$PROMPT_LEN" -gt 0 ] && [ "$PROMPT_LEN" -lt 200 ]; then
-      if echo "$PROMPT" | grep -qiE "(explore|cherche|liste|lister|trouve|find|résumé|résume|grep|lint|audit|scan|parcours|inventaire|recherche|quels? fichiers|quels? sont)"; then
-        if ! echo "$PROMPT" | grep -qiE "(erreur|bug|debug|crash|fail|broken|pourquoi|why|cause|fix|résoudre|bloquant|deadlock|stacktrace|flaky|architecture)"; then
-          echo "  💡 Exploration détectée → /model haiku (10x moins cher)"
+    # Suggestion Haiku pour tâches légères / exploration
+    if ! echo "$MODEL" | grep -qi "haiku"; then
+      if [ "$PROMPT_LEN" -gt 0 ] && [ "$PROMPT_LEN" -lt 200 ]; then
+        if echo "$PROMPT" | grep -qiE "(explore|cherche|liste|lister|trouve|find|résumé|résume|grep|lint|audit|scan|parcours|inventaire|recherche|quels? fichiers|quels? sont)"; then
+          if ! echo "$PROMPT" | grep -qiE "(erreur|bug|debug|crash|fail|broken|pourquoi|why|cause|fix|résoudre|bloquant|deadlock|stacktrace|flaky|architecture)"; then
+            echo "  💡 Exploration détectée → /model haiku (10x moins cher)"
+          fi
         fi
       fi
     fi
@@ -342,6 +361,7 @@ else
 fi
 
 # ===== REVIEW CHECK §25 (béton armé — cross-session) =====
+if [ -z "$_F_REVIEW" ]; then true; else
 # Fire au premier message de chaque session. Indépendant des commits in-session.
 # Fix 2 : checkpoint dans .git/ (persiste après reboot, par repo)
 LAST_REVIEW_FILE="$REPO_ROOT/.git/claude-atelier-last-reviewed-commit"
@@ -379,8 +399,10 @@ if [ ! -f "$SESSION_REVIEW_FLAG" ] && [ -d "$REPO_ROOT/.git" ]; then
     fi
   fi
 fi
+fi  # end _F_REVIEW gate
 
 # ===== DÉTECTION STACK (chaque message) =====
+if [ -z "$_F_STACK" ]; then true; else
 # iOS / Xcode → Steve
 if echo "$PROMPT" | grep -qiE "xcode|ios|tvos|ipados|swiftui|swift|simctl|xcodebuild|iphone|ipad|app store|testflight|make run|make tvrun"; then
   STACK_FILE="$REPO_ROOT/src/stacks/ios-xcode.md"
@@ -469,12 +491,13 @@ if echo "$PROMPT" | grep -qiE "postgresql|postgres|mysql|sqlite|flyway|liquibase
     cat "$STACK_FILE"
   fi
 fi
+fi  # end _F_STACK gate
 
 # ===== DIAGNOSTIC (throttled toutes les 30 min) =====
 RUN_DIAGNOSTIC=false
-if [ ! -f "$THROTTLE_FILE" ]; then
+if [ -n "$_F_DIAG" ] && [ ! -f "$THROTTLE_FILE" ]; then
   RUN_DIAGNOSTIC=true
-else
+elif [ -n "$_F_DIAG" ]; then
   LAST_RUN=$(cat "$THROTTLE_FILE" 2>/dev/null || echo 0)
   NOW=$(date +%s)
   ELAPSED=$(( NOW - LAST_RUN ))
@@ -545,8 +568,8 @@ if [ "$RUN_DIAGNOSTIC" = true ]; then
 fi
 
 # ===== §1 ENTÊTE OBLIGATOIRE — béton armé =====
+if [ -z "$_F_HEADER" ]; then exit 0; fi
 # Injecté en dernier pour être le plus proche de la réponse.
-# Claude DOIT commencer sa réponse par cette ligne — pas optionnel.
 _HDR_TS="$(date '+%Y-%m-%d %H:%M:%S')"
 _HDR_MODEL="$MODEL"
 _HDR_MODE="$SWITCH_MODE"

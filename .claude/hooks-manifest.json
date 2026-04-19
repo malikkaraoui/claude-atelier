@@ -68,7 +68,7 @@
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       },
-      "sha256": "ce1566e09ca4e594"
+      "sha256": "2c6736790b9739b5"
     },
     {
       "name": "guard-no-sign",
@@ -88,7 +88,7 @@
         "0": "allow",
         "2": "block — signature détectée"
       },
-      "sha256": "87a910ecda6411f7"
+      "sha256": "0a85502467661011"
     },
     {
       "name": "guard-commit-french",
@@ -147,7 +147,7 @@
       "exitCodes": {
         "0": "always (warning only)"
       },
-      "sha256": "b5162ea040f7a0ba"
+      "sha256": "61830ca0a3479e1b"
     },
     {
       "name": "guard-tests-before-push",
@@ -167,7 +167,7 @@
         "0": "allow",
         "2": "block — push sans tests"
       },
-      "sha256": "35b0571aafc1b329"
+      "sha256": "8bf890900e7c8fe9"
     },
     {
       "name": "guard-review-auto",
@@ -187,7 +187,7 @@
       "exitCodes": {
         "0": "always (suggestion only, never blocks)"
       },
-      "sha256": "9bdf27119658eac3"
+      "sha256": "ab21957088aa7336"
     },
     {
       "name": "model-metrics",
@@ -208,7 +208,7 @@
       "exitCodes": {
         "0": "always (warning only, never blocks)"
       },
-      "sha256": "c9d6af62ed354993"
+      "sha256": "3f72aeee45294948"
     },
     {
       "name": "guard-hooks-reload",
@@ -248,7 +248,7 @@
       "exitCodes": {
         "0": "always (suggestion only, never blocks)"
       },
-      "sha256": "7bd7bf903de5c239"
+      "sha256": "77e942754b683f14"
     }
   ],
   "stats": {

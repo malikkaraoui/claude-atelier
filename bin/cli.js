@@ -24,7 +24,7 @@ const pkg = JSON.parse(
 // ⚠️  BLOC GÉNÉRÉ — ne pas éditer manuellement.
 // Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
-claude-atelier v0.21.10
+claude-atelier v0.21.12
 Opinionated Claude Code configuration: bilingual runtime rules, orchestration patterns, autonomy modes, security gates and stack-specific satellites. Installable via CLI.
 
 Usage:
@@ -96,7 +96,7 @@ async function main(argv) {
   }
 
   const command = args[0];
-  const knownCommands = ['init', 'update', 'doctor', 'lint'];
+  const knownCommands = ['init', 'update', 'doctor', 'lint', 'features'];
 
   if (!knownCommands.includes(command)) {
     process.stderr.write(`error: unknown command "${command}"\n`);
@@ -120,6 +120,11 @@ async function main(argv) {
   if (command === 'update') {
     const { runUpdate } = await import('./update.js');
     return runUpdate(process.argv);
+  }
+
+  if (command === 'features') {
+    const { runFeatures } = await import('./features.js');
+    return runFeatures(process.argv);
   }
 
   process.stderr.write(
