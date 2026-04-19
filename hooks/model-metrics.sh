@@ -155,6 +155,15 @@ PYEOF
 
 if [ -n "$METRICS" ]; then
     echo "$METRICS"
+    # §1 — entête final avec pastille réelle (écrase le placeholder de routing-check.sh)
+    _PASTILLE=$(printf '%s' "$METRICS" | grep -oE '(⬆️|⬇️|🟢)' | tail -1)
+    _MMODEL=$(cat /tmp/claude-atelier-current-model 2>/dev/null | tr -d '\r\n')
+    _MMODE=$(cat /tmp/claude-atelier-switch-mode 2>/dev/null | tr -d '\r\n')
+    case "$_MMODE" in A|a) _MMODE="A" ;; *) _MMODE="M" ;; esac
+    [ -n "$_PASTILLE" ] && [ -n "$_MMODEL" ] && {
+        echo "⚡ §1 ENTÊTE FINAL (pastille réelle) :"
+        echo "\`[$(date '+%Y-%m-%d %H:%M:%S') | $_MMODEL] $_PASTILLE $_MMODE\`"
+    }
 fi
 
 exit 0

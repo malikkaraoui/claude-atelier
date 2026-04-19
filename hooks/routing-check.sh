@@ -543,3 +543,15 @@ if [ "$RUN_DIAGNOSTIC" = true ]; then
     echo -e "[DIAGNOSTIC]$ISSUES"
   fi
 fi
+
+# ===== §1 ENTÊTE OBLIGATOIRE — béton armé =====
+# Injecté en dernier pour être le plus proche de la réponse.
+# Claude DOIT commencer sa réponse par cette ligne — pas optionnel.
+_HDR_TS="$(date '+%Y-%m-%d %H:%M:%S')"
+_HDR_MODEL="$MODEL"
+_HDR_MODE="$SWITCH_MODE"
+echo ""
+echo "⚡⚡⚡ §1 ENTÊTE OBLIGATOIRE ⚡⚡⚡"
+echo "Ta réponse DOIT commencer par (1ère ligne, exactement) :"
+echo "\`[$_HDR_TS | $_HDR_MODEL] PASTILLE $_HDR_MODE\`"
+echo "PASTILLE = pastille issue de [METRICS] (⬆️ / ⬇️ / 🟢) — 🟢 si [METRICS] absent"

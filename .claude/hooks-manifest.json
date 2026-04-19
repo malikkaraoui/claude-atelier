@@ -68,7 +68,7 @@
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       },
-      "sha256": "17345e0757944d6b"
+      "sha256": "ce1566e09ca4e594"
     },
     {
       "name": "guard-no-sign",
@@ -208,7 +208,7 @@
       "exitCodes": {
         "0": "always (warning only, never blocks)"
       },
-      "sha256": "309eaf604f76cb6b"
+      "sha256": "c9d6af62ed354993"
     },
     {
       "name": "guard-hooks-reload",
