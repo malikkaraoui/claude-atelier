@@ -24,7 +24,7 @@ const pkg = JSON.parse(
 // ⚠️  BLOC GÉNÉRÉ — ne pas éditer manuellement.
 // Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
-claude-atelier v0.21.13
+claude-atelier v0.21.14
 Opinionated Claude Code configuration: bilingual runtime rules, orchestration patterns, autonomy modes, security gates and stack-specific satellites. Installable via CLI.
 
 Usage:
@@ -35,6 +35,8 @@ Commands:
   update            Met à jour la config en préservant §0 et les customisations projet
   doctor            Vérifie l'intégrité de l'installation
   lint              Valide les références markdown et la longueur du core CLAUDE.md
+  features          Tableau de contrôle des features (on/off par feature)
+  review-local      Review automatique d'un handoff via Ollama local (anti-bypass auto-review Claude)
 
 Options:
   --version, -v       Affiche la version et quitte
