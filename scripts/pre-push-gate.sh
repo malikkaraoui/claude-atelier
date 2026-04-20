@@ -245,6 +245,21 @@ esac
 
 step 6 "Handoff debt §25..."
 
+# Pré-vérification : reviewedRange non résolu (HEAD au lieu d'un SHA)
+# Bloque avant la dette pour donner un message utile immédiatement.
+_HANDOFF_DIR="$(cd "$(dirname "$0")/.." && pwd)/docs/handoffs"
+if [[ -d "$_HANDOFF_DIR" ]]; then
+  _UNRESOLVED=$(grep -rl "reviewedRange:.*\bHEAD\b" "$_HANDOFF_DIR" 2>/dev/null | grep -v "_template" || true)
+  if [[ -n "$_UNRESOLVED" ]]; then
+    echo ""
+    echo "  Handoffs avec reviewedRange non résolu (HEAD au lieu d'un SHA) :"
+    while IFS= read -r _f; do echo "    - ${_f##*/}"; done <<< "$_UNRESOLVED"
+    echo "  → Remplace HEAD par le SHA réel : git rev-parse HEAD"
+    echo "  → Ou utilise : bash scripts/handoff-draft.sh <slug> (résout automatiquement)"
+    fail "reviewedRange non résolu dans un handoff — corrige avant push"
+  fi
+fi
+
 HANDOFF_DEBT_SCRIPT="$(cd "$(dirname "$0")" && pwd)/handoff-debt.sh"
 VALIDATE_HANDOFF="$(cd "$(dirname "$0")/.." && pwd)/test/validate-handoff.js"
 
