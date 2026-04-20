@@ -3,7 +3,7 @@
 > Date : 2026-04-20
 > Type : review
 > Priorité : moyenne
-> reviewedRange: c9ddb3e..HEAD
+> reviewedRange: c9ddb3e..6c6b13c
 
 ---
 
