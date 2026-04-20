@@ -135,7 +135,7 @@ function parseArgs(argv) {
   };
 }
 
-function copyDirRecursive(src, dest, dryRun, copied) {
+function copyDirRecursive(src, dest, dryRun, copied, { skipExisting = false } = {}) {
   if (!existsSync(src)) return;
 
   for (const entry of readdirSync(src, { withFileTypes: true })) {
@@ -148,12 +148,12 @@ function copyDirRecursive(src, dest, dryRun, copied) {
       if (!dryRun && !existsSync(destPath)) {
         mkdirSync(destPath, { recursive: true });
       }
-      copyDirRecursive(srcPath, destPath, dryRun, copied);
+      copyDirRecursive(srcPath, destPath, dryRun, copied, { skipExisting });
     } else {
       // CLAUDE.md is user-customized (§0, project context) — never overwrite
       const isClaude = entry.name === 'CLAUDE.md';
-      if (isClaude && existsSync(destPath)) {
-        console.log(`${YELLOW}[SKIP]${NC} ${destPath} (already customized — not overwritten)`);
+      if ((isClaude || skipExisting) && existsSync(destPath)) {
+        console.log(`${YELLOW}[SKIP]${NC} ${destPath} (already exists — not overwritten)`);
         continue;
       }
       if (dryRun) {
@@ -257,12 +257,21 @@ export async function runInit(argv) {
   const destStacks = join(target, 'stacks');
   copyDirRecursive(srcStacks, destStacks, dryRun, copied);
 
-  // 2b. Copy skills into .claude/skills/ (slash commands)
+  // 2b. Copy skills into .claude/skills/ (superpowers skills)
   const srcSkills = join(PKG_ROOT, 'src', 'skills');
   const destSkills = isGlobal
     ? join(homedir(), '.claude', 'skills')
     : join(process.cwd(), '.claude', 'skills');
   copyDirRecursive(srcSkills, destSkills, dryRun, copied);
+
+  // 2c. Copy commands into .claude/commands/ (native Claude Code slash commands)
+  const srcCommands = join(PKG_ROOT, '.claude', 'commands');
+  const destCommands = isGlobal
+    ? join(homedir(), '.claude', 'commands')
+    : join(process.cwd(), '.claude', 'commands');
+  if (existsSync(srcCommands)) {
+    copyDirRecursive(srcCommands, destCommands, dryRun, copied, { skipExisting: true });
+  }
 
   // 3. Merge settings.json + inject hooks with resolved absolute paths
   const settingsTemplate = join(PKG_ROOT, 'src', 'templates', 'settings.json');
