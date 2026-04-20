@@ -24,7 +24,7 @@ sidebar_label: Introduction
 npx claude-atelier init
 ```
 
-C'est tout. Claude Code est configuré avec 14 rails d'enforcement.
+C'est tout. Claude Code est configuré avec 12 rails d'enforcement et un cockpit §1.
 
 ---
 
@@ -32,8 +32,9 @@ C'est tout. Claude Code est configuré avec 14 rails d'enforcement.
 
 `claude-atelier` installe dans `.claude/` :
 
-- **14 hooks bash** — s'exécutent automatiquement (commit, push, session)
-- **13 slash commands** — `/review-copilot`, `/night-launch`, `/angle-mort`…
+- **12 hooks bash** — s'exécutent automatiquement (message, commit, push, session)
+- **Cockpit §1** — chaque réponse s'ouvre sur `` `[timestamp | model] 🟢 M | 🦙❌ | 🔌❌` `` : horodatage, modèle, pastille fit, mode M/A, état Ollama, état proxy — en un coup d'œil
+- **16 slash commands** — `/review-copilot`, `/night-launch`, `/angle-mort`…
 - **Satellites de stack** — JS, Python, iOS, Docker… chargés selon le projet
 - **Mode nuit** — Claude travaille seul, watchdog surveille, vous dormez
 - **Gate pré-push** — 5 vérifications avant chaque `git push`
@@ -88,7 +89,7 @@ scripts/
 ## Navigation
 
 - [Installation](./installation) — mise en place complète
-- [Hooks d'enforcement](./hooks) — les 14 rails
+- [Hooks d'enforcement](./hooks) — les 12 rails + cockpit §1
 - [Agents nommés](./agents) — Steve, Isaac, Mohamed, Amine
 - [Mode Nuit](./mode-nuit) — autonomie supervisée + watchdog
 - [Skills](./skills) — 13 slash commands

@@ -9,68 +9,97 @@ Les hooks sont des scripts shell exécutés automatiquement par le harness Claud
 
 ---
 
-## Les 14 rails
+## Cockpit §1 — heads-up display
+
+Chaque réponse Claude s'ouvre sur une ligne d'en-tête générée par les hooks :
+
+```
+`[2026-04-20 15:12 | claude-sonnet-4-6] 🟢 M | 🦙❌ | 🔌❌`
+```
+
+| Champ | Valeurs | Signification |
+|---|---|---|
+| `timestamp` | `YYYY-MM-DD HH:MM:SS` | Horodatage machine |
+| `model` | `claude-sonnet-4-6` | Modèle actif (extrait du transcript live) |
+| Pastille | `🟢` optimal · `⬆️` upgrade · `⬇️` downgrade | Fit modèle/complexité (METRICS) |
+| Mode | `M` Anthropic direct · `A` proxy actif | Basé sur healthcheck `:4000/health` réel |
+| Ollama | `🦙✅ qwen3.5` · `🦙⚡ qwen3.5` · `🦙❌` | Intercept total · triage dynamique · off |
+| Proxy | `🔌✅` · `🔌❌` | Port 4000 répond ou non |
+
+Un vrai tableau de bord pilote : modèle, coût, routage, infrastructure — en un coup d'œil.
+
+---
+
+## Les rails actifs
 
 | # | Hook | Événement | Ce qu'il fait |
 |---|---|---|---|
-| 1 | `routing-check.sh` | `SessionStart` | Injecte horodatage + modèle actif |
-| 2 | `session-context.sh` | `SessionStart` | Charge `§0` du projet courant |
-| 3 | `guard-no-sign.sh` | `PreToolUse` (commit) | Bloque `Co-Authored-By`, `--signoff` |
-| 4 | `guard-commit-french.sh` | `PreToolUse` (commit) | Bloque messages purement anglais |
-| 5 | `guard-secrets.sh` | `PreToolUse` (bash) | Détecte patterns de secrets dans les diffs |
-| 6 | `guard-no-force-push.sh` | `PreToolUse` (push) | Bloque `git push --force` |
-| 7 | `guard-tests-required.sh` | `PreToolUse` (commit) | Exige des tests sur les commits `feat:` |
-| 8 | `guard-review-auto.sh` | `PostToolUse` (commit) | Challenger : 100+ lignes, feature, 10 commits, archi |
-| 9 | `guard-anti-loop.sh` | `PostToolUse` | Détecte 3+ tentatives identiques → STOP |
-| 10 | `guard-readme-sync.sh` | `PostToolUse` (commit `feat:`) | Rappel de mettre le README à jour |
-| 11 | `guard-budget-check.sh` | `SessionStart` | Vérifie `maxBudgetUsd` défini en mode autonome |
-| 12 | `guard-claudeignore.sh` | `PreToolUse` | Vérifie `.claudeignore` avant premier commit |
-| 13 | `guard-gitignore.sh` | `PreToolUse` | Vérifie `.gitignore` avant premier commit |
-| 14 | `guard-pre-push.sh` | `PreToolUse` (push) | Lance `scripts/pre-push-gate.sh` complet |
+| 1 | `routing-check.sh` | `UserPromptSubmit` | Routing modèle (live > transcript > cache), détection stack, diagnostic throttled 30 min, longueur session, §1 instruction cockpit |
+| 2 | `model-metrics.sh` | `UserPromptSubmit` | Analyse 5 derniers tours assistant → pastille `🟢/⬆️/⬇️` → §1 ENTÊTE FINAL avec vraie pastille + mode/Ollama/proxy |
+| 3 | `detect-design-need.sh` | `UserPromptSubmit` | Détecte besoin UI/UX/design → propose Séréna 🎨 |
+| 4 | `guard-no-sign.sh` | `PreToolUse` (commit) | Bloque `Co-Authored-By`, `--signoff` |
+| 5 | `guard-commit-french.sh` | `PreToolUse` (commit) | Bloque messages purement anglais |
+| 6 | `guard-tests-before-push.sh` | `PreToolUse` (push) | Exige `npm test` vert avant push |
+| 7 | `guard-review-auto.sh` | `PostToolUse` (commit) | Challenger : 100+ lignes, feat, 10 commits, archi |
+| 8 | `guard-anti-loop.sh` | `PostToolUse` | Détecte 3+ tentatives identiques → STOP |
+| 9 | `guard-hooks-reload.sh` | `PostToolUse` (Edit/Write) | Rappel rechargement si hooks/settings modifiés |
+| 10 | `guard-qmd-first.sh` | `PreToolUse` (Read) | Redirige `.md` vers QMD avant lecture complète |
+| 11 | `session-model.sh` | `SessionStart` | Cache le modèle de session pour routing cross-hooks |
+| 12 | `guard-no-force-push.sh` | `PreToolUse` (push) | Bloque `git push --force` |
 
 ---
 
 ## Principe de fonctionnement
 
 ```
-Claude veut exécuter un outil
+Utilisateur envoie un message
+         ↓
+UserPromptSubmit hooks (routing-check, model-metrics, detect-design)
+         ↓
+Claude raisonne + choisit un outil
          ↓
 PreToolUse hooks s'exécutent
-         ↓
-Exit 0 → l'outil s'exécute
-Exit 1+ → bloqué, message injecté dans le contexte
+  Exit 0 → l'outil s'exécute
+  Exit 2 → bloqué, message injecté dans le contexte
          ↓
 PostToolUse hooks s'exécutent
 ```
 
-Les hooks écrivent sur `stderr` — Claude voit leur output comme contexte injecté.
+---
+
+## Mode A/M — logique de routage
+
+Le mode est déterminé par un **healthcheck réel**, pas par la variable d'environnement `ANTHROPIC_BASE_URL` :
+
+| État proxy | Mode | En-tête |
+|---|---|---|
+| `curl :4000/health` répond | `A` — Auto (proxy actif) | `🦙✅/🦙⚡ \| 🔌✅` |
+| `curl :4000/health` timeout | `M` — Manuel (Anthropic direct) | `🦙❌ \| 🔌❌` |
+
+`ANTHROPIC_BASE_URL=localhost:4000` + proxy éteint → affiche `M` de fait. La config ne ment pas.
 
 ---
 
-## Configuration dans settings.json
+## Pastille METRICS — fit modèle/complexité
 
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          { "type": "command", "command": "bash .claude/hooks/guard-secrets.sh" }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          { "type": "command", "command": "bash .claude/hooks/guard-review-auto.sh" }
-        ]
-      }
-    ]
-  }
-}
-```
+`model-metrics.sh` analyse les 5 derniers tours assistant et classe chaque outil utilisé :
+
+| Catégorie | Outils |
+|---|---|
+| `low` | Read, Glob, Grep, NotebookRead |
+| `high` | Agent, WebSearch, WebFetch |
+| `medium` | tout le reste (Edit, Write, Bash…) |
+
+Si 60%+ des tours sont `high` → complexité `high`. Si 60%+ sont `low` → complexité `low`. Sinon `medium`.
+
+| Complexité + Modèle | Verdict | Pastille |
+|---|---|---|
+| high + opus | optimal | 🟢 |
+| high + sonnet | limite | ⬆️ |
+| medium + sonnet | optimal | 🟢 |
+| medium + opus | léger surplus | ⬇️ |
+| low + haiku | optimal | 🟢 |
+| low + sonnet | léger surplus | ⬇️ |
 
 ---
 
@@ -96,4 +125,4 @@ Le Challenger **propose**, il ne bloque pas. Exit code 0 toujours.
 npm test
 ```
 
-Amine 🧪 (`test/hooks.js`) vérifie les 20 cas de chaque hook. Doit passer avant tout push.
+Amine 🧪 (`test/hooks.js`) — **58 tests** couvrant routing, METRICS, mode M/A, Ollama, race condition inter-hooks, gate handoff. Doit passer avant tout push.
