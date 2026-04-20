@@ -1,6 +1,6 @@
 # PARITY — claude-atelier vs Claude Code natif
 
-> Ce que Claude Code fournit hors-boîte vs ce que claude-atelier ajoute par-dessus. Mis à jour : 2026-04-14.
+> Ce que Claude Code fournit hors-boîte vs ce que claude-atelier ajoute par-dessus. Mis à jour : 2026-04-20.
 
 claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel d'Anthropic. Ce document liste, feature par feature, ce qui est natif, ce qu'on étend, et ce qu'on n'a délibérément pas fait.
 
@@ -31,10 +31,12 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 | `UserPromptSubmit` hook | ✅ | Natif |
 | `PreToolUse` / `PostToolUse` hooks | ✅ | Natif |
 | `SessionStart` hooks | ✅ | Natif |
-| `routing-check.sh` (modèle actif) | ➕ | Injecte `[ROUTING] modèle actif: MODEL-ID` à chaque message — évite d'extraire le modèle d'un system prompt potentiellement stale |
+| `routing-check.sh` (modèle actif + cockpit) | ➕ | Injecte `[ROUTING]`, `[OLLAMA]`, `[SWITCH-MODE]` et l'instruction §1 à chaque message. Mode `A`/`M` basé sur healthcheck `:4000/health` réel — proxy off = `M` de fait, quelle que soit la config `ANTHROPIC_BASE_URL`. |
+| `model-metrics.sh` (métriques de complexité) | ➕ | Analyse les 5 derniers tours assistant → verdict `optimal`/`limite`/`léger surplus` → pastille `🟢/⬆️/⬇️`. Construit le §1 ENTÊTE FINAL avec la vraie pastille + mode dérivé de son propre healthcheck (pas de race condition avec `routing-check.sh`). |
+| **Cockpit §1 — heads-up display** | ➕ | Chaque réponse commence par `` `[timestamp \| model] PASTILLE MODE \| 🦙state \| 🔌proxy` ``. Pastille = fit modèle (METRICS). Mode = `M` (Anthropic direct) / `A` (proxy actif). Ollama = `🦙✅ model` (intercept tout), `🦙⚡ model` (triage dynamique), `🦙❌` (off). Proxy = `🔌✅`/`🔌❌`. |
 | `guard-no-sign.sh` (anti-signature) | ➕ | Bloque tout `Co-Authored-By` ou `--signoff` dans les commits |
 | `guard-commit-french.sh` | ➕ | Bloque les commits messages purement anglais (≥ 2 mots EN, 0 FR) |
-| Test suite des hooks | ➕ | `test/hooks.js` — 42 tests, exécutés à chaque `npm test` |
+| Test suite des hooks | ➕ | `test/hooks.js` — 58 tests, exécutés à chaque `npm test` |
 
 ## 3. Skills & Slash commands
 
@@ -154,7 +156,7 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 | Catégorie | Natif ✅ | Étendu 🔧 | Ajouté ➕ | Hors scope ❌ |
 | --- | --- | --- | --- | --- |
 | Configuration | 2 | 0 | 4 | 0 |
-| Hooks | 4 | 0 | 4 | 0 |
+| Hooks | 4 | 0 | 7 | 0 |
 | Skills | 1 | 0 | 1 | 1 |
 | Orchestration | 2 | 2 | 1 | 0 |
 | MCPs | 1 | 1 | 2 | 0 |
@@ -165,9 +167,9 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 | Autonomie | 2 | 0 | 2 | 0 |
 | Inter-agents | 0 | 0 | 2 | 0 |
 | CLI | 0 | 0 | 3 | 0 |
-| **Total** | **16** | **5** | **33** | **6** |
+| **Total** | **16** | **5** | **36** | **6** |
 
-claude-atelier **ajoute 33 features** par-dessus Claude Code, **étend 5** existantes, et **refuse explicitement 6** pour rester un package de configs (pas un framework).
+claude-atelier **ajoute 36 features** par-dessus Claude Code, **étend 5** existantes, et **refuse explicitement 6** pour rester un package de configs (pas un framework).
 
 ---
 

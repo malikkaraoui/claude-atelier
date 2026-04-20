@@ -41,7 +41,7 @@ npx claude-atelier init
 | **Mémoire persistante intelligente** | Mémoire locale par projet + feedback user + règles de lecture/écriture → Claude reprend entre sessions sans repartir de zéro |
 | **Agents spécialisés** | 13 agents nommés + 16 slash commands → le bon spécialiste au bon moment |
 | **Verrou review avant push/release** | `git push` et `npm version` bloqués tant qu'un handoff §25 externe n'a pas été intégré |
-| **Mode éco visible en un clin d'œil** | Pastilles `⬆️ / 🟢 / ⬇️` et métriques runtime → tu vois immédiatement si le modèle est sous-régime ou sur-régime. Indicateur `A`/`M` : auto-détection du proxy Ollama (`ANTHROPIC_BASE_URL=localhost:4000`) → mode A (triage local/Anthropic) ou M (Anthropic direct) |
+| **Cockpit §1 — heads-up display** | Chaque réponse s'ouvre sur `` `[2026-04-20 15:12 \| claude-sonnet-4-6] 🟢 M \| 🦙❌ \| 🔌❌` ``. En un coup d'œil : horodatage, modèle actif, pastille fit (`🟢 optimal` / `⬆️ upgrade` / `⬇️ downgrade`), mode (`M`=Anthropic direct / `A`=proxy actif — basé sur healthcheck réel, pas la config), état Ollama (`🦙✅ qwen3.5` si actif, `🦙⚡` si triage dynamique, `🦙❌` si off), état proxy port 4000 (`🔌✅`/`🔌❌`). Un vrai tableau de bord pilote, pas un log. |
 | **Arsenal tout-en-un** | Hooks, skills, scripts, sécurité, satellites par stack, onboarding : un seul package npm |
 
 Un vrai arsenal de qualité supérieure : coût, contexte, mémoire, review, sécurité et agents — sans bricolage éparpillé.
@@ -149,7 +149,7 @@ Les règles critiques ne sont pas dans un README. Elles sont dans des hooks qui 
 | Longueur de session (300KB/600KB) | `routing-check.sh` UserPromptSubmit | Chaque message |
 | Suggestion Haiku (prompt court + mots d'exploration) | `routing-check.sh` UserPromptSubmit | Chaque message |
 | Détection besoin design → propose Séréna | `detect-design-need.sh` UserPromptSubmit | Chaque message |
-| **Mode A/M auto** — détecte `ANTHROPIC_BASE_URL=localhost:4000` → bascule en Auto (proxy Ollama actif, triage local/Anthropic) ; en CLI sans proxy → suggère la commande de lancement | `routing-check.sh` UserPromptSubmit | Chaque message |
+| **Cockpit §1** — en-tête heads-up display : `[timestamp \| model] PASTILLE MODE \| 🦙state \| 🔌proxy`. Mode `A`/`M` basé sur healthcheck `:4000/health` (proxy off → `M` de fait). Pastille `⬆️/🟢/⬇️` issue de `model-metrics.sh`. Ollama : `🦙✅ model` (intercept), `🦙⚡ model` (triage dynamique), `🦙❌` (off). | `routing-check.sh` + `model-metrics.sh` UserPromptSubmit | Chaque message |
 
 **Bilan : 16 rails actifs.** Les règles purement de jugement (anti-hallucination, qualité code) restent du ressort du modèle.
 
