@@ -11,7 +11,7 @@
 
 ### Contexte
 
-Session du 2026-04-20 : deux axes majeurs. (1) Cockpit §1 — l'en-tête de chaque réponse est devenu un vrai heads-up display : `[timestamp | model] PASTILLE MODE | 🦙state | 🔌proxy`. Mode M/A basé sur healthcheck `:4000/health` réel (plus ANTHROPIC_BASE_URL), pastille triage-aware (`❌` seulement si `triage=false`), race condition inter-hooks éliminée (model-metrics.sh fait son propre healthcheck). (2) Tableau de contrôle des features — le `features.json` existant a été exposé via un skill `/atelier-config` + une slash command native `.claude/commands/`, et intégré au pipeline `npx claude-atelier init`. La pre-push gate bloque désormais les handoffs avec `reviewedRange: HEAD` non résolu.
+Session du 2026-04-20 : deux axes majeurs. (1) Cockpit §1 — l'en-tête de chaque réponse est devenu un vrai heads-up display : `[timestamp | model] PASTILLE MODE | 🦙state | 🔌proxy`. Mode M/A basé sur healthcheck `:4000/health` réel (plus ANTHROPIC_BASE_URL), pastille triage-aware (`❌` seulement si `triage=false`), race condition inter-hooks éliminée (model-metrics.sh fait son propre healthcheck). (2) Tableau de contrôle des features — le `features.json` existant a été exposé via un skill `/atelier-config` + une slash command native `.claude/commands/`, et intégré au pipeline `npx claude-atelier init`. La pre-push gate bloque désormais les handoffs dont le reviewedRange pointe vers HEAD (non résolu).
 
 **Range analysé** : `6c6b13c32a83ebeab612d873c0251a9eba2d7bdc..1a7837929b9980855b3de45ad69eed48ed1fefa2`
 **Stats git** :  11 files changed, 232 insertions(+), 60 deletions(-)
