@@ -336,6 +336,28 @@ esac
   rmSync(dir, { recursive: true, force: true });
 });
 
+test('routing-check mode M quand proxy off (pas de dépendance ANTHROPIC_BASE_URL)', () => {
+  resetRoutingEnv();
+  // proxy ne répond pas → SWITCH_MODE doit être M, quelle que soit ANTHROPIC_BASE_URL
+  const r = hook('routing-check.sh', { prompt: 'bonjour', model: 'claude-sonnet-4-6' }, {
+    ANTHROPIC_BASE_URL: 'http://localhost:4000'  // config pointant sur proxy éteint
+  });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('[SWITCH-MODE] M'), 'proxy off → mode M même si ANTHROPIC_BASE_URL pointe sur :4000');
+});
+
+test('routing-check rappelle la commande de retour full Anthropic sur demande explicite', () => {
+  resetRoutingEnv();
+  const r = hook('routing-check.sh', {
+    prompt: 'je veux repasser en full anthropic et désactiver le proxy',
+    model: 'claude-sonnet-4-6'
+  });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('unset ANTHROPIC_BASE_URL && rm -f .env.local && claude'), 'commande full Anthropic attendue');
+  ok(r.stdout.includes('Quitter la session Claude en cours'), 'marche à suivre attendue');
+  ok(r.stdout.includes('Vérifier ensuite : [SWITCH-MODE] M'), 'vérification mode M attendue');
+});
+
 // ─────────────────────────────────────────────────────────────
 // guard-tests-before-push.sh — §11/§24 : tests avant push
 // ─────────────────────────────────────────────────────────────

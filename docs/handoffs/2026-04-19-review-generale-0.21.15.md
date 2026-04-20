@@ -64,12 +64,90 @@ Review générale sur deux axes :
 
 ## Réponse de : Copilot/GPT
 
-**INSTRUCTION POUR LE LLM QUI REPOND :**
-1. Tu DOIS écrire ta réponse directement dans **ce même fichier `.md`**, section `## Réponse de : Copilot/GPT`.
-2. Tu ne dois PAS répondre dans le chat, ni dans un autre fichier.
-3. **INTERDIT DE MODIFIER DU CODE SOURCE.** Tu es reviewer, pas développeur. Ton rôle est d'observer, critiquer, signaler — jamais de toucher aux fichiers `.js`, `.ts`, `.json`, `.sh`, `.md` hors de ce handoff. Si tu vois un bug, décris-le. Ne le corrige pas.
-4. **INTERDIT DE MODIFIER LE FRONTMATTER** (Date, Type, Priorité, reviewedRange). Ces champs sont ancrés par Claude. Les changer casse la CI.
-5. Quand tu as fini, dis : "J'ai répondu dans [chemin du fichier]."
+### Analyse des questions
+
+**1. Détection anti-bypass : insuffisante. Verdict ❌**
+
+Elle n'est ni robuste, ni opposable seule.
+
+- Le contrôle réel n'est **pas** dans `bin/review-local.js`, mais dans `test/validate-handoff.js`.
+- Il ne regarde que le **heading** `## Réponse de : ...` via `SELF_REVIEW_PATTERN = /\b(claude|sonnet|opus|haiku|auto-review|auto_review)\b/i`.
+- Donc le contournement est trivial : une review rédigée par Claude mais signée `Copilot`, `GPT`, `Reviewer externe`, `Ollama/qwen3`, etc. passe.
+- Inversement, le pattern peut aussi bloquer un heading légitime qui contient `Claude`, `Sonnet` ou `Haiku` dans un contexte non auto-review.
+
+Le vrai problème n'est pas seulement le regex : c'est que l'identité du reviewer est **déclarative**, pas attestée. Rien dans `review-local` ne prouve que la réponse vient réellement d'Ollama.
+
+Autre faiblesse : cette règle est surtout opposable au moment où `validate-handoff.js` est exécuté (pré-push / dette handoff). Elle ne bloque pas l'écriture initiale du fichier.
+
+**2. Appel direct Ollama : gestion partielle seulement. Verdict ⚠️**
+
+Le cas nominal est couvert, pas les cas sales.
+
+- **Modèle absent** : correctement rejeté si `--model` est fourni et n'apparaît pas dans `/api/tags`.
+- **Ollama inaccessible** : `ollamaListModels()` renvoie `[]`, puis la CLI affiche "Ollama non accessible". C'est acceptable, mais ça fusionne plusieurs causes en un seul symptôme : serveur down, JSON invalide, host erroné, timeout réseau.
+- **Timeout** : il n'y en a **aucun**. Ni `AbortController`, ni deadline applicative. Si `localhost:11434` accepte la connexion puis bloque, la commande peut rester pendue.
+- **Streaming** : le parseur NDJSON est fragile. `ollamaChat()` fait `decoder.decode(value).split('\n')` à chaque chunk, sans buffer pour les lignes incomplètes. Si un objet JSON est coupé entre deux chunks — cas normal en streaming — le fragment peut être jeté silencieusement. Risque concret : review tronquée ou texte perdu sans erreur explicite.
+- **Body null / réponse non standard** : pas de garde explicite avant `res.body.getReader()`.
+
+Donc : pas catastrophique, mais certainement pas "bien géré" au sens robuste.
+
+**3. Edge cases non couverts : plusieurs trous réels. Verdict ❌**
+
+Oui, il en manque plusieurs :
+
+- **Handoff malformé** : `review-local` ne valide pas la structure avant de construire le prompt. Si les sections attendues manquent, `buildPrompt()` produit un prompt appauvri, puis la commande écrit quand même dans le fichier.
+- **`reviewedRange` absent** : complètement ignoré par `review-local`. Le problème ne sera vu qu'ultérieurement par `validate-handoff.js`.
+- **Fichier déjà reviewé** : si l'utilisateur passe `--handoff`, il n'y a aucun garde-fou contre l'écrasement d'une réponse existante. La section est remplacée sans confirmation.
+- **Détection “déjà reviewé” trop naïve** : `findUnreviewedHandoff()` se base sur `stripTemplateContent(section).length > 100`. Un handoff long mais invalide/bypassé peut être considéré comme reviewé et donc sauté.
+- **Cible arbitraire** : `--handoff` accepte n'importe quel chemin existant, pas seulement `docs/handoffs/*.md`. Donc la commande peut écrire dans un fichier Markdown arbitraire du workspace.
+- **Repo root** : la détection repose sur `docs/handoffs` présent dans `cwd` ou dans `PKG_ROOT`, pas sur `git rev-parse --show-toplevel`. En cas de lancement depuis un sous-dossier ou un contexte ambigu, l'écriture/commit peut viser le mauvais endroit.
+
+**4. `--auto-integrate` : pas d'injection shell, mais surface d'écrasement fichier. Verdict ❌**
+
+Le point positif : pas de `exec("...")` ou interpolation shell dangereuse. `git add` / `git commit` passent par `spawnSync`, donc pas d'injection shell classique ici.
+
+Mais le vrai risque est ailleurs :
+
+- l'option écrit directement dans le fichier cible sans confinement strict du chemin ;
+- `injectResponse()` / remplacement `## Intégration` opèrent sur la structure Markdown supposée valide ;
+- si le fichier ciblé n'est pas un vrai handoff, la commande peut injecter du contenu dans un document non prévu ;
+- le commit automatique stage `docs/handoffs/${target.name}`, pas forcément le chemin réellement modifié si `--handoff` pointe ailleurs. Donc on peut avoir **écriture effective** + **stage incohérent**.
+
+En clair : ce n'est pas une injection de code, mais ce n'est pas sécurisé du point de vue intégrité documentaire.
+
+**5. `src/features.json` : risque de désync avéré. Verdict ❌**
+
+Il y a déjà trop de sources de vérité :
+
+- `src/features.json` décrit les **commandes/help CLI** ;
+- `src/features-registry.json` décrit les **feature flags runtime** ;
+- `bin/cli.js` embarque un **HELP généré** mais garde aussi un tableau `knownCommands` codé en dur.
+
+Résultat : la dérive est déjà visible.
+
+- `package.json` est en `0.21.15`, mais le `HELP` embarqué dans `bin/cli.js` affiche `v0.21.14`.
+- La liste des commandes existe à la fois dans `src/features.json` et dans `knownCommands`.
+- Les flags runtime utilisés par les hooks (`git_guard_french`, `review_copilot`, etc.) ne viennent pas de `src/features.json`, mais d'un autre registre.
+
+Donc le nom `features.json` est trompeur : il ne pilote pas "les features" du runtime, seulement une partie de la CLI/documentation générée. C'est un risque de compréhension et de drift.
+
+Autre angle mort : côté hooks, une feature absente dans `.claude/features.json` tombe souvent sur `default=true`. Donc une feature oubliée dans le registre peut rester active silencieusement ; inversement, une entrée de registre non consommée peut apparaître dans le tableau sans effet réel.
+
+### Verdict global
+
+Les deux features sont livrées en état **fonctionnel V1**, mais pas en état robuste.
+
+Le point le plus faible est `review-local` : l'anti-bypass est facile à contourner, le streaming Ollama peut perdre des fragments, `--handoff` n'est pas confiné, et plusieurs cas limites sont reportés au validateur aval au lieu d'être bloqués à l'entrée.
+
+Le point structurellement fragile côté features est la multiplication des vérités partielles (`src/features.json`, `src/features-registry.json`, `bin/cli.js`, hooks). La désync n'est pas théorique : elle est déjà visible dans la version du HELP.
+
+### Actions prioritaires
+
+- [ ] Durcir `review-local` en validant **avant écriture** que la cible est un vrai handoff sous `docs/handoffs/` et qu'elle n'est pas déjà reviewée sans confirmation explicite.
+- [ ] Ajouter un vrai timeout réseau (`AbortController`) et un buffer de ligne pour le streaming NDJSON Ollama.
+- [ ] Repenser l'anti-bypass : ne plus se contenter du heading déclaratif ; au minimum, lier la provenance à la commande `review-local` ou à un marqueur produit par elle.
+- [ ] Clarifier les sources de vérité : `src/features.json` (help CLI) vs `src/features-registry.json` (runtime flags), ou renommer pour supprimer l'ambiguïté.
+- [ ] Éliminer la duplication `src/features.json` ↔ `bin/cli.js` ↔ `knownCommands`, parce qu'elle produit déjà du drift observable.
 
 ---
 

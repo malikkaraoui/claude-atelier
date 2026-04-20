@@ -72,6 +72,10 @@ normalize_model() {
   printf '%s' "$1" | sed 's/\[.*$//' | tr -d '\r\n'
 }
 
+wants_full_anthropic_help() {
+  printf '%s' "$PROMPT" | grep -qiE "(full[[:space:]]+anthropic|anthropic[[:space:]]+direct|direct[[:space:]]+anthropic|mode[[:space:]]+anthropic|repasser([^[:alnum:]]|.*)anthropic|passer([^[:alnum:]]|.*)anthropic|retour([^[:alnum:]]|.*)anthropic|désactiver[[:space:]]+le[[:space:]]+proxy|desactiver[[:space:]]+le[[:space:]]+proxy|arrêter[[:space:]]+le[[:space:]]+proxy|arreter[[:space:]]+le[[:space:]]+proxy|stop[[:space:]]+proxy|sans[[:space:]]+proxy)"
+}
+
 cache_scope_key() {
   if [ -n "$1" ]; then
     printf '%s' "$1"
@@ -200,18 +204,16 @@ if [ -z "$MODEL" ]; then
 fi
 
 # ===== MODE SWITCH A/M (Auto ou Manuel) =====
+# A = proxy réellement actif (health check), M = Anthropic direct (proxy off ou absent)
+# ANTHROPIC_BASE_URL est une config, pas un état — un proxy éteint = mode M de fait.
 SWITCH_MODE_FILE="/tmp/claude-atelier-switch-mode"
 
-# ANTHROPIC_BASE_URL pointant sur le proxy local → Auto forcé (proxy actif)
-if echo "${ANTHROPIC_BASE_URL:-}" | grep -q "localhost:4000"; then
+if curl -s --max-time 1 http://localhost:4000/health &>/dev/null; then
   SWITCH_MODE="A"
   echo "A" > "$SWITCH_MODE_FILE"
 else
-  SWITCH_MODE=$(cat "$SWITCH_MODE_FILE" 2>/dev/null || echo "M")
-  case "$SWITCH_MODE" in
-    A|a) SWITCH_MODE="A" ;;
-    *)   SWITCH_MODE="M" ;;
-  esac
+  SWITCH_MODE="M"
+  echo "M" > "$SWITCH_MODE_FILE"
 fi
 
 # ===== OLLAMA STATUS (chaque message) =====
@@ -253,7 +255,7 @@ except: print('no')
       EMBED_TAG=""
       [ "$HAS_EMBED" = "yes" ] && EMBED_TAG=" +embed"
       if [ -n "$OLLAMA_MODELS" ]; then
-        OLLAMA_STATUS="🦙🟡 ollama ready ($OLLAMA_MODELS)$EMBED_TAG — proxy off → /ollama-router"
+        OLLAMA_STATUS="🦙❌ ollama ready ($OLLAMA_MODELS)$EMBED_TAG — proxy off → /ollama-router"
       else
         OLLAMA_STATUS="🦙⚠️ ollama (aucun modele LLM) → /ollama-router"
       fi
@@ -265,6 +267,20 @@ else
   OLLAMA_STATUS="🦙❌ non installe → /ollama-router"
 fi
 
+# Indicateur Ollama condensé → §1 (lu par model-metrics.sh pour la pastille réelle)
+if [ -n "$_F_OLLAMA" ]; then
+  if echo "$OLLAMA_STATUS" | grep -q "✅"; then
+    _OLLAMA_IND="🦙✅${ACTIVE_LLM:+ $ACTIVE_LLM}"
+  elif echo "$OLLAMA_STATUS" | grep -q "⚠️"; then
+    _OLLAMA_IND="🦙⚠️"
+  else
+    _OLLAMA_IND="🦙❌"
+  fi
+  printf '%s\n' "$_OLLAMA_IND" > /tmp/claude-atelier-ollama-indicator 2>/dev/null
+else
+  printf '' > /tmp/claude-atelier-ollama-indicator 2>/dev/null
+fi
+
 # ===== HORODATAGE + MODÈLE + OLLAMA (toujours en tête — machine time) =====
 echo "[HORODATAGE] $(date '+%Y-%m-%d %H:%M:%S') | $MODEL"
 [ -n "$_F_OLLAMA" ] && echo "[OLLAMA] $OLLAMA_STATUS"
@@ -273,6 +289,14 @@ echo "[SWITCH-MODE] $SWITCH_MODE"
 # Suggestion proxy si mode M + CLI (pas VS Code)
 if [ "$SWITCH_MODE" = "M" ] && [ -z "${VSCODE_PID:-}" ] && [ "${TERM_PROGRAM:-}" != "vscode" ]; then
   echo "  💡 CLI sans proxy → ANTHROPIC_BASE_URL=http://localhost:4000 claude (mode A : triage Ollama actif)"
+fi
+
+if wants_full_anthropic_help; then
+  echo ""
+  echo "  💡 Full Anthropic → unset ANTHROPIC_BASE_URL && rm -f .env.local && claude"
+  echo "     1. Quitter la session Claude en cours"
+  echo "     2. Lancer la commande depuis la racine du repo"
+  echo "     3. Vérifier ensuite : [SWITCH-MODE] M"
 fi
 
 # ===== HANDOFF DEBT BANNER §25 (calculé depuis git, jamais JSON) =====
@@ -573,8 +597,11 @@ if [ -z "$_F_HEADER" ]; then exit 0; fi
 _HDR_TS="$(date '+%Y-%m-%d %H:%M:%S')"
 _HDR_MODEL="$MODEL"
 _HDR_MODE="$SWITCH_MODE"
+_HDR_OLLAMA=$(cat /tmp/claude-atelier-ollama-indicator 2>/dev/null | tr -d '\r\n')
+_HDR_OLLAMA_PART="${_HDR_OLLAMA:+ | $_HDR_OLLAMA}"
+_HDR_PROXY=$(curl -s --max-time 1 http://localhost:4000/health &>/dev/null && echo "🔌✅" || echo "🔌❌")
 echo ""
 echo "⚡⚡⚡ §1 ENTÊTE OBLIGATOIRE ⚡⚡⚡"
 echo "Ta réponse DOIT commencer par (1ère ligne, exactement) :"
-echo "\`[$_HDR_TS | $_HDR_MODEL] PASTILLE $_HDR_MODE\`"
+echo "\`[$_HDR_TS | $_HDR_MODEL] PASTILLE $_HDR_MODE${_HDR_OLLAMA_PART} | $_HDR_PROXY\`"
 echo "PASTILLE = pastille issue de [METRICS] (⬆️ / ⬇️ / 🟢) — 🟢 si [METRICS] absent"
