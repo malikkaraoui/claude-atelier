@@ -16,14 +16,13 @@ transformer en actions concrètes.
 
 ### Étape 1 — Trouver le handoff
 
-Lis le dernier fichier modifié dans `docs/handoffs/` (excluant
-`_template.md` et `README.md`) :
+Lis le dernier fichier modifié dans `docs/handoffs/` (format `.json`, excluant `_template`) :
 
 ```bash
-ls -lt docs/handoffs/*.md | grep -v _template | grep -v README | head -1
+ls -lt docs/handoffs/*.json | grep -v _template | head -1
 ```
 
-Si la section « Réponse de » est vide → « Copilot n'a pas encore
+Si `response.content` est `null` → « Copilot n'a pas encore
 répondu. Attends sa réponse puis relance /integrate-review. »
 
 ### Étape 2 — Lire et analyser la réponse
@@ -40,36 +39,25 @@ classe-le dans une des 3 catégories :
 - **Écarté** : le point n'est pas pertinent, est déjà traité, ou
   contredit une décision prise. Expliquer pourquoi.
 
-### Étape 3 — Écrire la section Intégration
+### Étape 3 — Écrire le champ `integration`
 
-Dans le fichier handoff, remplace le contenu de la section
-« Intégration » par :
+Dans le fichier handoff `.json`, remplace `"integration": null` par :
 
-```markdown
-## Intégration (Claude, YYYY-MM-DD)
-
-### Retenu — à implémenter
-
-| # | Point | Action |
-| --- | --- | --- |
-| ... | ... | ... |
-
-### Retenu — à garder en tête
-
-| Point | Pourquoi pas maintenant |
-| --- | --- |
-| ... | ... |
-
-### Écarté
-
-| Point | Pourquoi |
-| --- | --- |
-| ... | ... |
-
-### Verdict
-
-[1-2 phrases sur la qualité globale de la review + le point le plus
-actionnable]
+```json
+"integration": {
+  "date": "YYYY-MM-DD",
+  "model": "claude-sonnet-4-6",
+  "retained_implement": [
+    { "point": "...", "action": "..." }
+  ],
+  "retained_later": [
+    { "point": "...", "why_not_now": "..." }
+  ],
+  "discarded": [
+    { "point": "...", "why": "..." }
+  ],
+  "verdict": "1-2 phrases sur la qualité globale + le point le plus actionnable"
+}
 ```
 
 ### Étape 4 — Générer la checklist d'actions
@@ -90,7 +78,7 @@ Tu veux que j'implémente maintenant, ou on priorise d'abord ?"
 ### Étape 6 — Committer l'intégration
 
 ```bash
-git add docs/handoffs/[fichier].md
+git add docs/handoffs/[fichier].json
 git commit -m "docs: integrer review [sujet] de Copilot/GPT"
 ```
 
