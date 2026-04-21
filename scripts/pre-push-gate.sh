@@ -297,7 +297,7 @@ if [[ -f "$HANDOFF_DEBT_SCRIPT" ]]; then
             echo "    1. Lance /review-copilot pour generer un handoff JSON"
             echo "    2. Pousse sur une branche feature → Copilot review automatique sur la PR"
             echo "    3. Lis les commentaires Copilot (gh pr view --json reviews)"
-            echo "    4. Integre dans le champ response/integration du .json"
+            echo "    4. Complete response.content puis integration dans le .json"
             echo "    5. Commit le handoff — le prochain push main verra la dette = 0"
             fail "Dette §25 depassee. Handoff Copilot requis avant push vers main."
         fi

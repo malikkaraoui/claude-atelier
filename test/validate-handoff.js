@@ -71,9 +71,11 @@ function gitRevParse(rev) {
 }
 
 function validateRange(fromSha, toSha, errors) {
-  if (!gitOk(['cat-file', '-e', `${fromSha}^{commit}`])) errors.push(`reviewedRange from-sha ${fromSha} introuvable dans git`);
-  if (!gitOk(['cat-file', '-e', `${toSha}^{commit}`])) errors.push(`reviewedRange to-sha ${toSha} introuvable dans git`);
-  if (errors.length === 0 && !gitOk(['merge-base', '--is-ancestor', fromSha, toSha])) {
+  const okFrom = gitOk(['cat-file', '-e', `${fromSha}^{commit}`]);
+  const okTo = gitOk(['cat-file', '-e', `${toSha}^{commit}`]);
+  if (!okFrom) errors.push(`reviewedRange from-sha ${fromSha} introuvable dans git`);
+  if (!okTo) errors.push(`reviewedRange to-sha ${toSha} introuvable dans git`);
+  if (okFrom && okTo && !gitOk(['merge-base', '--is-ancestor', fromSha, toSha])) {
     errors.push(`reviewedRange invalide : ${fromSha} n'est pas un ancêtre de ${toSha}`);
   }
 }
@@ -215,7 +217,13 @@ function validateJson(filePath) {
   const question = stripTemplateContent(from.question || '');
   if (question.length < 50) errors.push(`from.question trop court (${question.length} chars, min 50)`);
 
-  const files = Array.isArray(from.filesToRead) ? from.filesToRead.filter((f) => f && !f.startsWith('[')) : [];
+  const files = Array.isArray(from.filesToRead)
+    ? from.filesToRead.filter((f) => {
+        if (typeof f !== 'string') return false;
+        const value = f.trim();
+        return value && !value.startsWith('[');
+      })
+    : [];
   if (files.length === 0) errors.push('from.filesToRead doit lister ≥ 1 fichier réel');
 
   const response = d.response || {};
@@ -223,7 +231,10 @@ function validateJson(filePath) {
   if (responseContent.length < 100) {
     errors.push(`response.content trop court (${responseContent.length} chars réels, min 100)`);
   }
-  const responseModel = (response.model || '').toLowerCase();
+  if (response.model != null && typeof response.model !== 'string') {
+    errors.push('response.model doit être une chaîne');
+  }
+  const responseModel = typeof response.model === 'string' ? response.model.toLowerCase() : '';
   if (SELF_REVIEW_PATTERN.test(responseModel)) {
     errors.push(`Auto-review Claude interdite (response.model: "${response.model}")`);
   }

@@ -41,10 +41,14 @@ LATEST_INTEGRATED=""
 LATEST_SHA=""
 
 if [[ -d "$HANDOFF_DIR" ]]; then
-  # Rassembler tous les handoffs (md + json) triés par date de modif, plus récents en premier
-  SORTED=$(find "$HANDOFF_DIR" -maxdepth 1 \( -name "202*.md" -o -name "202*.json" \) \
-    -not -name "_template*" -print0 2>/dev/null \
-    | xargs -0 ls -t 2>/dev/null || true)
+  # Rassembler tous les handoffs (md + json) dans un tableau puis ls -t en un seul appel
+  # (xargs peut fragmenter le tri si la liste dépasse la taille d'argument — fix Copilot)
+  _hfiles=()
+  while IFS= read -r -d '' _f; do _hfiles+=("$_f"); done < <(
+    find "$HANDOFF_DIR" -maxdepth 1 \( -name "202*.md" -o -name "202*.json" \) \
+      -not -name "_template*" -print0 2>/dev/null
+  )
+  SORTED=$([[ ${#_hfiles[@]} -gt 0 ]] && ls -t "${_hfiles[@]}" 2>/dev/null || true)
 
   while IFS= read -r f; do
     [[ -z "$f" ]] && continue
