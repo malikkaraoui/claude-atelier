@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "subject": "auto-merge configurable + fixes copilot-loop + review-copilot robustesse",
+    "date": "2026-04-21",
+    "type": "review",
+    "priority": "haute",
+    "reviewedRange": "bfecc43ca86ad44c8c66dc18b30663e6b496cb13..074918f7b0caff0daf933e028598349b5a10e3d4"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "4 commits feat/fix post-sprint : (1) fix: review-copilot — branche handoff/ + gh pr create (fin copier-coller VS Code, deadlock gate résolu). (2) fix: review-copilot — étape 1 exhaustive via git log SHA_FROM..HEAD --grep feat/fix pour éviter les trous mémoire. (3) feat: auto-merge configurable — nouveau groupe Copilot Loop dans features-registry avec flag auto_merge_after_review (défaut OFF), param merge_target_branch (défaut main), copilot_loop_poll_sec (300s), copilot_loop_max_attempts (12). Support type string ajouté dans bin/features.js pour les params non numériques. copilot-loop SKILL mis à jour pour lire ces params. (4) fix: intégration review Copilot #23 — chemins absolus → relatifs dans atelier-config.md, filesToRead corrigé vers hooks réels, note header_show_* reformulée.",
+    "question": "Le skill copilot-loop lit maintenant features.json pour merge_target_branch et auto_merge_after_review. Deux risques à évaluer : (a) le ScheduleWakeup est déclenché depuis /review-copilot mais si la session Claude se ferme entre deux polls, le réveil est-il perdu ? Faut-il un mécanisme de persistance (CronCreate plutôt que ScheduleWakeup) ? (b) Le support type string dans bin/features.js — y a-t-il des cas limites (espaces dans la valeur, caractères spéciaux, valeur vide) non gérés ?",
+    "filesToRead": [
+      "src/skills/copilot-loop/SKILL.md",
+      "src/skills/review-copilot/SKILL.md",
+      "bin/features.js",
+      "src/features-registry.json"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'."
+  },
+  "integration": null
+}
