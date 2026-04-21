@@ -10,7 +10,7 @@ figure: La Bise
 > Quand Copilot répond, elle lit, intègre, corrige et ferme la boucle.
 > Sans un mot de l'utilisateur.
 
-Loop autonome complet : PR feature → Copilot review automatique → handoff JSON → fixes → gate §25 → merge main.
+Loop autonome complet : PR feature → Copilot review automatique → handoff JSON → fixes → merge main.
 
 ## Quand utiliser
 
@@ -25,6 +25,7 @@ Le loop tourne en arrière-plan via `ScheduleWakeup`.
 PR_NUM=$(gh pr view --json number -q .number)
 CURRENT_SHA=$(git rev-parse HEAD)
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
+REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 LAST_HANDOFF=$(ls -t docs/handoffs/202*.json 2>/dev/null | grep -v _template | head -1 || echo "")
 ```
 
@@ -39,19 +40,21 @@ Appeler `ScheduleWakeup` avec :
 
 ```
 Loop Copilot PR #[PR_NUM] branche [BRANCH] — tentative [X]/12.
-Repo: malikkaraoui/claude-atelier (ou adapter selon le remote).
+Repo: [REPO] (ex: malikkaraoui/claude-atelier — dérivé de gh repo view).
 
 1. Vérifier la review Copilot :
    gh pr view [PR_NUM] --json reviews | python3 -c "import json,sys; rs=json.load(sys.stdin)['reviews']; [print(r['author']['login'], r['commit']['oid'][:8]) for r in rs]"
 
 2. Si Copilot a reviewé le commit [CURRENT_SHA][:8] :
    a. Lire les commentaires inline :
-      gh api repos/[OWNER]/[REPO]/pulls/[PR_NUM]/comments
-   b. Créer/mettre à jour docs/handoffs/[DATE]-[SLUG].json :
+      gh api repos/[REPO]/pulls/[PR_NUM]/comments
+   b. Créer docs/handoffs/[DATE]-[SLUG].json à partir de _template.json.
+      Champs minimum requis par validate-handoff.js :
+      - meta.date (YYYY-MM-DD), meta.type, meta.reviewedRange (sha..sha valides dans git)
+      - from.question (≥ 50 chars), from.filesToRead (≥ 1 fichier réel)
       - response.model = "github-copilot-pr-reviewer"
-      - response.content = résumé structuré des commentaires
-      - integration.retained_implement = fixes à appliquer
-      - integration.verdict = jugement global
+      - response.content = résumé structuré des commentaires (≥ 100 chars)
+      - integration.retained_implement, integration.verdict (total ≥ 100 chars)
    c. Appliquer les fixes suggérés dans le code
    d. Valider le handoff : node test/validate-handoff.js [HANDOFF_FILE]
    e. Si valide :
