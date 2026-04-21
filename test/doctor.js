@@ -245,7 +245,17 @@ if (existsSync(handoffDebtScript)) {
     const d = data.currentDebt;
     const msg = `dette: ${d.commitsSince} commits · +${d.linesAdded}/-${d.linesDeleted} lignes · ${d.daysSince}j depuis dernier handoff intégré`;
     if (data.exceedsThreshold) {
-      fail('handoffs', 'debt', `§25 dépassée — ${msg} · ${data.reasons}`);
+      // Détecter si on est sur main : PUSH_TO_MAIN, GITHUB_REF_NAME, ou git rev-parse
+      const refName = process.env.GITHUB_REF_NAME || '';
+      const gitBranch = spawnSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { stdio: 'pipe' }).stdout?.toString().trim() || '';
+      const onMain = process.env.PUSH_TO_MAIN === 'true'
+        || ['main', 'master'].includes(refName)
+        || (process.env.PUSH_TO_MAIN !== 'false' && ['main', 'master'].includes(gitBranch));
+      if (onMain) {
+        fail('handoffs', 'debt', `§25 dépassée — ${msg} · ${data.reasons}`);
+      } else {
+        warn('handoffs', 'debt', `§25 dépassée — ${msg} · review Copilot attendu sur la PR`);
+      }
     } else {
       pass('handoffs', 'debt', `§25 sous seuil — ${msg}`);
     }

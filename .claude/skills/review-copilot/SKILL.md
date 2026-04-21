@@ -12,7 +12,8 @@ figure: Mohamed
 >
 > *"Un code non challengé n'est pas fini. C'est une bombe à retardement."*
 
-Handoff structuré pour Copilot/GPT, créé dans `docs/handoffs/`.
+Handoff structuré pour Copilot/GPT, créé dans `docs/handoffs/` au format `.json`.
+Le JSON est lisible par Copilot PR review ET par GPT/Mistral — pas le markdown.
 
 ## Procédure
 
@@ -24,7 +25,7 @@ Exécute silencieusement :
 # Stats depuis le dernier handoff (ou les 20 derniers commits)
 git log --oneline -20
 git diff --stat HEAD~10 2>/dev/null || git diff --stat HEAD~5
-ls -lt docs/handoffs/*.md 2>/dev/null | head -1
+ls -lt docs/handoffs/*.json 2>/dev/null | grep -v _template | head -1
 ```
 
 ### Étape 2 — Demander le sujet
@@ -35,80 +36,77 @@ ls -lt docs/handoffs/*.md 2>/dev/null | head -1
 3. Bug fix : [lequel ?]
 4. Architecture / décision technique"
 
-### Étape 3 — Générer le handoff
+### Étape 3 — Générer le handoff JSON
 
 **reviewedRange** : utiliser des SHA complets (`git rev-parse`). `sha-from` = dernier handoff OU `HEAD~N` résolu. `sha-to` = `HEAD` au moment du commit du handoff. Jamais de brouillon, jamais de `..HEAD (uncommitted)`.
 
-Créer le fichier `docs/handoffs/YYYY-MM-DD-<sujet-slug>.md` avec
-le format suivant :
+Créer le fichier `docs/handoffs/YYYY-MM-DD-<sujet-slug>.json` :
 
-```markdown
-# Handoff — [sujet]
-
-> Date : [date]
-> Type : review
-> Priorité : [haute si bug fix critique, moyenne sinon]
-> reviewedRange: [sha-from]..[sha-to]
-
----
-
-## De : Claude (Opus 4.6)
-
-### Contexte
-[résumé de ce qui a été fait, basé sur les commits récents]
-
-### Question précise
-[formulée selon le choix de l'utilisateur à l'étape 2]
-
-### Fichiers à lire
-[les fichiers les plus modifiés, max 10]
-
-### Contraintes / hors scope
-- Ne pas proposer de réécrire ce qui fonctionne
-- Se concentrer sur ce qui manque ou est fragile
-
----
-
-## Réponse de : Copilot/GPT
-
-**INSTRUCTION POUR LE LLM QUI REPOND :**
-1. Tu DOIS écrire ta réponse directement dans **ce même fichier `.md`**, section `## Réponse de : Copilot/GPT`.
-2. Tu ne dois PAS répondre dans le chat, ni dans un autre fichier.
-3. **INTERDIT DE MODIFIER DU CODE SOURCE.** Tu es reviewer, pas développeur. Ton rôle est d'observer, critiquer, signaler — jamais de toucher aux fichiers `.js`, `.ts`, `.json`, `.sh`, `.md` hors de ce handoff. Si tu vois un bug, décris-le. Ne le corrige pas.
-4. **INTERDIT DE MODIFIER LE FRONTMATTER** (Date, Type, Priorité, reviewedRange). Ces champs sont ancrés par Claude. Les changer casse la CI.
-5. Quand tu as fini, dis : "J'ai répondu dans [chemin du fichier]."
-
----
-
-## Intégration
-<!-- Claude remplit après lecture de la réponse -->
+```json
+{
+  "meta": {
+    "subject": "[sujet]",
+    "date": "YYYY-MM-DD",
+    "type": "review",
+    "priority": "[haute si bug fix critique, moyenne sinon]",
+    "reviewedRange": "[sha-from]..[sha-to]"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "[résumé de ce qui a été fait, basé sur les commits récents]",
+    "question": "[UNE question précise formulée selon le choix de l'étape 2]",
+    "filesToRead": [
+      "[les fichiers les plus modifiés, max 10]"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+  },
+  "integration": null
+}
 ```
 
 ### Étape 4 — Générer le prompt copier-coller
 
 Afficher à l'utilisateur :
 
-"Handoff créé : `docs/handoffs/[fichier].md`
+"Handoff créé : `docs/handoffs/[fichier].json`
 
-**Copie ce prompt dans Copilot ↓**
+**Copie ce prompt dans Copilot / GPT ↓**
 
 ---
-[Contenu complet de la section 'De : Claude' du handoff]
+Contexte : [valeur de from.context]
+
+Question : [valeur de from.question]
+
+Fichiers à lire : [valeur de from.filesToRead]
+
+Contraintes : [valeur de from.constraints]
+
+Réponds dans le champ `response.content` du fichier `[chemin]`.
 ---
 
-Quand Copilot répond (dans le fichier ou dans le chat), dis-moi
-et je remplirai la section Intégration."
+Quand Copilot/GPT répond (dans le fichier), dis-moi et je remplirai `integration`."
 
 ### Étape 5 — Committer le handoff
 
 ```bash
-git add docs/handoffs/[fichier].md
+git add docs/handoffs/[fichier].json
 git commit -m "docs: handoff review [sujet]"
 ```
 
 ## Règles
 
+- Format `.json` obligatoire — le markdown n'est pas reviewé par Copilot PR review
 - Un handoff par review (pas de méga-fichier)
 - Le prompt copier-coller doit être **complet et autonome**
-- Inclure les fichiers à lire (Copilot en a besoin pour le contexte)
+- Inclure les fichiers à lire (le LLM cible en a besoin pour le contexte)
 - Committer le handoff (traçabilité)

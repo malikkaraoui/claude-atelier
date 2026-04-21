@@ -34,9 +34,21 @@ cat > "$PRE_PUSH" <<'HOOK'
 # Git hook pre-push — claude-atelier
 # Appelle scripts/pre-push-gate.sh en DIRECT (sans composition shell)
 # Bypass impossible sauf --no-verify (interdit par §13/§22)
+#
+# Passe PUSH_TO_MAIN=true si un ref est poussé vers main/master
+# → permet à la gate §25 de skipper sur les branches feature
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 GATE="$REPO_ROOT/scripts/pre-push-gate.sh"
+
+PUSH_TO_MAIN=false
+while read -r _local_ref _local_sha _remote_ref _remote_sha; do
+  case "$_remote_ref" in
+    refs/heads/main|refs/heads/master) PUSH_TO_MAIN=true ;;
+  esac
+done
+
+export PUSH_TO_MAIN
 
 if [[ -f "$GATE" ]]; then
   exec bash "$GATE"

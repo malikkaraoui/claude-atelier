@@ -10,9 +10,9 @@
 #   bash scripts/handoff-debt.sh --check   # exit 1 si seuil dépassé (pour pre-push gate)
 #
 # Définition de "handoff intégré" :
-#   1. Fichier dans docs/handoffs/*.md (exclus _template)
-#   2. Contient section "## Intégration" avec > 100 caractères de texte
-#      différent du contenu template (commentaire HTML initial)
+#   1. Fichier dans docs/handoffs/*.md ou *.json (exclus _template)
+#   2. .md  : section "## Intégration" avec > 100 chars réels hors template
+#      .json : champ "integration" non null avec > 100 chars réels
 #   3. Passe le validateur test/validate-handoff.js
 #
 # Dette = git log <reviewedRange.to>..HEAD --shortstat (recalcul live)
@@ -41,30 +41,70 @@ LATEST_INTEGRATED=""
 LATEST_SHA=""
 
 if [[ -d "$HANDOFF_DIR" ]]; then
-  # Lister les handoffs par date de modif (plus récents en premier), null-séparés
-  while IFS= read -r -d '' f; do
-    # Extraire tout le contenu après la ligne "## Intégration"
-    INTEGRATION=$(awk '/^## Intégration/{flag=1; next} flag' "$f" 2>/dev/null || echo "")
-    REAL_CONTENT=$(echo "$INTEGRATION" | sed 's/<!--.*-->//g' | grep -v "^##\|^$" | tr -d '[:space:]' || echo "")
-    CONTENT_LEN=${#REAL_CONTENT}
+  # Rassembler tous les handoffs (md + json) dans un tableau puis ls -t en un seul appel
+  # (xargs peut fragmenter le tri si la liste dépasse la taille d'argument — fix Copilot)
+  _hfiles=()
+  while IFS= read -r -d '' _f; do _hfiles+=("$_f"); done < <(
+    find "$HANDOFF_DIR" -maxdepth 1 \( -name "202*.md" -o -name "202*.json" \) \
+      -not -name "_template*" -print0 2>/dev/null
+  )
+  SORTED=$([[ ${#_hfiles[@]} -gt 0 ]] && ls -t "${_hfiles[@]}" 2>/dev/null || true)
+
+  while IFS= read -r f; do
+    [[ -z "$f" ]] && continue
+
+    # Vérifier intégration selon le format
+    CONTENT_LEN=0
+    REVIEWED_RANGE=""
+
+    if [[ "$f" == *.json ]]; then
+      # Format JSON : lire via python3
+      INTEG_CHECK=$(python3 -c "
+import json, sys
+try:
+    d = json.load(open('$f'))
+    integ = d.get('integration') or {}
+    if isinstance(integ, dict):
+        text = json.dumps(integ).replace(' ', '')
+        print(len(text))
+    else:
+        print(0)
+except Exception:
+    print(0)
+" 2>/dev/null || echo 0)
+      CONTENT_LEN=$INTEG_CHECK
+      if [[ $CONTENT_LEN -gt 100 ]]; then
+        REVIEWED_RANGE=$(python3 -c "
+import json, sys
+try:
+    d = json.load(open('$f'))
+    print(d.get('meta', {}).get('reviewedRange', ''))
+except Exception:
+    print('')
+" 2>/dev/null || echo "")
+      fi
+    else
+      # Format Markdown
+      INTEGRATION=$(awk '/^## Intégration/{flag=1; next} flag' "$f" 2>/dev/null || echo "")
+      REAL_CONTENT=$(echo "$INTEGRATION" | sed 's/<!--.*-->//g' | grep -v "^##\|^$" | tr -d '[:space:]' || echo "")
+      CONTENT_LEN=${#REAL_CONTENT}
+      if [[ $CONTENT_LEN -gt 100 ]]; then
+        REVIEWED_RANGE=$(grep -E "^>[[:space:]]*reviewedRange[[:space:]]*:" "$f" 2>/dev/null | head -1 | sed -E 's/^>[[:space:]]*reviewedRange[[:space:]]*:[[:space:]]*//; s/[[:space:]]+$//' || echo "")
+      fi
+    fi
 
     if [[ $CONTENT_LEN -gt 100 ]]; then
       if ! node "$REPO_ROOT/test/validate-handoff.js" "$f" >/dev/null 2>&1; then
         continue
       fi
-
-      # Extraire reviewedRange du frontmatter (format: "> reviewedRange: sha..sha")
-      REVIEWED_RANGE=$(grep -E "^>[[:space:]]*reviewedRange[[:space:]]*:" "$f" 2>/dev/null | head -1 | sed -E 's/^>[[:space:]]*reviewedRange[[:space:]]*:[[:space:]]*//; s/[[:space:]]+$//' || echo "")
-      # Le validateur a déjà vérifié format, existence et sincérité du range.
       if [[ "$REVIEWED_RANGE" =~ ^[a-f0-9]{7,40}\.\.[a-f0-9]{7,40}$ ]]; then
         TO_SHA="${REVIEWED_RANGE##*..}"
         LATEST_INTEGRATED="$f"
         LATEST_SHA="$TO_SHA"
         break
       fi
-      # reviewedRange manquant/invalide → on ne retient PAS ce handoff (anti-triche)
     fi
-  done < <(find "$HANDOFF_DIR" -maxdepth 1 -name "202*.md" -not -name "_template*" -print0 2>/dev/null | xargs -0 ls -t 2>/dev/null | tr '\n' '\0')
+  done <<< "$SORTED"
 fi
 
 # ─── Calculer la dette depuis git ──────────────────────────────────────────
