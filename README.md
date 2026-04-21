@@ -364,16 +364,24 @@ push après gate verte         Screenshot VSCode → diagnostic
 
 ---
 
-### Review Inter-LLM — Claude ↔ Copilot
+### Review Inter-LLM — Claude ↔ Copilot (loop autonome)
 
 Un seul LLM ne voit pas ses propres angles morts.
 
 ```text
-/review-copilot → handoff .md → Copilot répond
-→ /integrate-review → trier (retenu / à garder / écarté) → actions
+git push (branche feature)
+  → Copilot review automatique PR (GitHub mailbox)
+  → /copilot-loop : ScheduleWakeup toutes les 5 min
+  → lit commentaires gh api, crée handoff JSON
+  → applique fixes, valide, CI verte → gh pr merge
+  → LOOP TERMINÉ — zéro intervention utilisateur
 ```
 
+**Workflow manuel :** `/review-copilot` → handoff JSON → `/integrate-review` → trier → actions
+
 Déclenchement automatique via hook : feature terminée, 100+ lignes modifiées, 3+ tentatives échouées.
+
+**GitHub comme boîte aux lettres** : Copilot ne peut pas "appeler" Claude, mais Claude peut l'interroger via `gh api`. `ScheduleWakeup` joue le rôle du facteur — toutes les 5 min, max 1h.
 
 ---
 
@@ -773,16 +781,24 @@ push after green gate         Screenshot VSCode → diagnosis
 
 ---
 
-### Inter-LLM Review — Claude ↔ Copilot
+### Inter-LLM Review — Claude ↔ Copilot (autonomous loop)
 
 A single LLM cannot see its own blind spots.
 
 ```text
-/review-copilot → handoff .md → Copilot replies
-→ /integrate-review → sort (kept / to keep / discarded) → actions
+git push (feature branch)
+  → Copilot auto-review on PR (GitHub as mailbox)
+  → /copilot-loop : ScheduleWakeup every 5 min
+  → reads gh api comments, creates JSON handoff
+  → applies fixes, validates, CI green → gh pr merge
+  → LOOP DONE — zero user intervention
 ```
 
+**Manual workflow:** `/review-copilot` → JSON handoff → `/integrate-review` → sort → actions
+
 Auto-triggered via hook: feature completed, 100+ lines modified, 3+ failed attempts.
+
+**GitHub as mailbox**: Copilot can't "call" Claude, but Claude can poll via `gh api`. `ScheduleWakeup` acts as the postman — every 5 min, max 1h.
 
 ---
 
