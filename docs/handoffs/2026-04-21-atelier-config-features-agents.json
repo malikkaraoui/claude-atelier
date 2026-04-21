@@ -1,22 +1,23 @@
 {
   "meta": {
-    "subject": "atelier-config — features registry, agents panel, état système",
+    "subject": "sprint 2026-04-21 — La Bise, copilot-loop, handoff JSON, gate §25, atelier-config",
     "date": "2026-04-21",
     "type": "review",
-    "priority": "moyenne",
+    "priority": "haute",
     "reviewedRange": "c1ec98f5a3bb41bf195a3232e4ec32705a8355f8..bfecc43ca86ad44c8c66dc18b30663e6b496cb13"
   },
   "from": {
     "model": "claude-sonnet-4-6",
-    "context": "Session de travail sur /atelier-config (tableau de contrôle). Trois évolutions majeures : (1) Nouveau groupe 'Skills & Outils' dans features-registry.json avec 5 flags (skill_bmad, skill_design_promax, skill_qmd, skill_copilot_loop, skill_ollama_router). (2) Nouveau groupe 'Format entête §1' avec 7 flags header_show_* (date, heure, modèle, pastille, mode, ollama, proxy) — actuellement en lecture seule, hook à câbler séparément. (3) La commande /atelier-config affiche désormais : bloc état système (proxy :4000, Ollama installé + modèles, modèle Claude actif) + tableau des 20 agents slash disponibles. La §25 CLAUDE.md a également été renforcée pour rendre le handoff automatique (sans demander confirmation).",
-    "question": "Les 7 flags header_show_* sont actuellement 'déclaratifs' (pas encore câblés dans les hooks §1). Quelle est la meilleure architecture pour les brancher : (a) lire features.json dans le hook UserPromptSubmit et conditionner la construction de l'entête, (b) générer un template d'entête dynamique à partir des flags actifs, ou (c) une autre approche ? Y a-t-il des risques de régression sur le filet de sécurité model-detection / pastille / mode A-M ?",
+    "context": "Sprint complet depuis le dernier handoff intégré. 9 commits feat/fix : (1) feat: agent La Bise — échanges inter-LLM GPT/Mistral + orchestration Copilot review auto. (2) feat: handoff format JSON — format unique lisible par Copilot PR review ET GPT/Mistral, remplace le markdown. (3) feat: gate §25 — skip feature branches + support handoff JSON (fin du deadlock circulaire). (4) feat: skill copilot-loop — loop autonome PR→Copilot review→handoff JSON→fixes→merge, zéro intervention utilisateur. (5) feat(atelier-config) — tableau de contrôle enrichi : état système (proxy, Ollama, modèle Claude), groupe Skills & Outils (5 flags), groupe Format entête §1 (7 flags header_show_* déclaratifs), tableau 20 agents slash. (6) fix: 3 rounds de corrections post-review Copilot (#20, #21, #22) — 6 bugs gate, repo hard-codé, accents/typos. (7) §25 CLAUDE.md renforcé : handoff automatique sans demander confirmation. (8) review-copilot SKILL corrigé : branche handoff/ + gh pr create (fin copier-coller VS Code).",
+    "question": "Deux questions liées : (a) Le skill review-copilot génère maintenant une branche handoff/ + PR GitHub — le flow complet copilot-loop (auto-merge après réponse Copilot) est-il robuste ou y a-t-il des cas limites non couverts ? (b) Les 7 flags header_show_* sont déclaratifs (non câblés dans les hooks §1). Quelle architecture pour les brancher sans régresser le filet model-detection / pastille / mode A-M ?",
     "filesToRead": [
+      "src/skills/review-copilot/SKILL.md",
+      "src/skills/copilot-loop/SKILL.md",
+      "src/skills/la-bise/SKILL.md",
       "src/features-registry.json",
-      ".claude/commands/atelier-config.md",
-      ".claude/CLAUDE.md",
       "hooks/user-prompt-submit.sh",
-      "hooks/post-tool-use.sh",
-      "src/skills/atelier-config/SKILL.md"
+      "scripts/pre-push-gate.sh",
+      "scripts/handoff-debt.sh"
     ],
     "constraints": [
       "Ne pas proposer de réécrire ce qui fonctionne",

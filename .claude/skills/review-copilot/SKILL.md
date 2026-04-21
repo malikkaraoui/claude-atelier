@@ -18,20 +18,27 @@ Flux : branche `handoff/` → commit JSON → push → `gh pr create` → Copilo
 
 ## Procédure
 
-### Étape 1 — Collecter le contexte
+### Étape 1 — Collecter le contexte exhaustif
 
 Exécute silencieusement :
 
 ```bash
-# Stats depuis le dernier handoff
-git log --oneline -20
-git diff --stat HEAD~10 2>/dev/null || git diff --stat HEAD~5
-ls -lt docs/handoffs/*.json 2>/dev/null | grep -v _template | head -1
-# SHA complets
+# 1. Trouver le SHA du dernier handoff intégré (source de vérité)
+bash scripts/handoff-debt.sh --json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['lastIntegratedHandoff']['sha'])"
+
+# 2. TOUS les commits feat/fix depuis ce SHA — aucun ne doit manquer
+SHA_FROM="<résultat ci-dessus>"
+git log "${SHA_FROM}..HEAD" --format="%h %s" | grep -E "^[a-f0-9]+ (feat|fix|refactor)"
+
+# 3. Stats globales du range
+git diff --stat "${SHA_FROM}..HEAD" | tail -1
+
+# 4. SHA HEAD courant
 git rev-parse HEAD
 ```
 
-Infère automatiquement le sujet depuis les commits récents (feat/fix dominants).
+**Règle absolue : le champ `from.context` doit mentionner TOUS les commits feat/fix du range, pas seulement les derniers visibles.**
+Infère automatiquement le sujet depuis ces commits.
 **Ne pas demander le sujet à l'utilisateur — déduire depuis git log.**
 
 ### Étape 2 — Créer la branche handoff
