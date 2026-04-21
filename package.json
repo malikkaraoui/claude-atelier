@@ -1,6 +1,6 @@
 {
   "name": "claude-atelier",
-  "version": "0.21.22",
+  "version": "0.21.24",
   "description": "Opinionated Claude Code configuration: bilingual runtime rules, orchestration patterns, autonomy modes, security gates and stack-specific satellites. Installable via CLI.",
   "keywords": [
     "claude",

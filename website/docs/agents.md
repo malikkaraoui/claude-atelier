@@ -7,7 +7,7 @@ title: Agents nommés
 
 ---
 
-## Les 4 agents
+## Les 5 agents
 
 ### Steve 🍎 — iOS / Xcode
 
@@ -52,6 +52,26 @@ Activé via `/review-copilot`. Coordonne les handoffs inter-LLM.
 ```
 
 **Triggers automatiques (§25) :** feature terminée · bug fix critique · 100+ lignes · 3+ tentatives échouées
+
+---
+
+### La Bise 🌬️ — Échanges inter-LLM
+
+Activé via `/la-bise`. Organise le passage de contexte entre Claude et d'autres modèles.
+
+> Entre deux modèles, pas d'embrassade — juste une bise.
+> Mistral fait rage sur la toile. La Bise, elle, passe là où il le faut.
+
+Double sens voulu : vent léger qui trouve sa place là où le Mistral ne passe pas — et la bise échangée entre Claude et GPT, ni une fusion, ni un silence.
+
+**Workflow :**
+```
+/la-bise → brief compact (≤ 500 tokens)
+         → colle dans ChatGPT / Mistral / ollama
+         → retour intégré et trié dans la session
+```
+
+**Cibles supportées :** GPT-4o · Mistral (Ollama local) · tout LLM externe
 
 ---
 
