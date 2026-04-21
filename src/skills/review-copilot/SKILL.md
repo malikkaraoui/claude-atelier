@@ -13,7 +13,8 @@ figure: Mohamed
 > *"Un code non challengé n'est pas fini. C'est une bombe à retardement."*
 
 Handoff structuré pour Copilot/GPT, créé dans `docs/handoffs/` au format `.json`.
-Le JSON est lisible par Copilot PR review ET par GPT/Mistral — pas le markdown.
+Le JSON est lu par **Copilot via la PR GitHub** — pas de copier-coller, pas de VS Code.
+Flux : branche `handoff/` → commit JSON → push → `gh pr create` → Copilot review PR → `/integrate-review`.
 
 ## Procédure
 
@@ -22,30 +23,35 @@ Le JSON est lisible par Copilot PR review ET par GPT/Mistral — pas le markdown
 Exécute silencieusement :
 
 ```bash
-# Stats depuis le dernier handoff (ou les 20 derniers commits)
+# Stats depuis le dernier handoff
 git log --oneline -20
 git diff --stat HEAD~10 2>/dev/null || git diff --stat HEAD~5
 ls -lt docs/handoffs/*.json 2>/dev/null | grep -v _template | head -1
+# SHA complets
+git rev-parse HEAD
 ```
 
-### Étape 2 — Demander le sujet
+Infère automatiquement le sujet depuis les commits récents (feat/fix dominants).
+**Ne pas demander le sujet à l'utilisateur — déduire depuis git log.**
 
-"Quel est le sujet de cette review ?
-1. Review générale (tout ce qui a changé récemment)
-2. Feature spécifique : [laquelle ?]
-3. Bug fix : [lequel ?]
-4. Architecture / décision technique"
+### Étape 2 — Créer la branche handoff
+
+```bash
+SLUG="<sujet-slug-depuis-commits>"   # ex: atelier-config-features-agents
+BRANCH="handoff/$(date +%Y-%m-%d)-${SLUG}"
+git checkout -b "$BRANCH"
+```
 
 ### Étape 3 — Générer le handoff JSON
 
-**reviewedRange** : utiliser des SHA complets (`git rev-parse`). `sha-from` = dernier handoff OU `HEAD~N` résolu. `sha-to` = `HEAD` au moment du commit du handoff. Jamais de brouillon, jamais de `..HEAD (uncommitted)`.
+**reviewedRange** : `sha-from` = SHA du dernier handoff intégré (résolu via `git rev-parse`). `sha-to` = HEAD courant. Jamais de `..HEAD (uncommitted)`.
 
-Créer le fichier `docs/handoffs/YYYY-MM-DD-<sujet-slug>.json` :
+Créer `docs/handoffs/YYYY-MM-DD-<sujet-slug>.json` :
 
 ```json
 {
   "meta": {
-    "subject": "[sujet]",
+    "subject": "[sujet inféré depuis git log]",
     "date": "YYYY-MM-DD",
     "type": "review",
     "priority": "[haute si bug fix critique, moyenne sinon]",
@@ -54,7 +60,7 @@ Créer le fichier `docs/handoffs/YYYY-MM-DD-<sujet-slug>.json` :
   "from": {
     "model": "claude-sonnet-4-6",
     "context": "[résumé de ce qui a été fait, basé sur les commits récents]",
-    "question": "[UNE question précise formulée selon le choix de l'étape 2]",
+    "question": "[UNE question précise sur ce qui est fragile ou manquant]",
     "filesToRead": [
       "[les fichiers les plus modifiés, max 10]"
     ],
@@ -74,39 +80,43 @@ Créer le fichier `docs/handoffs/YYYY-MM-DD-<sujet-slug>.json` :
 }
 ```
 
-### Étape 4 — Générer le prompt copier-coller
+### Étape 4 — Committer + pousser la branche + créer la PR
 
-Afficher à l'utilisateur :
-
-"Handoff créé : `docs/handoffs/[fichier].json`
-
-**Copie ce prompt dans Copilot / GPT ↓**
-
----
-Contexte : [valeur de from.context]
-
-Question : [valeur de from.question]
-
-Fichiers à lire : [valeur de from.filesToRead]
-
-Contraintes : [valeur de from.constraints]
-
-Réponds dans le champ `response.content` du fichier `[chemin]`.
----
-
-Quand Copilot/GPT répond (dans le fichier), dis-moi et je remplirai `integration`."
-
-### Étape 5 — Committer le handoff
+La gate §25 est bypassée sur les branches feature/handoff — pas de deadlock.
 
 ```bash
 git add docs/handoffs/[fichier].json
 git commit -m "docs: handoff review [sujet]"
+git push -u origin "$BRANCH"
+
+# Créer la PR — Copilot la reviewera automatiquement
+gh pr create \
+  --title "handoff: review [sujet]" \
+  --body "$(cat <<'EOF'
+## Handoff review — [sujet]
+
+Copilot : lis `docs/handoffs/[fichier].json` et réponds dans `response.content`.
+
+**Question :** [valeur de from.question]
+
+**Fichiers clés :** [valeur de from.filesToRead]
+
+**Contraintes :** reviewer uniquement, pas de modification de code ni de meta/from.
+EOF
+)"
 ```
+
+### Étape 5 — Annoncer et attendre
+
+Afficher à l'utilisateur :
+"PR créée : [URL]. Copilot va reviewer le JSON dans la PR. Quand Copilot répond, lance `/integrate-review`."
+
+**Ne pas afficher de prompt copier-coller. Copilot lit directement la PR GitHub.**
 
 ## Règles
 
 - Format `.json` obligatoire — le markdown n'est pas reviewé par Copilot PR review
+- Toujours passer par une branche `handoff/YYYY-MM-DD-slug` — jamais commit direct sur main
 - Un handoff par review (pas de méga-fichier)
-- Le prompt copier-coller doit être **complet et autonome**
-- Inclure les fichiers à lire (le LLM cible en a besoin pour le contexte)
-- Committer le handoff (traçabilité)
+- La PR doit mentionner le fichier JSON et la question dans le body
+- Committer le handoff avant de créer la PR (Copilot a besoin du fichier dans le diff)
