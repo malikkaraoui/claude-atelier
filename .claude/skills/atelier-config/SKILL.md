@@ -49,6 +49,38 @@ npx claude-atelier features --reset
 | `git_guard_sign` | Guards Git | Bloque commits signés (Co-Authored-By) |
 | `git_guard_french` | Guards Git | Messages de commit en français obligatoires |
 | `git_guard_tests` | Guards Git | npm test doit passer avant git push |
+| `skill_bmad` | Skills & Outils | Cycle complet analyse→plan→archi→implem (gros projets) |
+| `skill_design_promax` | Skills & Outils | Propose Séréna + installe UI/UX Pro Max si besoin design |
+| `skill_qmd` | Skills & Outils | QMD-first sur tous les .md (moteur recherche hybride) |
+| `skill_copilot_loop` | Skills & Outils | Loop autonome PR→Copilot review→handoff→fixes→merge |
+| `skill_ollama_router` | Skills & Outils | Setup et routing automatique Ollama local (proxy :4000) |
+
+## Agents disponibles — commandes slash
+
+Après avoir affiché le tableau de contrôle, affiche **toujours** ce tableau d'agents :
+
+| Commande | Agent | Rôle |
+|---|---|---|
+| `/atelier-help` | Atelier Help | État du projet + commandes disponibles |
+| `/atelier-setup` | Atelier Setup | Onboarding post-install, setup watchdog & QMD |
+| `/atelier-doctor` | Atelier Doctor | Diagnostic complet installation (27+ checks) |
+| `/atelier-config` | Atelier Config | Ce tableau de contrôle |
+| `/review-copilot` | Review Copilot | Génère un handoff review pour Copilot/GPT (§25) |
+| `/integrate-review` | Integrate Review | Intègre la réponse Copilot depuis docs/handoffs/ |
+| `/copilot-loop` | Copilot Loop | Loop autonome PR→review→merge |
+| `/la-bise` | La Bise | Échange inter-LLM (GPT/Mistral) |
+| `/angle-mort` | Angle Mort | Review anti-complaisance avant release |
+| `/compress` | Compress | Compresse CLAUDE.md pour réduire les tokens |
+| `/audit-safe` | Audit Safe | Scan secrets, gate, permissions, .claudeignore |
+| `/night-launch` | Night Launch | Prépare le mode nuit (autonomie) |
+| `/token-routing` | Token Routing | Configure le routing Haiku/Sonnet/Opus |
+| `/design-senior` | Design Senior | Propose Séréna + installe UI/UX Pro Max |
+| `/bmad-init` | BMAD Init | Installe BMAD-METHOD dans le projet |
+| `/qmd-init` | QMD Init | Installe QMD (moteur recherche .md local) |
+| `/ollama-router` | Ollama Router | Setup Ollama bout-en-bout + proxy |
+| `/ios-setup` | iOS Setup | Workflow iOS/tvOS : VS Code + Xcode + Makefile |
+| `/freebox-init` | Freebox Init | Bootstrap autorisation app Freebox |
+| `/handoff-debt` | Handoff Debt | Affiche la dette §25 + draft handoff |
 
 ## Conseils d'usage
 
