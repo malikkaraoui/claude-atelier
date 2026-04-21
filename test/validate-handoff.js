@@ -2,20 +2,21 @@
 /**
  * test/validate-handoff.js — Validation structurelle d'un fichier handoff
  *
- * Critères (anti-triche, PAS par nombre de mots) :
- *   1. Frontmatter contient "Type :" et "Date :"
- *   2. Section "## De :" existe et contient une sous-section "### Question précise"
- *      avec au moins 50 caractères de texte
- *   3. Section "### Fichiers à lire" liste au moins 1 fichier (bloc de code)
- *   4. Section "## Réponse de :" contient au moins 100 caractères de texte
- *      DISTINCT du contenu template (détecté par hash)
- *      ET n'est PAS une auto-review Claude (bypass interdit)
- *   5. Section "## Intégration" contient au moins 100 caractères de texte
- *      DISTINCT du contenu template
+ * Supporte deux formats :
+ *   - .md  : frontmatter "> Date/Type/reviewedRange", sections ## De/Réponse/Intégration
+ *   - .json : champs meta.date, meta.type, meta.reviewedRange, from, response, integration
+ *
+ * Critères communs (anti-triche) :
+ *   1. Date et type présents
+ *   2. reviewedRange <sha>..<sha> avec SHAs valides dans git
+ *   3. Question précise ≥ 50 chars
+ *   4. Fichiers à lire : ≥ 1 fichier listé
+ *   5. Réponse ≥ 100 chars DISTINCTE du template, PAS une auto-review Claude
+ *   6. Intégration ≥ 100 chars DISTINCTE du template
  *
  * Usage:
- *   node test/validate-handoff.js <path/to/handoff.md>
- *   node test/validate-handoff.js --all       # valide tous les handoffs
+ *   node test/validate-handoff.js <path/to/handoff.md|.json>
+ *   node test/validate-handoff.js --all
  *
  * Exit : 0 = valide, 1 = invalide
  */
@@ -35,16 +36,51 @@ if (args.length === 0) {
   process.exit(2);
 }
 
-// Hashes des blocs template à rejeter
 const TEMPLATE_MARKERS = [
   'INSTRUCTION POUR LE LLM QUI REPOND',
-  'Rempli par le LLM d\'origine',
+  "Rempli par le LLM d'origine",
   'Rempli par Claude après avoir lu',
-  "Réponse ci-dessous",
+  'Réponse ci-dessous',
+  'Écrire la réponse dans le champ',
 ];
 
+const SELF_REVIEW_PATTERN = /\b(claude|sonnet|opus|haiku|auto-review|auto_review)\b/i;
+
+function stripTemplateContent(text) {
+  if (!text) return '';
+  let cleaned = text.replace(/<!--[\s\S]*?-->/g, '');
+  for (const marker of TEMPLATE_MARKERS) {
+    const re = new RegExp(`.*${marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*`, 'g');
+    cleaned = cleaned.replace(re, '');
+  }
+  cleaned = cleaned.replace(/^#+\s.*$/gm, '');
+  return cleaned.trim();
+}
+
+function gitOk(gitArgs) {
+  return spawnSync('git', gitArgs, { cwd: ROOT, stdio: 'pipe' }).status === 0;
+}
+
+function gitStdout(gitArgs) {
+  const r = spawnSync('git', gitArgs, { cwd: ROOT, stdio: 'pipe' });
+  return r.status === 0 ? r.stdout.toString('utf8') : '';
+}
+
+function gitRevParse(rev) {
+  return gitStdout(['rev-parse', rev]).trim();
+}
+
+function validateRange(fromSha, toSha, errors) {
+  if (!gitOk(['cat-file', '-e', `${fromSha}^{commit}`])) errors.push(`reviewedRange from-sha ${fromSha} introuvable dans git`);
+  if (!gitOk(['cat-file', '-e', `${toSha}^{commit}`])) errors.push(`reviewedRange to-sha ${toSha} introuvable dans git`);
+  if (errors.length === 0 && !gitOk(['merge-base', '--is-ancestor', fromSha, toSha])) {
+    errors.push(`reviewedRange invalide : ${fromSha} n'est pas un ancêtre de ${toSha}`);
+  }
+}
+
+// ─── Format Markdown ────────────────────────────────────────────────────────
+
 function extractSection(content, heading) {
-  // Split par lignes de niveau ## et retrouve la section par heading
   const parts = content.split(/^## /m);
   for (const p of parts) {
     if (p.startsWith(heading)) return '## ' + p;
@@ -52,100 +88,54 @@ function extractSection(content, heading) {
   return '';
 }
 
-function stripTemplateContent(text) {
-  let cleaned = text;
-  // Retirer commentaires HTML
-  cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
-  // Retirer les markers template connus (et leur paragraphe)
-  for (const marker of TEMPLATE_MARKERS) {
-    const re = new RegExp(`.*${marker.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}.*`, 'g');
-    cleaned = cleaned.replace(re, '');
-  }
-  // Retirer les headings
-  cleaned = cleaned.replace(/^#+\s.*$/gm, '');
-  return cleaned.trim();
-}
-
-function gitOk(args) {
-  const r = spawnSync('git', args, { cwd: ROOT, stdio: 'pipe' });
-  return r.status === 0;
-}
-
-function gitStdout(args) {
-  const r = spawnSync('git', args, { cwd: ROOT, stdio: 'pipe' });
-  if (r.status !== 0) return '';
-  return r.stdout.toString('utf8');
-}
-
-function gitRevParse(rev) {
-  return gitStdout(['rev-parse', rev]).trim();
-}
-
-function extractReviewedRange(content) {
-  return content.match(/^>\s*reviewedRange\s*:\s*([a-f0-9]{7,40})\.\.([a-f0-9]{7,40})\s*$/m);
-}
-
-function findFirstIntegratedCommit(filePath) {
+function findFirstIntegratedCommitMd(filePath) {
   const relPath = relative(ROOT, filePath);
   const history = gitStdout(['log', '--format=%H', '--reverse', '--follow', '--', relPath])
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean);
+    .split('\n').map((l) => l.trim()).filter(Boolean);
 
   for (const sha of history) {
     const fileAtCommit = gitStdout(['show', `${sha}:${relPath}`]);
     if (!fileAtCommit) continue;
-
     const integration = extractSection(fileAtCommit, 'Intégration');
-    const integrationClean = stripTemplateContent(integration);
-    if (integrationClean.length >= 100) return sha;
+    if (stripTemplateContent(integration).length >= 100) return sha;
   }
-
   return '';
 }
 
-function validate(filePath) {
+function validateMd(filePath) {
   const errors = [];
-  if (!existsSync(filePath)) {
-    return { valid: false, errors: [`Fichier absent : ${filePath}`] };
-  }
   const content = readFileSync(filePath, 'utf8');
 
   if (!/^>\s*Date\s*:/m.test(content)) errors.push('Frontmatter "> Date :" manquant');
   if (!/^>\s*Type\s*:/m.test(content)) errors.push('Frontmatter "> Type :" manquant');
 
-  // reviewedRange : format <sha>..<sha>, les 2 shas doivent exister dans git
-  const rangeMatch = extractReviewedRange(content);
+  const rangeMatch = content.match(/^>\s*reviewedRange\s*:\s*([a-f0-9]{7,40})\.\.([a-f0-9]{7,40})\s*$/m);
   if (!rangeMatch) {
     errors.push('Frontmatter "> reviewedRange: <sha>..<sha>" manquant ou malformé');
   } else {
     const [, fromSha, toSha] = rangeMatch;
-    if (!gitOk(['cat-file', '-e', `${fromSha}^{commit}`])) errors.push(`reviewedRange from-sha ${fromSha} introuvable dans git`);
-    if (!gitOk(['cat-file', '-e', `${toSha}^{commit}`])) errors.push(`reviewedRange to-sha ${toSha} introuvable dans git`);
-    if (!gitOk(['merge-base', '--is-ancestor', fromSha, toSha])) {
-      errors.push(`reviewedRange invalide : ${fromSha} n'est pas un ancêtre de ${toSha}`);
-    }
-
-    const firstIntegratedCommit = findFirstIntegratedCommit(filePath);
-    const resolvedToSha = gitRevParse(toSha);
-    if (!firstIntegratedCommit) {
-      errors.push('Impossible de déterminer le premier commit d’intégration réel de ce handoff');
-    } else if (firstIntegratedCommit !== resolvedToSha) {
-      errors.push(`reviewedRange to-sha ${toSha} doit être ancré au premier commit d’intégration réel ${firstIntegratedCommit}`);
+    validateRange(fromSha, toSha, errors);
+    if (errors.length === 0) {
+      const firstIntegrated = findFirstIntegratedCommitMd(filePath);
+      if (!firstIntegrated) {
+        errors.push('Impossible de determiner le premier commit d integration reel');
+      } else if (firstIntegrated !== gitRevParse(toSha)) {
+        errors.push(`reviewedRange to-sha ${toSha} doit être ancré au premier commit d'intégration réel ${firstIntegrated}`);
+      }
     }
   }
 
   const deSection = extractSection(content, 'De :');
   if (!deSection) errors.push('Section "## De :" manquante');
 
-  const question = deSection.match(/### Question précise[\s\S]*?(?=###|\Z)/);
+  const question = deSection.match(/### Question précise[\s\S]*?(?=###|$)/);
   if (!question || stripTemplateContent(question[0]).length < 50) {
     errors.push('### Question précise absente ou < 50 caractères réels');
   }
 
-  const files = deSection.match(/### Fichiers à lire[\s\S]*?(?=###|\Z)/);
-  if (!files || !files[0].match(/```/)) {
-    errors.push('### Fichiers à lire doit contenir un bloc de code avec fichiers');
+  const files = deSection.match(/### Fichiers à lire[\s\S]*?(?=###|$)/);
+  if (!files || !files[0].includes('```')) {
+    errors.push('### Fichiers à lire doit contenir un bloc de code');
   }
 
   const reponse = extractSection(content, 'Réponse de :');
@@ -153,28 +143,118 @@ function validate(filePath) {
   if (reponseClean.length < 100) {
     errors.push(`## Réponse de : trop courte (${reponseClean.length} chars réels, min 100)`);
   }
-  // Anti-bypass : auto-review Claude interdite — reviewer doit être externe
   const reponseHeading = reponse.match(/^## Réponse de\s*:\s*(.*)$/m)?.[1]?.trim() || '';
-  const SELF_REVIEW_PATTERN = /\b(claude|sonnet|opus|haiku|auto-review|auto_review)\b/i;
   if (reponseHeading && SELF_REVIEW_PATTERN.test(reponseHeading)) {
-    errors.push(`Auto-review Claude interdite ("${reponseHeading}") — utilise \`npx claude-atelier review-local\` pour une review Ollama`);
+    errors.push(`Auto-review Claude interdite ("${reponseHeading}")`);
   }
 
   const integration = extractSection(content, 'Intégration');
-  const integrationClean = stripTemplateContent(integration);
-  if (integrationClean.length < 100) {
-    errors.push(`## Intégration trop courte (${integrationClean.length} chars réels, min 100)`);
+  if (stripTemplateContent(integration).length < 100) {
+    errors.push(`## Intégration trop courte (min 100 chars réels)`);
   }
 
   return { valid: errors.length === 0, errors, checksum: createHash('sha256').update(content).digest('hex').slice(0, 12) };
 }
 
+// ─── Format JSON ─────────────────────────────────────────────────────────────
+
+function findFirstIntegratedCommitJson(filePath) {
+  const relPath = relative(ROOT, filePath);
+  const history = gitStdout(['log', '--format=%H', '--reverse', '--follow', '--', relPath])
+    .split('\n').map((l) => l.trim()).filter(Boolean);
+
+  for (const sha of history) {
+    const raw = gitStdout(['show', `${sha}:${relPath}`]);
+    if (!raw) continue;
+    try {
+      const d = JSON.parse(raw);
+      const integ = d.integration;
+      if (integ && typeof integ === 'object') {
+        const verdict = stripTemplateContent(integ.verdict || '');
+        const retainedText = JSON.stringify(integ.retained_implement || []);
+        if ((verdict + retainedText).length >= 100) return sha;
+      }
+    } catch {
+      continue;
+    }
+  }
+  return '';
+}
+
+function validateJson(filePath) {
+  const errors = [];
+  let d;
+  try {
+    d = JSON.parse(readFileSync(filePath, 'utf8'));
+  } catch (e) {
+    return { valid: false, errors: [`JSON invalide : ${e.message}`] };
+  }
+
+  const meta = d.meta || {};
+  if (!meta.date) errors.push('meta.date manquant');
+  if (!meta.type) errors.push('meta.type manquant');
+
+  const rangeRaw = meta.reviewedRange || '';
+  const rangeMatch = rangeRaw.match(/^([a-f0-9]{7,40})\.\.([a-f0-9]{7,40})$/);
+  if (!rangeMatch) {
+    errors.push('meta.reviewedRange "<sha>..<sha>" manquant ou malformé');
+  } else {
+    const [, fromSha, toSha] = rangeMatch;
+    validateRange(fromSha, toSha, errors);
+    if (errors.length === 0) {
+      const firstIntegrated = findFirstIntegratedCommitJson(filePath);
+      if (!firstIntegrated) {
+        errors.push('Impossible de determiner le premier commit d integration reel');
+      } else if (firstIntegrated !== gitRevParse(toSha)) {
+        errors.push(`meta.reviewedRange to-sha ${toSha} doit être ancré au premier commit d'intégration réel ${firstIntegrated}`);
+      }
+    }
+  }
+
+  const from = d.from || {};
+  const question = stripTemplateContent(from.question || '');
+  if (question.length < 50) errors.push(`from.question trop court (${question.length} chars, min 50)`);
+
+  const files = Array.isArray(from.filesToRead) ? from.filesToRead.filter((f) => f && !f.startsWith('[')) : [];
+  if (files.length === 0) errors.push('from.filesToRead doit lister ≥ 1 fichier réel');
+
+  const response = d.response || {};
+  const responseContent = stripTemplateContent(typeof response.content === 'string' ? response.content : '');
+  if (responseContent.length < 100) {
+    errors.push(`response.content trop court (${responseContent.length} chars réels, min 100)`);
+  }
+  const responseModel = (response.model || '').toLowerCase();
+  if (SELF_REVIEW_PATTERN.test(responseModel)) {
+    errors.push(`Auto-review Claude interdite (response.model: "${response.model}")`);
+  }
+
+  const integration = d.integration;
+  if (!integration || typeof integration !== 'object') {
+    errors.push('integration null ou absent — champ requis après review');
+  } else {
+    const integText = stripTemplateContent(JSON.stringify(integration));
+    if (integText.length < 100) errors.push(`integration trop court (${integText.length} chars réels, min 100)`);
+  }
+
+  const content = JSON.stringify(d);
+  return { valid: errors.length === 0, errors, checksum: createHash('sha256').update(content).digest('hex').slice(0, 12) };
+}
+
+// ─── Dispatch ────────────────────────────────────────────────────────────────
+
+function validate(filePath) {
+  if (!existsSync(filePath)) return { valid: false, errors: [`Fichier absent : ${filePath}`] };
+  return filePath.endsWith('.json') ? validateJson(filePath) : validateMd(filePath);
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
+
 let targets = [];
 if (args[0] === '--all') {
   const dir = join(ROOT, 'docs', 'handoffs');
-  targets = readdirSync(dir)
-    .filter((f) => f.match(/^202.*\.md$/) && !f.includes('_template'))
-    .map((f) => join(dir, f));
+  const mdFiles = readdirSync(dir).filter((f) => /^202.*\.md$/.test(f) && !f.includes('_template')).map((f) => join(dir, f));
+  const jsonFiles = readdirSync(dir).filter((f) => /^202.*\.json$/.test(f) && !f.includes('_template')).map((f) => join(dir, f));
+  targets = [...mdFiles, ...jsonFiles];
 } else {
   targets = [resolve(args[0])];
 }

@@ -245,7 +245,12 @@ if (existsSync(handoffDebtScript)) {
     const d = data.currentDebt;
     const msg = `dette: ${d.commitsSince} commits · +${d.linesAdded}/-${d.linesDeleted} lignes · ${d.daysSince}j depuis dernier handoff intégré`;
     if (data.exceedsThreshold) {
-      fail('handoffs', 'debt', `§25 dépassée — ${msg} · ${data.reasons}`);
+      // Sur une branche feature, la dette est attendue — Copilot review via PR
+      if (process.env.PUSH_TO_MAIN === 'true') {
+        fail('handoffs', 'debt', `§25 dépassée — ${msg} · ${data.reasons}`);
+      } else {
+        warn('handoffs', 'debt', `§25 dépassée — ${msg} · review Copilot attendu sur la PR`);
+      }
     } else {
       pass('handoffs', 'debt', `§25 sous seuil — ${msg}`);
     }
