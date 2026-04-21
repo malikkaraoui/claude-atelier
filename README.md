@@ -14,7 +14,7 @@
 
 ## ⚡ From vibes to rails — Claude Code, disciplined
 
-29 agents · 16 skills · mémoire persistante · Context7 dynamique · mode éco · verrou review
+30 agents · 16 skills · mémoire persistante · Context7 dynamique · mode éco · verrou review
 
 [![npm version](https://img.shields.io/npm/v/claude-atelier.svg?style=flat-square&color=CB3837)](https://www.npmjs.com/package/claude-atelier)
 [![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/claude-atelier)
@@ -39,7 +39,8 @@ npx claude-atelier init
 | **Token killer** | Routing Haiku/Sonnet/Opus, `/compact`, QMD-first, `maxBudgetUsd` → beaucoup moins de tokens brûlés pour rien |
 | **Contexte dynamique du Context7** | Le contexte doc se calibre selon `§0` (phase + stack) → tu charges les bonnes libs au bon moment, pas toute la bibliothèque du monde |
 | **Mémoire persistante intelligente** | Mémoire locale par projet + feedback user + règles de lecture/écriture → Claude reprend entre sessions sans repartir de zéro |
-| **Agents spécialisés** | 13 agents nommés + 16 slash commands → le bon spécialiste au bon moment |
+| **Agents spécialisés** | 14 agents nommés + 16 slash commands → le bon spécialiste au bon moment |
+| **La Bise 🌬️** | Échanges inter-LLM : prépare le brief pour GPT/Mistral et intègre leurs réponses — vent léger, pas d'embrassade |
 | **Verrou review avant push/release** | `git push` et `npm version` bloqués tant qu'un handoff §25 externe n'a pas été intégré |
 | **Cockpit §1 — heads-up display** | Chaque réponse s'ouvre sur `` `[2026-04-20 15:12 \| claude-sonnet-4-6] 🟢 M \| 🦙❌ \| 🔌❌` ``. En un coup d'œil : horodatage, modèle actif, pastille fit (`🟢 optimal` / `⬆️ upgrade` / `⬇️ downgrade`), mode (`M`=Anthropic direct / `A`=proxy actif — basé sur healthcheck réel, pas la config), état Ollama (`🦙✅ qwen3.5` si actif, `🦙⚡` si triage dynamique, `🦙❌` si off), état proxy port 4000 (`🔌✅`/`🔌❌`). Un vrai tableau de bord pilote, pas un log. |
 | **Arsenal tout-en-un** | Hooks, skills, scripts, sécurité, satellites par stack, onboarding : un seul package npm |

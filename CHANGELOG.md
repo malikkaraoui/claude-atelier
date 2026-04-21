@@ -17,6 +17,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.21.24] — 2026-04-20
+
+### Added — Agent La Bise 🌬️ + Copilot Code Review
+
+**Agent La Bise** : 5e agent nommé, coordonne les échanges inter-LLM (GPT-4o, Mistral, Ollama local).
+- Skill `/la-bise` : brief compact ≤ 500 tokens, prompt copier-coller, intégration des réponses
+- Double sens : vent léger (Mistral fait rage, La Bise trouve sa place) + bise entre Claude et GPT (ni fusion, ni silence)
+- Ajouté dans `website/docs/agents.md` et README
+
+**Copilot Code Review** automatique sur les PRs :
+- Ruleset "Copilot review for default branch" activé (3 règles · 1 branche)
+- Automated code reviews on push → déclenché sur toute PR ouverte vers `main`
+
+---
+
 ## [0.21.3] — 2026-04-17
 
 ### Added — Extension 20 langages (16 nouveaux satellites)
