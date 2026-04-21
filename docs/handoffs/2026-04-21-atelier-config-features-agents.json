@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "subject": "atelier-config — features registry, agents panel, état système",
+    "date": "2026-04-21",
+    "type": "review",
+    "priority": "moyenne",
+    "reviewedRange": "c1ec98f5a3bb41bf195a3232e4ec32705a8355f8..bfecc43ca86ad44c8c66dc18b30663e6b496cb13"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "Session de travail sur /atelier-config (tableau de contrôle). Trois évolutions majeures : (1) Nouveau groupe 'Skills & Outils' dans features-registry.json avec 5 flags (skill_bmad, skill_design_promax, skill_qmd, skill_copilot_loop, skill_ollama_router). (2) Nouveau groupe 'Format entête §1' avec 7 flags header_show_* (date, heure, modèle, pastille, mode, ollama, proxy) — actuellement en lecture seule, hook à câbler séparément. (3) La commande /atelier-config affiche désormais : bloc état système (proxy :4000, Ollama installé + modèles, modèle Claude actif) + tableau des 20 agents slash disponibles. La §25 CLAUDE.md a également été renforcée pour rendre le handoff automatique (sans demander confirmation).",
+    "question": "Les 7 flags header_show_* sont actuellement 'déclaratifs' (pas encore câblés dans les hooks §1). Quelle est la meilleure architecture pour les brancher : (a) lire features.json dans le hook UserPromptSubmit et conditionner la construction de l'entête, (b) générer un template d'entête dynamique à partir des flags actifs, ou (c) une autre approche ? Y a-t-il des risques de régression sur le filet de sécurité model-detection / pastille / mode A-M ?",
+    "filesToRead": [
+      "src/features-registry.json",
+      ".claude/commands/atelier-config.md",
+      ".claude/CLAUDE.md",
+      "hooks/user-prompt-submit.sh",
+      "hooks/post-tool-use.sh",
+      "src/skills/atelier-config/SKILL.md"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+  },
+  "integration": null
+}

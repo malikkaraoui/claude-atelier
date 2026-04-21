@@ -145,4 +145,4 @@ Plan Pro → `acceptEdits` + allow/deny, `maxBudgetUsd` défini. Push autonome a
 
 ## §25 Inter-agents — Review Copilot auto
 
-Proposer un handoff Copilot (`docs/handoffs/`) **sans attendre** si : feature terminée, bug fix critique, 100+ lignes modifiées, ou 3+ tentatives échouées. « Malik, je prépare un handoff review ? » = réflexe, pas un choix.
+**Générer le handoff automatiquement, sans demander**, dès que : feature terminée, bug fix critique, 100+ lignes modifiées, ou avant tout commit/push/bump. Séquence obligatoire : `/review-copilot` → commit handoff → push. Ne pas demander confirmation, ne pas attendre instruction. C'est un réflexe non négociable, pas un choix.
