@@ -180,9 +180,9 @@ export async function runFeatures(argv) {
     const def = registry.params[id];
     let val;
     if (def.type === 'string') {
-      val = raw;
+      val = (raw || '').trim();
       if (!val) {
-        process.stderr.write(`${RED}error${NC}: valeur manquante pour "${id}"\n`);
+        process.stderr.write(`${RED}error${NC}: valeur manquante ou vide pour "${id}"\n`);
         return 1;
       }
     } else {

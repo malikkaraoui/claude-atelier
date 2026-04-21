@@ -18,6 +18,8 @@ Lancer immédiatement après `git push` sur une branche feature + `gh pr create`
 **Aussi déclenché automatiquement par `/review-copilot` — pas besoin d'appel manuel.**
 Le loop tourne en arrière-plan via `ScheduleWakeup`.
 
+> ⚠️ **Limitation** : `ScheduleWakeup` est **session-scoped** — si la session Claude se ferme (tab fermé, timeout), le réveil est perdu. Pour une utilisation **mode nuit / autonome**, utiliser `CronCreate` à la place (jobs persistants inter-sessions). Le skill `/night-launch` bascule automatiquement sur `CronCreate`.
+
 ## Procédure
 
 ### Étape 1 — Lire la configuration features
