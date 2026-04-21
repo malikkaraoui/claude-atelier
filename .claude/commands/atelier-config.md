@@ -1,4 +1,4 @@
-Lance `node "/Users/malik/Documents/claude-atelier/Claude instructions/bin/cli.js" features` et affiche le tableau de contrôle.
+Lance `node bin/cli.js features` (dans le repo source) ou `npx claude-atelier features` (hors repo) et affiche le tableau de contrôle.
 
 **AVANT** d'afficher le tableau, exécute ces 3 commandes en parallèle pour construire le bloc état système :
 
@@ -29,16 +29,16 @@ Puis affiche ce bloc en tête de réponse (avant le tableau features) :
 Si l'utilisateur demande à modifier une feature ou un paramètre, exécute la commande correspondante :
 
 **Features (on/off) :**
-- Activer   : `node "/Users/malik/Documents/claude-atelier/Claude instructions/bin/cli.js" features --on <feature>`
-- Désactiver : `node "/Users/malik/Documents/claude-atelier/Claude instructions/bin/cli.js" features --off <feature>`
-- Basculer  : `node "/Users/malik/Documents/claude-atelier/Claude instructions/bin/cli.js" features --toggle <feature>`
+- Activer   : `node bin/cli.js features --on <feature>`
+- Désactiver : `node bin/cli.js features --off <feature>`
+- Basculer  : `node bin/cli.js features --toggle <feature>`
 
 **Paramètres configurables (valeurs numériques) :**
-- Modifier : `node "/Users/malik/Documents/claude-atelier/Claude instructions/bin/cli.js" features --set <param> <valeur>`
+- Modifier : `node bin/cli.js features --set <param> <valeur>`
 - Exemples de params : `handoff_threshold_lines`, `context_warning_kb`, `context_critical_kb`, `anti_loop_count`, `diagnostic_interval_min`
 
 **Réinitialiser tout :**
-- `node "/Users/malik/Documents/claude-atelier/Claude instructions/bin/cli.js" features --reset`
+- `node bin/cli.js features --reset`
 
 Après chaque modification, rappelle que Claude Code doit être relancé pour appliquer le changement.
 
@@ -71,4 +71,4 @@ Ensuite, affiche **toujours** le tableau des agents disponibles :
 
 ---
 
-**⚠️ Note entête §1** : Les flags `header_show_*` dans le registre sont **en lecture seule** pour l'instant — ils documentent la structure voulue mais le câblage dans les hooks §1 est un chantier séparé. Ne pas modifier le comportement réel de l'entête sans instruction explicite.
+**⚠️ Note entête §1** : Les flags `header_show_*` sont **modifiables via CLI** (`--on/--off/--toggle`) et écrits dans `features.json`, mais **aucun hook ne les lit encore** — ils n'ont donc pas d'effet runtime pour l'instant. Le câblage dans les hooks §1 est un chantier séparé. Ne pas modifier le comportement réel de l'entête sans instruction explicite.
