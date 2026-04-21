@@ -122,7 +122,7 @@ function validateMd(filePath) {
       if (!firstIntegrated) {
         errors.push('Impossible de determiner le premier commit d integration reel');
       } else if (!gitOk(['merge-base', '--is-ancestor', gitRevParse(toSha), firstIntegrated])) {
-        errors.push(`reviewedRange to-sha ${toSha} doit être un ancetre du commit d integration ${firstIntegrated}`);
+        errors.push(`reviewedRange to-sha ${toSha} doit être un ancêtre du commit d intégration ${firstIntegrated}`);
       }
     }
   }
@@ -208,7 +208,7 @@ function validateJson(filePath) {
       if (!firstIntegrated) {
         errors.push('Impossible de determiner le premier commit d integration reel');
       } else if (!gitOk(['merge-base', '--is-ancestor', gitRevParse(toSha), firstIntegrated])) {
-        errors.push(`meta.reviewedRange to-sha ${toSha} doit être un ancetre du commit d integration ${firstIntegrated}`);
+        errors.push(`meta.reviewedRange to-sha ${toSha} doit être un ancêtre du commit d intégration ${firstIntegrated}`);
       }
     }
   }

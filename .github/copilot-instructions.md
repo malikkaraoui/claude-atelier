@@ -2,13 +2,13 @@
 
 ## Identification obligatoire
 
-Commence TOUJOURS ta review par cette ligne exacte :
+Commence TOUJOURS ta review par une ligne au format suivant (remplace le placeholder par ton nom de modèle réel) :
 
 ```
-> Reviewer: GitHub Copilot — model: {TON_NOM_DE_MODELE_EXACT} (ex: gpt-4o, gpt-4.5, o3-mini...)
+> Reviewer: GitHub Copilot — model: gpt-4o
 ```
 
-Si tu ne connais pas ton nom de modèle, indique `model: unknown` — ne saute pas cette ligne.
+Exemples valides : `gpt-4o`, `gpt-4.5`, `o3-mini`, `o1`. Si ton nom de modèle est inconnu, écris `model: unknown` — ne saute pas cette ligne.
 
 ## Contexte du projet
 

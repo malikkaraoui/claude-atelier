@@ -8,7 +8,7 @@
 
 ### Idée initiale
 
-Utiliser GitHub Copilot comme reviewer externe pour cassser les angles morts de Claude.
+Utiliser GitHub Copilot comme reviewer externe pour casser les angles morts de Claude.
 Copilot = GPT-4 côté OpenAI → second regard indépendant, gratuit dans l'abonnement GitHub.
 
 ### Le workflow manuel (avant)
@@ -26,7 +26,7 @@ Claude génère du code
 
 ### L'objectif
 
-> "Je ne devrais plus intervenir jusqu'à que le push réussisse."
+> "Je ne devrais plus intervenir jusqu'à ce que le push réussisse."
 > — Malik, à mi-chemin
 
 ---
@@ -235,7 +235,7 @@ Le prompt ScheduleWakeup doit être **auto-suffisant** : Claude à son réveil n
 
 - Copilot ne review que les fichiers de code (pas `.md` seul)
   → Solution : toute PR utile modifie `.js`/`.sh` → Copilot s'active
-- Le `firstIntegrated == toSha` dans `validate-handoff.js` est théoriquement impossible à satisfaire pour un nouveau fichier (le SHA du commit qui crée le fichier ne peut pas être connu avant de l'écrire). En pratique : la gate ne s'exécute jamais sur les branches feature ni sur les merges GitHub.
+- La validation de `validate-handoff.js` repose désormais sur une vérification d'ancestralité (`merge-base --is-ancestor`) plutôt que sur l'ancien check `firstIntegrated == toSha` — ce point ne fait plus partie des blocages actuels.
 
 ---
 
