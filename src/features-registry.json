@@ -17,6 +17,10 @@
       "label": "Skills & Outils",
       "features": ["skill_bmad", "skill_design_promax", "skill_qmd", "skill_copilot_loop", "skill_ollama_router"]
     },
+    "copilot_loop": {
+      "label": "Copilot Loop",
+      "features": ["auto_merge_after_review"]
+    },
     "entete": {
       "label": "Format entête §1",
       "features": ["header_show_date", "header_show_time", "header_show_model", "header_show_pastille", "header_show_mode", "header_show_ollama", "header_show_proxy"]
@@ -108,6 +112,11 @@
       "description": "Setup et routing automatique Ollama local (proxy :4000)",
       "default": true
     },
+    "auto_merge_after_review": {
+      "label": "Auto-merge après review",
+      "description": "Merge automatiquement dans merge_target_branch après intégration Copilot + CI verte",
+      "default": false
+    },
     "header_show_date": {
       "label": "Entête: date",
       "description": "Afficher la date YYYY-MM-DD dans l'entête §1 (hook à câbler séparément)",
@@ -184,6 +193,28 @@
       "unit": "min",
       "min": 5,
       "max": 120
+    },
+    "merge_target_branch": {
+      "label": "Branche cible auto-merge",
+      "description": "Branche dans laquelle merger après review Copilot (auto_merge_after_review)",
+      "type": "string",
+      "default": "main"
+    },
+    "copilot_loop_poll_sec": {
+      "label": "Intervalle polling Copilot Loop",
+      "description": "Délai entre deux vérifications de review Copilot (ScheduleWakeup)",
+      "default": 300,
+      "unit": "sec",
+      "min": 60,
+      "max": 1800
+    },
+    "copilot_loop_max_attempts": {
+      "label": "Tentatives max Copilot Loop",
+      "description": "Nombre de polls avant abandon et notification manuelle",
+      "default": 12,
+      "unit": "tentatives",
+      "min": 3,
+      "max": 48
     }
   }
 }

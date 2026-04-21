@@ -113,10 +113,17 @@ EOF
 )"
 ```
 
-### Étape 5 — Annoncer et attendre
+### Étape 5 — Lancer le Copilot Loop automatiquement
 
-Afficher à l'utilisateur :
-"PR créée : [URL]. Copilot va reviewer le JSON dans la PR. Quand Copilot répond, lance `/integrate-review`."
+**Immédiatement après `gh pr create`**, invoquer le skill `copilot-loop` pour activer le polling via `ScheduleWakeup`.
+Ne pas attendre que l'utilisateur le demande — c'est automatique.
+
+Le loop se chargera de :
+- Surveiller la review Copilot
+- Intégrer la réponse dans le handoff JSON
+- Merger dans la branche cible si `auto_merge_after_review = true`
+
+Annoncer : "PR créée : [URL]. Loop Copilot activé — je surveille et intègrerai automatiquement."
 
 **Ne pas afficher de prompt copier-coller. Copilot lit directement la PR GitHub.**
 

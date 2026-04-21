@@ -126,7 +126,7 @@ function display(registry, features, featuresPath) {
       const val     = getParam(features, registry, id);
       const isCustom= features.params && id in features.params;
       const marker  = isCustom ? `${YELLOW}✎${NC}` : `${DIM}·${NC}`;
-      const valStr  = `${BOLD}${val}${NC} ${DIM}${def.unit}${NC}`;
+      const valStr  = def.unit ? `${BOLD}${val}${NC} ${DIM}${def.unit}${NC}` : `${BOLD}${val}${NC}`;
       const idStr   = id.padEnd(maxId + 2);
       console.log(`   ${idStr} ${marker} ${pad(valStr, 14)}  ${def.description}`);
     }
@@ -177,11 +177,20 @@ export async function runFeatures(argv) {
       return 1;
     }
 
-    const val = Number(raw);
     const def = registry.params[id];
-    if (isNaN(val) || val < def.min || val > def.max) {
-      process.stderr.write(`${RED}error${NC}: valeur invalide "${raw}" — attendu entre ${def.min} et ${def.max}\n`);
-      return 1;
+    let val;
+    if (def.type === 'string') {
+      val = raw;
+      if (!val) {
+        process.stderr.write(`${RED}error${NC}: valeur manquante pour "${id}"\n`);
+        return 1;
+      }
+    } else {
+      val = Number(raw);
+      if (isNaN(val) || val < def.min || val > def.max) {
+        process.stderr.write(`${RED}error${NC}: valeur invalide "${raw}" — attendu entre ${def.min} et ${def.max}\n`);
+        return 1;
+      }
     }
 
     if (!features.params) features.params = {};
@@ -193,7 +202,8 @@ export async function runFeatures(argv) {
     if (Object.keys(features.params).length === 0) delete features.params;
 
     saveFeatures(featuresPath, features);
-    console.log(`${YELLOW}✎${NC}  ${BOLD}${id}${NC} → ${GREEN}${val}${NC} ${DIM}${def.unit}${NC}`);
+    const unitStr = def.unit ? ` ${DIM}${def.unit}${NC}` : '';
+    console.log(`${YELLOW}✎${NC}  ${BOLD}${id}${NC} → ${GREEN}${val}${NC}${unitStr}`);
     console.log(`${DIM}Sauvegardé : ${featuresPath}${NC}`);
     console.log(`${YELLOW}⚡ Relancez Claude Code pour appliquer.${NC}`);
     return 0;
