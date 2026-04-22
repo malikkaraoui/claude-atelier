@@ -1,17 +1,21 @@
 {
   "name": "claude-atelier",
   "version": "0.21.26",
-  "description": "Opinionated Claude Code configuration: bilingual runtime rules, orchestration patterns, autonomy modes, security gates and stack-specific satellites. Installable via CLI.",
+  "description": "Framework complet Claude Code: 30 agents, 18 skills, MCP GitHub intégré, loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.",
   "keywords": [
     "claude",
     "claude-code",
     "anthropic",
+    "copilot",
+    "github",
     "config",
     "ai",
     "agent",
     "prompt-engineering",
     "llm",
-    "developer-tools"
+    "developer-tools",
+    "mcp",
+    "review-automation"
   ],
   "author": "Malik Karaoui",
   "license": "MIT",

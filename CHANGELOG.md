@@ -17,6 +17,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.21.26] — 2026-04-22
+
+### Added — MCP GitHub + Loop Copilot finalisé
+
+**MCP GitHub** : nouveau serveur MCP intégré dans settings.json
+- Outils : `get_pull_request`, `request_copilot_review`, `create_pull_request`
+- Auth automatique via `gh` CLI (OAuth Copilot)
+- Remplace les fallbacks bash pour manipuler les PRs
+
+**Skill `copilot-loop` finalisé** :
+- Vérification MCP des reviews Copilot (avec fallback bash)
+- Lecture des commentaires inline via MCP ou API REST
+- Génération automatique handoffs `docs/handoffs/[DATE].json`
+- Polling configurable + auto-merge après validation
+
+**Skill `review-copilot` finalisé** :
+- Étape 5 : sélection du modèle Copilot (GPT-5.4 recommandé)
+- Instructions UI pour forcer le modèle via le sélecteur GitHub
+- Automatisation copilot-loop après création de PR
+
+### Changed — Métadonnées npm + README
+
+- Description mise à jour : "Framework complet Claude Code: 30 agents, 18 skills..."
+- Keywords ajoutés : `copilot`, `github`, `mcp`, `review-automation`
+- README : section "Loop Copilot autonome" expliquant le flux complet
+- Comptage agents : 30 (mise à jour depuis 14), skills : 18 (depuis 16)
+
+---
+
 ## [0.21.24] — 2026-04-20
 
 ### Added — Agent La Bise 🌬️ + Copilot Code Review
