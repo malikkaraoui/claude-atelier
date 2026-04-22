@@ -13,7 +13,7 @@
 | Conventions | FR commits, pas de signing, gate pré-push |
 | Endpoints actifs | proxy :4000 (Ollama), Ollama :11434 |
 | Contraintes métier | LLM local via Ollama, tool_use bidirectionnel |
-| MCPs actifs | qmd (moteur recherche .md hybride) |
+| MCPs actifs | qmd (moteur recherche .md hybride), github (PR reviews, polling) |
 | Gate pré-push | `bash scripts/pre-push-gate.sh` |
 
 Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + commit atomique.

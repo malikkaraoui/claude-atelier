@@ -66,6 +66,13 @@
     "_comment_budget": "Disjoncteur hard. Claude stoppe automatiquement au-dela.",
     "maxBudgetUsd": 20
   },
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "_comment": "MCP GitHub officiel — outils: get_pull_request, request_copilot_review, create_pull_request. Auth: OAuth Copilot (automatique si CLI gh authentifié)."
+    }
+  },
   "hooks": {
     "SessionStart": [
       {
