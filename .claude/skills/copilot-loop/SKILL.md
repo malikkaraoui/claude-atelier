@@ -65,12 +65,14 @@ Loop Copilot PR #[PR_NUM] branche [BRANCH] — tentative [X]/[MAX_ATTEMPTS].
 Repo: [REPO].
 Config: AUTO_MERGE=[auto_merge_after_review], TARGET=[merge_target_branch], POLL=[poll_sec]s.
 
-1. Vérifier la review Copilot :
-   gh pr view [PR_NUM] --json reviews | python3 -c "import json,sys; rs=json.load(sys.stdin)['reviews']; [print(r['author']['login'], r['commit']['oid'][:8]) for r in rs]"
+1. Vérifier la review Copilot (via MCP GitHub si disponible, sinon fallback bash) :
+   — MCP (préféré) : appeler `get_pull_request(owner, repo, pullNumber)` → lire `.reviews[]`
+   — Fallback bash : gh pr view [PR_NUM] --json reviews -q '.reviews[] | select(.author.login | test("copilot")) | .commit.oid[:8]'
 
 2. Si Copilot a reviewé le commit [CURRENT_SHA][:8] :
-   a. Lire les commentaires inline :
-      gh api repos/[REPO]/pulls/[PR_NUM]/comments
+   a. Lire les commentaires inline (via MCP si disponible, sinon fallback) :
+      — MCP (préféré) : appeler `get_pull_request_files` ou `gh api repos/[REPO]/pulls/[PR_NUM]/comments`
+      — Fallback bash : gh api repos/[REPO]/pulls/[PR_NUM]/comments
    b. Créer docs/handoffs/[DATE]-[SLUG].json à partir de _template.json.
       Champs minimum requis par validate-handoff.js :
       - meta.date (YYYY-MM-DD), meta.type, meta.reviewedRange (sha..sha valides dans git)

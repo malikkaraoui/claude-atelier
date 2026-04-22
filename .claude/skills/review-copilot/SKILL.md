@@ -113,7 +113,27 @@ EOF
 )"
 ```
 
-### Étape 5 — Lancer le Copilot Loop automatiquement
+### Étape 5 — Sélection du modèle Copilot (optionnel — GPT-5.4 recommandé)
+
+GitHub ne permet pas de forcer un modèle via API/CLI pour les reviews automatiques.
+Pour cibler **GPT-5.4** (ou autre modèle spécifique) :
+
+Afficher à l'utilisateur :
+
+```
+🎯 Pour forcer GPT-5.4 sur cette review :
+
+  1. Ouvre la PR : [URL_PR]
+  2. Ajoute un commentaire avec ce texte exact :
+     @copilot review
+  3. Dans le sélecteur de modèle (bas gauche de la boîte), choisis : GPT-5.4
+
+  ⚠️  Si tu ne fais rien → Copilot choisit automatiquement le modèle (auto-sélection).
+```
+
+Si l'utilisateur ne répond pas dans les 2 minutes → continuer avec la review automatique.
+
+### Étape 6 — Lancer le Copilot Loop automatiquement
 
 **Immédiatement après `gh pr create`**, invoquer le skill `copilot-loop` pour activer le polling via `ScheduleWakeup`.
 Ne pas attendre que l'utilisateur le demande — c'est automatique.
