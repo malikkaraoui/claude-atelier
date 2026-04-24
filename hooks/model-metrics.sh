@@ -155,59 +155,60 @@ PYEOF
 
 if [ -n "$METRICS" ]; then
     echo "$METRICS"
-    # §1 — entête final avec pastille réelle (seulement si feature header activée)
-    _FF="$(cd "$(dirname "$0")/.." && pwd)/.claude/features.json"
-    python3 -c "import json,sys,os; d=json.load(open(sys.argv[1])) if os.path.exists(sys.argv[1]) else {}; sys.exit(0 if d.get('header',True) else 1)" "$_FF" 2>/dev/null || exit 0
-    _PASTILLE=$(printf '%s' "$METRICS" | grep -oE '(⬆️|⬇️|🟢)' | tail -1)
-    _MMODEL=$(cat /tmp/claude-atelier-current-model 2>/dev/null | tr -d '\r\n')
-    # Mode dérivé du healthcheck local — pas de lecture du fichier /tmp/ pour éviter la race
-    # avec routing-check.sh qui tourne en parallèle sur le même événement hook.
-    if curl -s --max-time 1 http://localhost:4000/health &>/dev/null; then
-      _MMODE="A"
-    else
-      _MMODE="M"
-    fi
-    # Détection Ollama inline (hooks parallèles — pas de dépendance fichier routing-check.sh)
-    _MOLLAMA=""
-    _MPROXY="🔌❌"
-    if command -v ollama &>/dev/null; then
-      if curl -s --max-time 1 http://localhost:4000/health &>/dev/null; then
-        _MPROXY="🔌✅"
-        _PROXY_CFG="$(cd "$(dirname "$0")/.." && pwd)/scripts/ollama-proxy/config.json"
-        _OLLAMA_LLM=$(python3 -c "
+fi
+
+# §1 ENTÊTE — émis toujours si model connu (indépendant du nombre de tours dans le transcript).
+# Garantit que 🦙 et 🔌 apparaissent même en session compactée / début de session.
+_FF="$(cd "$(dirname "$0")/.." && pwd)/.claude/features.json"
+python3 -c "import json,sys,os; d=json.load(open(sys.argv[1])) if os.path.exists(sys.argv[1]) else {}; sys.exit(0 if d.get('header',True) else 1)" "$_FF" 2>/dev/null || exit 0
+# Pastille : extraire depuis METRICS si disponible, 🟢 par défaut (session courte / compactée)
+_PASTILLE=$(printf '%s' "$METRICS" | grep -oE '(⬆️|⬇️|🟢)' | tail -1)
+[ -z "$_PASTILLE" ] && _PASTILLE="🟢"
+# Mode proxy : A si proxy actif, M sinon
+if curl -s --max-time 1 http://localhost:4000/health &>/dev/null; then
+  _MMODE="A"
+else
+  _MMODE="M"
+fi
+# Détection Ollama inline (hooks parallèles — pas de dépendance fichier routing-check.sh)
+_MOLLAMA=""
+_MPROXY="🔌❌"
+if command -v ollama &>/dev/null; then
+  if curl -s --max-time 1 http://localhost:4000/health &>/dev/null; then
+    _MPROXY="🔌✅"
+    _PROXY_CFG="$(cd "$(dirname "$0")/.." && pwd)/scripts/ollama-proxy/config.json"
+    _OLLAMA_LLM=$(python3 -c "
 import json
 try:
     d = json.load(open('$_PROXY_CFG'))
     print(d.get('model', ''))
 except: print('')
 " 2>/dev/null)
-        _TRIAGE=$(python3 -c "
+    _TRIAGE=$(python3 -c "
 import json
 try:
     d = json.load(open('$_PROXY_CFG'))
     print(str(d.get('triage', False)).lower())
 except: print('false')
 " 2>/dev/null)
-        if [ "$_TRIAGE" = "false" ]; then
-          # triage=false : Ollama intercepts tout → pastille ❌ (métriques Claude N/A)
-          _MOLLAMA="🦙✅${_OLLAMA_LLM:+ $_OLLAMA_LLM}"
-          _PASTILLE="❌"
-        else
-          # triage=true : routage dynamique, Anthropic peut répondre → conserver pastille METRICS
-          _MOLLAMA="🦙⚡${_OLLAMA_LLM:+ $_OLLAMA_LLM}"
-          # _PASTILLE reste la valeur METRICS issue de grep ci-dessus
-        fi
-      elif curl -s --max-time 1 http://localhost:11434/api/tags &>/dev/null; then
-        _MOLLAMA="🦙❌"
-      else
-        _MOLLAMA="🦙❌"
-      fi
+    if [ "$_TRIAGE" = "false" ]; then
+      # triage=false : Ollama intercepts tout → pastille ❌ (métriques Claude N/A)
+      _MOLLAMA="🦙✅${_OLLAMA_LLM:+ $_OLLAMA_LLM}"
+      _PASTILLE="❌"
+    else
+      # triage=true : routage dynamique, Anthropic peut répondre → conserver pastille METRICS
+      _MOLLAMA="🦙⚡${_OLLAMA_LLM:+ $_OLLAMA_LLM}"
     fi
-    [ -n "$_MMODEL" ] && [ -n "${_PASTILLE:-}" ] && {
-        echo "⚡ §1 ENTÊTE FINAL (pastille réelle) :"
-        _S1_OLLAMA="${_MOLLAMA:+ | $_MOLLAMA}"
-        echo "\`[$(date '+%Y-%m-%d %H:%M:%S') | $_MMODEL] $_PASTILLE $_MMODE${_S1_OLLAMA} | $_MPROXY\`"
-    }
+  elif curl -s --max-time 1 http://localhost:11434/api/tags &>/dev/null; then
+    _MOLLAMA="🦙❌"
+  else
+    _MOLLAMA="🦙❌"
+  fi
 fi
+[ -n "$MODEL" ] && {
+    echo "⚡ §1 ENTÊTE FINAL (pastille réelle) :"
+    _S1_OLLAMA="${_MOLLAMA:+ | $_MOLLAMA}"
+    echo "\`[$(date '+%Y-%m-%d %H:%M:%S') | $MODEL] $_PASTILLE $_MMODE${_S1_OLLAMA} | $_MPROXY\`"
+}
 
 exit 0
