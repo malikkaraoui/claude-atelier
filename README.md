@@ -457,6 +457,37 @@ Résultat : Claude ne peut pas publier proprement une feature lourde sans passer
 
 ---
 
+### Programmatic API — `applyProfile()`
+
+Utilisé par le plugin `@paperclipai/plugin-atelier` pour injecter la config dans un worktree d'exécution :
+
+```js
+import { applyProfile } from 'claude-atelier'
+
+const result = await applyProfile({
+  cwd: worktreePath,        // répertoire cible (obligatoire)
+  profile: 'lean',          // 'full' | 'lean' | 'review-only'
+  mergeStrategy: 'repo-wins', // défaut — clés existantes survivent
+  dryRun: false,
+})
+// { applied: [...], skipped: [...], warnings: [...] }
+```
+
+**Profils disponibles :**
+
+| Profil | Skills | Hooks | MCP |
+|---|---|---|---|
+| `full` | 20 skills atelier | 11 hooks | qmd |
+| `lean` | token-routing, review-copilot | 3 hooks guard | — |
+| `review-only` | review-copilot | — | — |
+
+**Options :**
+- `skills` / `hooks` / `mcp` : override les listes du preset
+- `mergeStrategy: 'atelier-wins'` : les fichiers injectés écrasent l'existant
+- `dryRun: true` : affiche le plan sans rien écrire
+
+---
+
 ### CI/CD — Publication npm automatique
 
 Un workflow GitHub Actions publie automatiquement sur npm à chaque push d'un tag `v*` :

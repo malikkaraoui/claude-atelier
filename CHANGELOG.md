@@ -17,6 +17,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.22.0-preview.0] — 2026-04-24
+
+### Added — API programmatique `applyProfile()` (preview)
+
+**API programmatique** pour l'intégration `@paperclipai/plugin-atelier` :
+- `applyProfile({ cwd, profile, mergeStrategy, dryRun })` — injecte skills, hooks, settings et mcp dans un worktree
+- Presets `full` / `lean` / `review-only` dans `src/profiles/index.js`
+- Deep merge `.claude/` selon 4 règles Paperclip (settings, hooks/agents, mcp, skills)
+- Préfixe `atelier-` automatique sur les skills injectés
+
+**CLI `apply`** :
+- `claude-atelier apply --profile <name> --cwd <path> --yes --dry-run --merge <strategy>`
+- Délègue entièrement à `applyProfile()` — zéro logique dupliquée
+
+**Module `src/merge.js`** :
+- `mergeSettings` — deep merge JSON, winner configurable
+- `mergeMcpServers` — merge par clé mcpServers
+- `mergeFileDirectory` — union par nom de fichier avec collision warning
+- `mergeSkills` — union stricte avec préfixe atelier-
+- 14 tests unitaires dans `test/merge.js`
+
+**Export programmatique** :
+- `index.js` : `export { applyProfile, PROFILES }`
+- `package.json` : champs `main` et `exports` ajoutés
+
+> **Preview** — API stable, pas encore utilisée en production Paperclip.
+> Tag npm : `preview` (pas `latest`).
+
+---
+
 ## [0.21.26] — 2026-04-22
 
 ### Added — MCP GitHub + Loop Copilot finalisé
