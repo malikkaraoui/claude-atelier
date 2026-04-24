@@ -28,10 +28,15 @@
   },
   "homepage": "https://github.com/malikkaraoui/claude-atelier#readme",
   "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
   "bin": {
     "claude-atelier": "bin/cli.js"
   },
   "files": [
+    "index.js",
     ".claude/",
     "bin/",
     "src/",
