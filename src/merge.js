@@ -8,8 +8,6 @@
  *   - skills/           : union stricte, préfixe atelier- sur les skills injectés
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
-import { join, basename } from 'node:path';
 
 /**
  * Fusionne deux objets JSON selon la règle winner.
@@ -126,12 +124,3 @@ export function mergeSkills(existingSkills, injectedSkills) {
   return { toInstall, warnings };
 }
 
-/**
- * Point d'entrée principal — fusionne config injectée avec cwd existant.
- * @param {unknown} injected  config injectée (objet brut)
- * @param {{ winner: 'existing' | 'injected' }} opts
- * @returns {unknown}
- */
-export function deepMergeClaudeConfig(injected, opts) {
-  return deepMergeObjects(undefined, injected, opts.winner);
-}

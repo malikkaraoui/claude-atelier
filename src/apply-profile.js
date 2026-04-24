@@ -50,6 +50,9 @@ const PKG_ROOT = resolve(__dirname, '..');
  * @returns {Promise<ApplyResult>}
  */
 export async function applyProfile(opts) {
+  if (!opts || typeof opts !== 'object') {
+    throw new Error('applyProfile: opts est obligatoire');
+  }
   const {
     cwd,
     profile,
@@ -83,7 +86,6 @@ export async function applyProfile(opts) {
   const mcpConfig = mcpOverride ?? preset.mcp;
 
   const claudeDir = join(resolvedCwd, '.claude');
-  const claudeExists = existsSync(claudeDir);
 
   if (!dryRun) {
     mkdirSync(claudeDir, { recursive: true });
@@ -164,9 +166,16 @@ export async function applyProfile(opts) {
     result.warnings.push(...warnings);
 
     for (const prefixedSkill of toInstall) {
-      // prefixedSkill = "atelier-<name>", src = "<name>" (sans préfixe)
+      // Validation path traversal
+      if (/[/\\]|\.\./.test(prefixedSkill)) {
+        result.warnings.push(`skill "${prefixedSkill}" nom invalide — ignoré`);
+        continue;
+      }
+      // Lookup source : d'abord le nom complet (ex: atelier-config), puis sans préfixe (ex: angle-mort)
       const srcName = prefixedSkill.replace(/^atelier-/, '');
-      const srcSkillDir = join(skillsSrcDir, srcName);
+      const srcSkillDir = existsSync(join(skillsSrcDir, prefixedSkill))
+        ? join(skillsSrcDir, prefixedSkill)
+        : join(skillsSrcDir, srcName);
       const destSkillDir = join(skillsDestDir, prefixedSkill);
 
       if (!existsSync(srcSkillDir)) {
