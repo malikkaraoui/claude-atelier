@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — proxy tool_use mapping (Anthropic→OpenAI) |
+| Phase | Phase 2 — v0.22.0-preview.0 livrée (applyProfile API + CLI apply) · next: proxy tool_use mapping |
 | Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
