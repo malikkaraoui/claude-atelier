@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "subject": "API programmatique applyProfile() + CLI apply — intégration Paperclip",
+    "date": "2026-04-24",
+    "type": "review",
+    "priority": "haute",
+    "reviewedRange": "074918f7b0caff0daf933e028598349b5a10e3d4..968b530992b285c28c3ca1602fe520153927e001"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "6 commits feat/fix depuis le dernier handoff intégré : (1) feat(profiles) module PROFILES full/lean/review-only dans src/profiles/index.js ; (2) feat(merge) deep merge .claude/ avec 4 règles Paperclip (settings, hooks/agents, mcp, skills) + 14 tests dans src/merge.js/test/merge.js ; (3) feat(api) applyProfile() programmatique + index.js + champs main/exports dans package.json ; (4) feat(cli) commande apply --cwd --profile --yes --dry-run --merge dans bin/apply.js + enregistrement dans bin/cli.js ; (5) docs README section Programmatic API + CHANGELOG 0.22.0-preview.0 ; (6) fix copilot-loop ScheduleWakeup session-scoped et string params trim (commit antérieur). La branche feat/apply-profile-api est prête à être mergée dans main pour publication npm --tag preview.",
+    "question": "L'interface applyProfile() expose trois angles morts potentiels : (a) la validation du champ `cwd` ne gère pas les chemins relatifs ni les symlinks — est-ce suffisant pour l'usage worktree de Paperclip ? (b) le preset `full` liste 20 skills mais le brief mentionnait '30 agents + 18 skills' — y a-t-il un gap intentionnel ou un risque d'expectation mismatch avec le plugin ? (c) test/merge.js couvre les 4 règles mais il n'y a pas de test d'intégration end-to-end sur applyProfile() lui-même — est-ce un risque acceptable pour une preview ?",
+    "filesToRead": [
+      "src/apply-profile.js",
+      "src/profiles/index.js",
+      "src/merge.js",
+      "test/merge.js",
+      "bin/apply.js",
+      "index.js",
+      "package.json"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+  },
+  "integration": null
+}
