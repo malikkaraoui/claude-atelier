@@ -80,9 +80,9 @@ export async function applyProfile(opts) {
   const preset = PROFILES[profile];
   const winner = mergeStrategy === 'atelier-wins' ? 'injected' : 'existing';
 
-  // Listes effectives (override ou preset)
-  const skillNames = skillsOverride ?? preset.skills;
-  const hookNames = hooksOverride ?? preset.hooks;
+  // Listes effectives (override ou preset) — Array.isArray pour rejeter null/non-array explicites
+  const skillNames = Array.isArray(skillsOverride) ? skillsOverride : preset.skills;
+  const hookNames = Array.isArray(hooksOverride) ? hooksOverride : preset.hooks;
   const mcpConfig = mcpOverride ?? preset.mcp;
 
   const claudeDir = join(resolvedCwd, '.claude');

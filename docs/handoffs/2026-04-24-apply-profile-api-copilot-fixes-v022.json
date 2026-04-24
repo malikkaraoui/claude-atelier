@@ -27,9 +27,19 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
-    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+    "model": "github-copilot-pr-reviewer",
+    "content": "Globalement, pour une preview 0.22.0, l'état me paraît acceptable côté logique métier : les 4 règles de merge sont couvertes par 72/72 tests verts, et les correctifs critiques signalés par la review Copilot #25 semblent bien adressés. En revanche, ta question est pertinente : il reste un vrai risque d'intégration non détecté tant que applyProfile({ cwd, profile, dryRun }) n'est pas exercée de bout en bout. Les tests actuels valident surtout les briques de merge en isolation ; ils ne prouvent pas que l'orchestration réelle entre création de .claude/, copie des skills, fusion de settings.json, résolution de profil et branchement dryRun se comporte correctement une fois assemblée. Le risque principal n'est pas un bug théorique dans les règles déjà testées, mais un défaut d'enchaînement entre fonctions : ordre des opérations, chemins calculés différemment entre copy et merge, dossier parent non créé dans un cas, ou comportement dryRun incohérent si une vérification existsSync suppose qu'un répertoire a été matérialisé alors qu'il ne doit justement pas l'être. C'est typiquement le genre de régression qui échappe aux tests unitaires propres mais apparaît dans le flux réel. Problèmes identifiés : (1) skillsOverride/hooksOverride peuvent être null/non-array et passer via ?? en remplaçant le preset, faisant planter .length — valider avec Array.isArray() ; (2) en-tête merge.js référence deepMergeClaudeConfig qui n'existe plus — renommer pour refléter l'API réelle ; (3) pas de test e2e applyProfile() — risque acceptable en preview mais priorité avant 0.22.x stable. Recommandation : oui pour la preview, avec 1-2 tests e2e ciblés comme suivi prioritaire."
   },
-  "integration": null
+  "integration": {
+    "date": "2026-04-24",
+    "model": "claude-sonnet-4-6",
+    "actions": [
+      "fix(apply-profile): Array.isArray() pour skillsOverride/hooksOverride — rejette null/non-array explicites sans planter .length",
+      "fix(merge): en-tête JSDoc renommé 'Utilitaires de fusion de configuration Claude Atelier' — supprime référence à deepMergeClaudeConfig inexistante"
+    ],
+    "skipped": [
+      "test e2e applyProfile() — risque acceptable pour preview 0.22.0, priorité avant 0.22.x stable"
+    ],
+    "verdict": "2 bugs corrigés (validation Array.isArray + en-tête JSDoc), gate §25 levée, prêt pour merge main + npm publish --tag preview"
+  }
 }

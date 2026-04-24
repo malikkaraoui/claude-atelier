@@ -1,5 +1,5 @@
 /**
- * deepMergeClaudeConfig — Fusion d'une config claude-atelier injectée avec une config existante.
+ * Utilitaires de fusion de configuration Claude Atelier.
  *
  * Règles :
  *   - settings.json     : deep merge, clés terminales suivent winner
