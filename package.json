@@ -65,7 +65,8 @@
     "manifest:validate": "node test/manifest-validator.js",
     "doctor": "node test/doctor.js",
     "test:hooks": "node test/hooks.js",
-    "test": "npm run lint && npm run doctor && npm run test:hooks"
+    "test:merge": "node test/merge.js",
+    "test": "npm run lint && npm run doctor && npm run test:hooks && npm run test:merge"
   },
   "publishConfig": {
     "access": "public"

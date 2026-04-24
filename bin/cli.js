@@ -24,8 +24,8 @@ const pkg = JSON.parse(
 // ⚠️  BLOC GÉNÉRÉ — ne pas éditer manuellement.
 // Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
-claude-atelier v0.21.25
-Opinionated Claude Code configuration: bilingual runtime rules, orchestration patterns, autonomy modes, security gates and stack-specific satellites. Installable via CLI.
+claude-atelier v0.22.0-preview.0
+Framework complet Claude Code: 30 agents, 18 skills, MCP GitHub intégré, loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.
 
 Usage:
   claude-atelier <command> [options]
@@ -37,6 +37,7 @@ Commands:
   lint              Valide les références markdown et la longueur du core CLAUDE.md
   features          Tableau de contrôle des features (on/off par feature)
   review-local      Review automatique d'un handoff via Ollama local (anti-bypass auto-review Claude)
+  apply             Injecte un profil de config dans un worktree cible (API Paperclip)
 
 Options:
   --version, -v       Affiche la version et quitte

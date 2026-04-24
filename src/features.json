@@ -29,6 +29,11 @@
       "name": "review-local",
       "description": "Review automatique d'un handoff via Ollama local (anti-bypass auto-review Claude)",
       "flags": ["--model <nom>", "--handoff <path>", "--auto-integrate", "--list-models"]
+    },
+    {
+      "name": "apply",
+      "description": "Injecte un profil de config dans un worktree cible (API Paperclip)",
+      "flags": ["--profile <full|lean|review-only>", "--cwd <path>", "--merge <repo-wins|atelier-wins>", "--yes", "--dry-run"]
     }
   ],
   "options": [
