@@ -25,9 +25,12 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
+    "model": "github-copilot-pr-reviewer",
+    "content": "La couverture actuelle est bonne pour valider le cœur fonctionnel de applyProfile() : les 16 tests couvrent les chemins critiques (validation, settings, hooks, .mcp.json, dryRun) et suffisent pour réduire fortement le risque de régression sur l'usage nominal PaperClip. Points faibles identifiés : (1) Aucune couverture de la branche skills/ (mergeSkills, namespace atelier-) — les skills sont copiés mais pas testés. (2) Pas de test de concurrence : avec un runner séquentiel top-level await, on valide uniquement le déterminisme mono-exécution ; deux applyProfile() parallèles sur le même cwd pourraient corrompre settings.json ou hooks/. (3) Absence de guard ESM dans le header du fichier de test. (4) Le handoff JSON lui-même avait response.content null, ce qui fait échouer validate-handoff. Verdict : suffisant pour merger et documenter le support PaperClip, insuffisant pour affirmer l'absence de race condition en production. Tests manquants prioritaires : exécutions concurrentes (même cible / cibles distinctes), idempotence, permissions fs dégradées, état partiellement écrit. README PaperClip : clair pour un développeur débutant si table profils + prérequis npm + exemple JS présents ; ajouter une phrase visible sur l'idempotence de applyProfile() serait un plus.",
     "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-04-25-applyprofile-tests-paperclip-compat.json.\""
   },
-  "integration": null
+  "integration": {
+    "retained_implement": "Ajout tests skills/ (atelier-token-routing, atelier-review-copilot) + test concurrence deux applyProfile() parallèles sur même cwd + guard ESM dans header test/apply-profile.js.",
+    "verdict": "3 lacunes adressées : couverture skills/, concurrence basique, guard ESM. Race condition complète (permissions dégradées, idempotence, état partiel) reste hors scope — documenté pour la prochaine itération."
+  }
 }

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+// Requis : Node.js >= 18 en mode ESM (package.json "type":"module")
 /**
  * test/apply-profile.js — Tests unitaires de applyProfile()
- * Couvre : validation, settings.json, hooks/, .mcp.json, dryRun, mergeStrategy.
+ * Couvre : validation, settings.json, hooks/, skills/, .mcp.json, dryRun, mergeStrategy, concurrence.
  */
 
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -157,6 +158,27 @@ await test('review-only: aucun hook copié (liste vide)', async () => {
   } finally { rm(dir); }
 });
 
+// ── skills/ ───────────────────────────────────────────────────────────────────
+console.log('\n[APPLY-PROFILE] skills/');
+
+await test('lean: skill token-routing copié sous .claude/skills/atelier-token-routing/', async () => {
+  const dir = tmp();
+  try {
+    const r = await applyProfile({ cwd: dir, profile: 'lean' });
+    ok(existsSync(join(dir, '.claude', 'skills', 'atelier-token-routing', 'SKILL.md')), 'SKILL.md copié');
+    ok(r.applied.some(p => p.includes('atelier-token-routing')), 'dans applied');
+  } finally { rm(dir); }
+});
+
+await test('lean: skill review-copilot copié sous .claude/skills/atelier-review-copilot/', async () => {
+  const dir = tmp();
+  try {
+    const r = await applyProfile({ cwd: dir, profile: 'lean' });
+    ok(existsSync(join(dir, '.claude', 'skills', 'atelier-review-copilot', 'SKILL.md')), 'SKILL.md copié');
+    ok(r.applied.some(p => p.includes('atelier-review-copilot')), 'dans applied');
+  } finally { rm(dir); }
+});
+
 // ── .mcp.json ─────────────────────────────────────────────────────────────────
 console.log('\n[APPLY-PROFILE] .mcp.json');
 
@@ -207,6 +229,31 @@ await test('dryRun: aucun fichier écrit sur disque', async () => {
     ok(!existsSync(join(dir, '.claude', 'hooks')), 'hooks/ absent');
     ok(r.applied.length > 0, 'applied non vide (dry-run entries)');
     ok(r.applied.every(p => p.includes('(dry-run)')), 'tous marqués (dry-run)');
+  } finally { rm(dir); }
+});
+
+// ── Concurrence ───────────────────────────────────────────────────────────────
+console.log('\n[APPLY-PROFILE] Concurrence');
+
+await test('deux applyProfile() en parallèle sur le même cwd → état final cohérent ou erreur explicite', async () => {
+  const dir = tmp();
+  try {
+    const results = await Promise.allSettled([
+      applyProfile({ cwd: dir, profile: 'lean' }),
+      applyProfile({ cwd: dir, profile: 'lean' }),
+    ]);
+    const fulfilled = results.filter(r => r.status === 'fulfilled');
+    const rejected = results.filter(r => r.status === 'rejected');
+    ok(fulfilled.length + rejected.length === 2, 'deux appels terminés');
+    if (rejected.length === 0) {
+      ok(existsSync(join(dir, '.claude', 'settings.json')), 'settings.json présent');
+      const raw = readFileSync(join(dir, '.claude', 'settings.json'), 'utf8');
+      ok(typeof JSON.parse(raw) === 'object', 'settings.json parsable');
+    } else {
+      for (const r of rejected) {
+        ok(r.reason instanceof Error && r.reason.message.length > 0, 'erreur explicite');
+      }
+    }
   } finally { rm(dir); }
 });
 
