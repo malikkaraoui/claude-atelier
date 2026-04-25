@@ -66,7 +66,8 @@
     "doctor": "node test/doctor.js",
     "test:hooks": "node test/hooks.js",
     "test:merge": "node test/merge.js",
-    "test": "npm run lint && npm run doctor && npm run test:hooks && npm run test:merge"
+    "test:apply-profile": "node test/apply-profile.js",
+    "test": "npm run lint && npm run doctor && npm run test:hooks && npm run test:merge && npm run test:apply-profile"
   },
   "publishConfig": {
     "access": "public"
