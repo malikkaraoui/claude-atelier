@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "subject": "applyProfile — tests unitaires + compatibilité PaperClip (README FR+EN)",
+    "date": "2026-04-25",
+    "type": "review",
+    "priority": "moyenne",
+    "reviewedRange": "20f7c58b16c5ea7c0d94fa6188063aba7b09e592..f444ff0c7351a09b5a0f513116732b321421228e"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "Range couvre 6 commits depuis le dernier handoff intégré (merge #26). Commits feat/fix : (1) fix(hooks) model-metrics émet §1 entête même si METRICS vide (session compactée) ; (2) fix: appliquer review Copilot #26 — Array.isArray + JSDoc merge.js ; (3) feat(applyProfile): tests unitaires + compatibilité PaperClip (README FR+EN). Bilan : +382/-50 lignes sur 10 fichiers. Nouveaux livrables : test/apply-profile.js (16 tests custom runner sans framework externe, couvrant validation/settings/hooks/.mcp.json/dryRun), README enrichi de sections PaperClip (FR+EN) avec table profils et exemple JS. Contexte métier : @paperclipai/plugin-atelier consomme applyProfile() pour injecter la config claude-atelier dans les worktrees agents du fork PaperClip de Malik. Prochaine étape prévue : bump version stable (0.22.0) et publish npm.",
+    "question": "Les 16 tests de test/apply-profile.js utilisent top-level await séquentiel sans framework. Est-ce que la couverture est suffisante pour valider l'intégration PaperClip en production (pas de race condition, cas de concurrence worktree, ou edge case sur permissions fs non couverts) ? Et le README PaperClip est-il clair pour un développeur qui n'a jamais vu claude-atelier ?",
+    "filesToRead": [
+      "test/apply-profile.js",
+      "src/apply-profile.js",
+      "src/merge.js",
+      "src/profiles/index.js",
+      "README.md"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-04-25-applyprofile-tests-paperclip-compat.json.\""
+  },
+  "integration": null
+}
