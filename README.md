@@ -44,6 +44,7 @@ npx claude-atelier init
 | **La Bise 🌬️** | Échanges inter-LLM : prépare le brief pour GPT/Mistral et intègre leurs réponses — vent léger, pas d'embrassade |
 | **Verrou review avant push/release** | `git push` et `npm version` bloqués tant qu'un handoff §25 externe n'a pas été intégré |
 | **Cockpit §1 — heads-up display** | Chaque réponse s'ouvre sur `` `[2026-04-20 15:12 \| claude-sonnet-4-6] 🟢 M \| 🦙❌ \| 🔌❌` ``. En un coup d'œil : horodatage, modèle actif, pastille fit (`🟢 optimal` / `⬆️ upgrade` / `⬇️ downgrade`), mode (`M`=Anthropic direct / `A`=proxy actif — basé sur healthcheck réel, pas la config), état Ollama (`🦙✅ qwen3.5` si actif, `🦙⚡` si triage dynamique, `🦙❌` si off), état proxy port 4000 (`🔌✅`/`🔌❌`). Un vrai tableau de bord pilote, pas un log. |
+| **PaperClip natif** | `applyProfile()` injecte hooks, skills et settings dans tout worktree agent — intégration profonde avec [PaperClip](https://github.com/paperclipai/paperclip) via `@paperclipai/plugin-atelier` |
 | **Arsenal tout-en-un** | Hooks, skills, scripts, sécurité, satellites par stack, onboarding : un seul package npm |
 
 Un vrai arsenal de qualité supérieure : coût, contexte, mémoire, review, sécurité et agents — sans bricolage éparpillé.
@@ -454,6 +455,30 @@ Résultat : Claude ne peut pas publier proprement une feature lourde sans passer
 | MATLAB | `stacks/matlab.md` | **Mathilde** 📐 |
 | Delphi / Object Pascal | `stacks/delphi.md` | **Daphné** 🏛️ |
 | Scratch | `stacks/scratch.md` | **Sofia** 🧩 |
+
+---
+
+### 🤝 Intégration PaperClip
+
+[PaperClip](https://github.com/paperclipai/paperclip) est un framework d'orchestration d'agents — claude-atelier est son compagnon de configuration natif.
+
+Si tu travailles sur un fork de PaperClip ou un plugin `@paperclipai/plugin-atelier`, claude-atelier expose une API programmatique pensée exactement pour ça : injecter les hooks, skills et settings dans un worktree d'exécution agent, sans conflit avec le projet hôte.
+
+**Ce que PaperClip obtient :**
+
+- Hooks d'enforcement (guard-no-sign, guard-tests, review-auto…) copiés dans `.claude/hooks/`
+- `settings.json` mergé en deep merge (repo-wins ou atelier-wins)
+- Skills slash commands installés sous le namespace `atelier-` pour éviter les collisions
+- Serveurs MCP fusionnés dans `.mcp.json`
+- Mode `dryRun` pour valider le plan avant d'écrire quoi que ce soit
+
+**3 profils prêts à l'emploi :**
+
+| Profil | Quand l'utiliser |
+|---|---|
+| `full` | Agent autonome complet (20 skills, 11 hooks, MCP qmd) |
+| `lean` | CI / worktree léger (token-routing, review-copilot, 3 guards) |
+| `review-only` | Review-bot sans hooks ni MCP |
 
 ---
 
@@ -901,6 +926,51 @@ git tag v0.3.0 && git push --tags
 The npm token is stored in GitHub secrets (`NPM_TOKEN`). No more manual `npm publish`.
 
 A separate `CI` workflow runs `npm test` (lint + doctor + 20 hook tests) on every PR and push to main, on Node **18 / 20 / 22**, with `shellcheck --severity=warning` on all `hooks/*.sh` and `scripts/*.sh`. Doctor JSON output is uploaded as an artifact for debugging.
+
+---
+
+### 🤝 PaperClip Integration
+
+[PaperClip](https://github.com/paperclipai/paperclip) is an agent orchestration framework — claude-atelier is its native configuration companion.
+
+If you're building a PaperClip fork or a `@paperclipai/plugin-atelier` plugin, claude-atelier exposes a programmatic API designed exactly for this: inject hooks, skills, and settings into an agent worktree, without conflicting with the host project.
+
+**What PaperClip gets out of the box:**
+
+- Enforcement hooks (guard-no-sign, guard-tests, review-auto…) copied to `.claude/hooks/`
+- `settings.json` deep-merged (repo-wins or atelier-wins)
+- Slash command skills installed under the `atelier-` namespace to avoid collisions
+- MCP servers merged into `.mcp.json`
+- `dryRun` mode to validate the plan before writing anything
+
+**3 ready-to-use profiles:**
+
+| Profile | When to use |
+|---|---|
+| `full` | Full autonomous agent (20 skills, 11 hooks, MCP qmd) |
+| `lean` | CI / lightweight worktree (token-routing, review-copilot, 3 guards) |
+| `review-only` | Review bot with no hooks or MCP |
+
+### Programmatic API — `applyProfile()`
+
+Used by the `@paperclipai/plugin-atelier` plugin to inject config into an agent worktree:
+
+```js
+import { applyProfile } from 'claude-atelier'
+
+const result = await applyProfile({
+  cwd: worktreePath,          // target directory (required)
+  profile: 'lean',            // 'full' | 'lean' | 'review-only'
+  mergeStrategy: 'repo-wins', // default — existing keys survive
+  dryRun: false,
+})
+// { applied: [...], skipped: [...], warnings: [...] }
+```
+
+**Options:**
+- `skills` / `hooks` / `mcp`: override preset lists
+- `mergeStrategy: 'atelier-wins'`: injected files overwrite existing ones
+- `dryRun: true`: show the plan without writing anything
 
 ---
 
