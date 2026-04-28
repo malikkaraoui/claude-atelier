@@ -71,3 +71,4 @@ for (const f of files) {
 if (updated === 0) {
   process.stderr.write(`[PULSE] aucun pouls.md trouvé pour ${AGENT_ID}\n`);
 }
+process.exit(0);
