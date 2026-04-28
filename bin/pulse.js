@@ -21,6 +21,15 @@ import { renderStatusTable } from '../src/pulse/format.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
+function _flag(args, name) {
+  const idx = args.indexOf(name);
+  return idx !== -1 && idx + 1 < args.length ? args[idx + 1] : null;
+}
+
+function _sanitizeHostname(h) {
+  return (h ?? 'unknown').toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 63);
+}
+
 function parseArgs(argv) {
   const args = argv.slice(3);
   const sub = args[0] ?? 'status';
@@ -28,10 +37,10 @@ function parseArgs(argv) {
     json:    args.includes('--json'),
     expired: args.includes('--expired'),
     global:  args.includes('--global'),
-    lang:    args.includes('--lang') ? args[args.indexOf('--lang') + 1] : null,
-    role:    args.includes('--role') ? args[args.indexOf('--role') + 1] : null,
-    status:  args.includes('--status') ? args[args.indexOf('--status') + 1] : null,
-    phase:   args.includes('--phase') ? args[args.indexOf('--phase') + 1] : null,
+    lang:    _flag(args, '--lang'),
+    role:    _flag(args, '--role'),
+    status:  _flag(args, '--status'),
+    phase:   _flag(args, '--phase'),
   };
   return { sub, flags };
 }
@@ -72,7 +81,9 @@ export async function runPulse(argv) {
 
   if (sub === 'status' || sub === 'list') {
     const files = findPoulsMdFiles(ROOT);
-    let agents = files.map(f => parsePoulsMd(f)).filter(Boolean);
+    const agents = files
+      .map(f => { try { return parsePoulsMd(f); } catch (e) { process.stderr.write(`⚠️  ${f}: ${e.message}\n`); return null; } })
+      .filter(Boolean);
 
     if (flags.role) agents = agents.filter(a => a.agent?.role === flags.role);
     if (flags.expired) agents = agents.filter(a => isExpired(a));
@@ -92,14 +103,14 @@ export async function runPulse(argv) {
 
   if (sub === 'init') {
     const role = flags.role ?? 'dev';
-    const agentId = `claude-code/${hostname()}`;
+    const agentId = `claude-code/${_sanitizeHostname(hostname())}`;
     const outPath = join(ROOT, '.claude', 'agents', agentId.replace('/', '-'), 'pouls.md');
     const phase = readPhase(ROOT);
     const profile = getProfile(role);
     const intensity = computeIntensity(role, phase);
 
     writePoulsMd(outPath, {
-      agent: { id: agentId, name: `Claude Code — ${hostname()}`, role, provider: 'claude' },
+      agent: { id: agentId, name: `Claude Code — ${_sanitizeHostname(hostname())}`, role, provider: 'claude' },
       status: intensityToStatus(intensity),
       lastPulse: new Date().toISOString(),
       ttl: profile.ceiling <= 0.3 ? 600 : profile.ceiling <= 0.6 ? 900 : 300,
@@ -115,7 +126,7 @@ export async function runPulse(argv) {
 
   if (sub === 'update') {
     const files = findPoulsMdFiles(ROOT);
-    const agentId = `claude-code/${hostname()}`;
+    const agentId = `claude-code/${_sanitizeHostname(hostname())}`;
     let updated = 0;
 
     for (const f of files) {
