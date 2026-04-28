@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, join } from 'node:fs';
-import { join as pathJoin } from 'node:path';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 const RED = '\x1b[0;31m';
 const GREEN = '\x1b[0;32m';
@@ -15,7 +15,7 @@ export function runPostInstallChecks(projectRoot, pkgRoot) {
   // 1. npm audit — uniquement si projectRoot est un projet Node
   //    (présence de package.json). En install --global depuis un répertoire
   //    arbitraire, ce check n'a pas de sens et produit de faux signaux.
-  const hasPackageJson = existsSync(pathJoin(projectRoot, 'package.json'));
+  const hasPackageJson = existsSync(join(projectRoot, 'package.json'));
 
   if (hasPackageJson) {
     const auditResult = spawnSync('npm', ['audit', '--audit-level=high'], {

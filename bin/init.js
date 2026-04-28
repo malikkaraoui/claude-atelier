@@ -126,6 +126,18 @@ async function promptYesNo(question, defaultYes = true) {
   });
 }
 
+async function promptLang() {
+  return new Promise(resolve => {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    process.stdout.write('\n? Langue préférée / Preferred language:\n  1) Français (fr)\n  2) English (en)\n');
+    rl.question('  Choix / Choice [1]: ', answer => {
+      rl.close();
+      const choice = answer.trim();
+      resolve(choice === '2' || choice === 'en' ? 'en' : 'fr');
+    });
+  });
+}
+
 function parseArgs(argv) {
   const args = argv.slice(2).filter(a => a !== 'init');
   return {
@@ -216,7 +228,18 @@ function mergeSettings(existingPath, templatePath) {
 }
 
 export async function runInit(argv) {
-  const { global: isGlobal, dryRun, lang } = parseArgs(argv);
+  const { global: isGlobal, dryRun, lang: langArg } = parseArgs(argv);
+
+  let lang = langArg;
+  if (!lang && process.stdin.isTTY) {
+    const cfgPath = isGlobal
+      ? join(homedir(), '.claude', 'atelier-config.json')
+      : join(process.cwd(), '.claude', 'atelier-config.json');
+    if (!existsSync(cfgPath)) {
+      lang = await promptLang();
+    }
+  }
+  lang = lang ?? 'fr';
 
   // Validate lang — must have a CLAUDE.md to be considered ready
   const langDir = join(PKG_ROOT, 'src', lang);
@@ -402,6 +425,15 @@ export async function runInit(argv) {
       ? relative(process.cwd(), f)
       : f;
     console.log(`  ${display}`);
+  }
+
+  if (!dryRun) {
+    const cfgPath = join(target, 'atelier-config.json');
+    const existingCfg = existsSync(cfgPath) ? JSON.parse(readFileSync(cfgPath, 'utf8')) : {};
+    if (!existingCfg.lang) {
+      writeFileSync(cfgPath, JSON.stringify({ ...existingCfg, lang }, null, 2) + '\n', 'utf8');
+      console.log(`${GREEN}[CONFIG]${NC} lang=${lang} → ${cfgPath}`);
+    }
   }
 
   if (!dryRun) {

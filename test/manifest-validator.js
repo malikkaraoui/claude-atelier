@@ -18,7 +18,7 @@ const manifestPath = resolve(root, '.claude/hooks-manifest.json');
 const hooksDir = resolve(root, 'hooks');
 
 const REQUIRED_FIELDS = ['name', 'file', 'type', 'purpose', 'exitCodes'];
-const REQUIRED_WITH_SHA = ['helper', 'SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'PreToolUse + PostToolUse'];
+const REQUIRED_WITH_SHA = ['helper', 'SessionStart', 'Stop', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'PreToolUse + PostToolUse'];
 
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 const errors = [];
