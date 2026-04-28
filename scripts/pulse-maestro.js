@@ -56,7 +56,7 @@ let lastPhase = '';
 if (existsSync(CACHE_FILE)) {
   lastPhase = readFileSync(CACHE_FILE, 'utf8').trim();
 }
-if (phase && phase !== lastPhase) {
+if (phase !== lastPhase) {
   phaseChanged = true;
   try { writeFileSync(CACHE_FILE, phase, 'utf8'); } catch (_) {}
 }
@@ -64,6 +64,8 @@ if (phase && phase !== lastPhase) {
 if (phaseChanged && lastPhase) {
   process.stderr.write(`[MAESTRO] ⚡ Phase changée : "${lastPhase}" → "${phase}"\n`);
   process.stderr.write(`[MAESTRO] 💡 Nouvelle phase détectée → /compact recommandé + nouvelle session\n`);
+} else if (phase !== lastPhase && lastPhase === '') {
+  try { writeFileSync(CACHE_FILE, phase, 'utf8'); } catch (_) {}
 }
 
 // ── Mise à jour de tous les pouls.md ──
@@ -82,14 +84,18 @@ for (const f of files) {
     const intensity = computeIntensity(role, phase);
     const status = intensityToStatus(intensity);
 
-    writePoulsMd(f, {
+    const nowIso = new Date().toISOString();
+    const updated = {
       ...existing,
       status,
+      lastPulse: nowIso,
       phase: phase || existing.phase,
       intensity: { current: intensity, ceiling: profile.ceiling },
-    }, existing._body);
+    };
 
-    if (!isExpired(existing) && intensity > topIntensity) {
+    writePoulsMd(f, updated, existing._body);
+
+    if (!isExpired(updated) && intensity > topIntensity) {
       topIntensity = intensity;
       topStatus = status;
       active++;

@@ -212,7 +212,8 @@ fi
     PULSE_STATUS_FILE="/tmp/claude-atelier-pulse-status"
     _PULSE_INDICATOR=""
     if [ -f "$PULSE_STATUS_FILE" ]; then
-      _PULSE_INDICATOR=" | $(cat "$PULSE_STATUS_FILE")"
+      _PULSE_CONTENT=$(cat "$PULSE_STATUS_FILE")
+      _PULSE_INDICATOR=" | ${_PULSE_CONTENT}"
     fi
     echo "\`[$(date '+%Y-%m-%d %H:%M:%S') | $MODEL] $_PASTILLE $_MMODE${_S1_OLLAMA} | $_MPROXY${_PULSE_INDICATOR}\`"
 }
