@@ -7,6 +7,7 @@
 import { parsePoulsMdContent, isExpired, ageSeconds } from '../src/pulse/parse.js';
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
 import { serialisePoulsMd } from '../src/pulse/write.js';
+import { statusLabel, pulseIndicator, renderStatusTable } from '../src/pulse/format.js';
 
 let pass = 0;
 let fail = 0;
@@ -187,6 +188,42 @@ test('serialisePoulsMd: agent.name avec ":" ne casse pas le round-trip', () => {
   const content = serialisePoulsMd(data, '');
   const parsed = parsePoulsMdContent(content);
   ok(parsed.agent.name === 'Test: Code Review', `name="${parsed.agent.name}"`);
+});
+
+// ── format.js ────────────────────────────────────────────────────────────────
+console.log('\n[format.js]');
+
+test('statusLabel FR: high → élevé', () => {
+  ok(statusLabel('high', 'fr') === 'élevé', 'élevé');
+});
+
+test('statusLabel EN: high → high', () => {
+  ok(statusLabel('high', 'en') === 'high', 'high');
+});
+
+test('statusLabel FR: idle → repos', () => {
+  ok(statusLabel('idle', 'fr') === 'repos', 'repos');
+});
+
+test('pulseIndicator format correct FR', () => {
+  const ind = pulseIndicator('high', 2, 3, 'fr');
+  ok(ind === '💓élevé·2/3', `attendu 💓élevé·2/3, reçu: ${ind}`);
+});
+
+test('pulseIndicator format correct EN', () => {
+  const ind = pulseIndicator('high', 2, 3, 'en');
+  ok(ind === '💓high·2/3', `attendu 💓high·2/3, reçu: ${ind}`);
+});
+
+test('renderStatusTable contient la séparation et le récapitulatif', () => {
+  const agents = [
+    { agent: { id: 'a/b', role: 'dev' }, status: 'high', lastPulse: new Date().toISOString(), ttl: 300, phase: 'Phase test', intensity: { current: 0.7, ceiling: 0.8 } },
+    { agent: { id: 'c/d', role: 'ops' }, status: 'idle', lastPulse: '2020-01-01T00:00:00Z', ttl: 300, phase: 'Phase test', intensity: { current: 0.1, ceiling: 0.5 } },
+  ];
+  const table = renderStatusTable(agents, 'fr');
+  ok(table.includes('💓'), 'doit contenir 💓');
+  ok(table.includes('agents'), 'doit contenir "agents"');
+  ok(table.includes('EXPIRÉ'), 'doit contenir EXPIRÉ pour le 2e agent');
 });
 
 // ── résumé ────────────────────────────────────────────────────────────────────
