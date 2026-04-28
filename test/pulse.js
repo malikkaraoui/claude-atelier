@@ -182,6 +182,13 @@ test('serialisePoulsMd commence par ---', () => {
   ok(content.startsWith('---\n'), 'doit commencer par ---');
 });
 
+test('serialisePoulsMd: agent.name avec ":" ne casse pas le round-trip', () => {
+  const data = { ...SAMPLE_DATA, agent: { ...SAMPLE_DATA.agent, name: 'Test: Code Review' } };
+  const content = serialisePoulsMd(data, '');
+  const parsed = parsePoulsMdContent(content);
+  ok(parsed.agent.name === 'Test: Code Review', `name="${parsed.agent.name}"`);
+});
+
 // ── résumé ────────────────────────────────────────────────────────────────────
 console.log(`\n  ${pass} passed · ${fail} failed\n`);
 if (fail > 0) process.exit(1);

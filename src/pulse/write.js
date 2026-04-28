@@ -7,12 +7,12 @@ export function serialisePoulsMd(data, body) {
   const yaml = [
     `schema: ${SCHEMA_VERSION}`,
     `agent:`,
-    `  id: ${data.agent.id}`,
-    `  name: ${data.agent.name}`,
-    `  role: ${data.agent.role}`,
-    `  provider: ${data.agent.provider}`,
+    `  id: "${data.agent.id}"`,
+    `  name: "${data.agent.name}"`,
+    `  role: "${data.agent.role}"`,
+    `  provider: "${data.agent.provider}"`,
     ``,
-    `status: ${data.status}`,
+    `status: "${data.status}"`,
     `lastPulse: "${data.lastPulse}"`,
     `ttl: ${data.ttl}`,
     ``,
@@ -21,7 +21,7 @@ export function serialisePoulsMd(data, body) {
     `  current: ${Number(data.intensity.current).toFixed(2)}`,
     `  ceiling: ${Number(data.intensity.ceiling).toFixed(2)}`,
     ``,
-    `lang: ${data.lang}`,
+    `lang: "${data.lang}"`,
   ].join('\n');
 
   return `---\n${yaml}\n---\n\n${body ?? ''}\n`;
