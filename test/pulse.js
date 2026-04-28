@@ -8,6 +8,7 @@ import { parsePoulsMdContent, isExpired, ageSeconds } from '../src/pulse/parse.j
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
 import { serialisePoulsMd } from '../src/pulse/write.js';
 import { statusLabel, pulseIndicator, renderStatusTable, _clearCache } from '../src/pulse/format.js';
+import { computePulseSummary } from '../src/pulse/summary.js';
 
 let pass = 0;
 let fail = 0;
@@ -153,6 +154,24 @@ test('computeIntensity: phase UPPERCASE → même résultat que lowercase', () =
   const low = computeIntensity('dev', 'impl');
   const up  = computeIntensity('dev', 'IMPL');
   ok(low === up, `lowercase(${low}) === uppercase(${up})`);
+});
+
+// ── summary.js ───────────────────────────────────────────────────────────────
+console.log('\n[summary.js]');
+
+test('computePulseSummary compte tous les agents actifs, pas seulement le plus intense', () => {
+  const fresh = new Date().toISOString();
+  const agents = [
+    { status: 'high', lastPulse: fresh, ttl: 300, intensity: { current: 0.7, ceiling: 0.8 } },
+    { status: 'medium', lastPulse: fresh, ttl: 300, intensity: { current: 0.5, ceiling: 0.8 } },
+    { status: 'idle', lastPulse: fresh, ttl: 300, intensity: { current: 0.1, ceiling: 0.8 } },
+    { status: 'high', lastPulse: '2020-01-01T00:00:00Z', ttl: 300, intensity: { current: 0.9, ceiling: 0.9 } },
+  ];
+
+  const summary = computePulseSummary(agents);
+  ok(summary.active === 3, `active=${summary.active} attendu 3`);
+  ok(summary.topStatus === 'high', `topStatus=${summary.topStatus} attendu high`);
+  ok(summary.topIntensity === 0.7, `topIntensity=${summary.topIntensity} attendu 0.7`);
 });
 
 // ── write.js ─────────────────────────────────────────────────────────────────
