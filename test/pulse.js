@@ -6,6 +6,7 @@
 
 import { parsePoulsMdContent, isExpired, ageSeconds } from '../src/pulse/parse.js';
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
+import { serialisePoulsMd } from '../src/pulse/write.js';
 
 let pass = 0;
 let fail = 0;
@@ -151,6 +152,34 @@ test('computeIntensity: phase UPPERCASE → même résultat que lowercase', () =
   const low = computeIntensity('dev', 'impl');
   const up  = computeIntensity('dev', 'IMPL');
   ok(low === up, `lowercase(${low}) === uppercase(${up})`);
+});
+
+// ── write.js ─────────────────────────────────────────────────────────────────
+console.log('\n[write.js]');
+
+const SAMPLE_DATA = {
+  agent: { id: 'claude-code/test', name: 'Test', role: 'dev', provider: 'claude' },
+  status: 'high',
+  lastPulse: '2026-04-28T12:00:00Z',
+  ttl: 300,
+  phase: 'Phase test',
+  intensity: { current: 0.70, ceiling: 0.80 },
+  lang: 'fr',
+};
+
+test('serialisePoulsMd produit un frontmatter YAML parsable', () => {
+  const content = serialisePoulsMd(SAMPLE_DATA, '## Corps\nTest.');
+  const parsed = parsePoulsMdContent(content);
+  ok(parsed.agent.id === 'claude-code/test', 'agent.id round-trip');
+  ok(parsed.status === 'high', 'status round-trip');
+  ok(parsed.ttl === 300, 'ttl round-trip');
+  ok(parsed.intensity.current === 0.70, 'intensity.current round-trip');
+  ok(parsed._body.includes('## Corps'), '_body round-trip');
+});
+
+test('serialisePoulsMd commence par ---', () => {
+  const content = serialisePoulsMd(SAMPLE_DATA, '');
+  ok(content.startsWith('---\n'), 'doit commencer par ---');
 });
 
 // ── résumé ────────────────────────────────────────────────────────────────────
