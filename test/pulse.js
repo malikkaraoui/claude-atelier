@@ -4,9 +4,12 @@
  * Usage: node test/pulse.js  (ou: npm run test:pulse)
  */
 
-import { parsePoulsMdContent, isExpired, ageSeconds } from '../src/pulse/parse.js';
+import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { parsePoulsMd, parsePoulsMdContent, isExpired, ageSeconds } from '../src/pulse/parse.js';
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
-import { serialisePoulsMd } from '../src/pulse/write.js';
+import { serialisePoulsMd, writePoulsMd } from '../src/pulse/write.js';
 import { statusLabel, pulseIndicator, renderStatusTable, _clearCache } from '../src/pulse/format.js';
 import { sanitizeHostname, buildAgentId, buildKnownAgentIds } from '../src/pulse/identity.js';
 import { computePulseSummary } from '../src/pulse/summary.js';
@@ -230,6 +233,26 @@ test('serialisePoulsMd: agent.name avec ":" ne casse pas le round-trip', () => {
   const content = serialisePoulsMd(data, '');
   const parsed = parsePoulsMdContent(content);
   ok(parsed.agent.name === 'Test: Code Review', `name="${parsed.agent.name}"`);
+});
+
+test('writePoulsMd écrit sur disque sans laisser de fichier temporaire', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'claude-atelier-pulse-'));
+  const filePath = join(dir, 'agents', 'pouls.md');
+
+  try {
+    writePoulsMd(filePath, SAMPLE_DATA, '## Corps\nInitial.');
+    writePoulsMd(filePath, { ...SAMPLE_DATA, status: 'low' }, '## Corps\nMis à jour.');
+
+    ok(existsSync(filePath), 'pouls.md doit exister');
+
+    const parsed = parsePoulsMd(filePath);
+    ok(parsed.status === 'low', `status=${parsed.status} attendu low`);
+
+    const files = readdirSync(join(dir, 'agents'));
+    ok(files.length === 1 && files[0] === 'pouls.md', `fichiers inattendus: ${files.join(', ')}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 // ── format.js ────────────────────────────────────────────────────────────────
