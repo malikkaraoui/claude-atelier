@@ -17,6 +17,7 @@ import { parsePoulsMd, isExpired } from '../src/pulse/parse.js';
 import { writePoulsMd } from '../src/pulse/write.js';
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
 import { renderStatusTable } from '../src/pulse/format.js';
+import { buildAgentId, buildAgentName, buildKnownAgentIds } from '../src/pulse/identity.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -24,10 +25,6 @@ const ROOT = resolve(__dirname, '..');
 function _flag(args, name) {
   const idx = args.indexOf(name);
   return idx !== -1 && idx + 1 < args.length ? args[idx + 1] : null;
-}
-
-function _sanitizeHostname(h) {
-  return (h ?? 'unknown').toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 63);
 }
 
 function parseArgs(argv) {
@@ -75,6 +72,23 @@ function findPoulsMdFiles(dir, depth = 0) {
   return results;
 }
 
+function findCurrentAgentPouls(root, rawHostname) {
+  const knownIds = new Set(buildKnownAgentIds(rawHostname));
+
+  for (const filePath of findPoulsMdFiles(root)) {
+    try {
+      const parsed = parsePoulsMd(filePath);
+      if (parsed && knownIds.has(parsed.agent?.id)) {
+        return { filePath, parsed };
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 export async function runPulse(argv) {
   const { sub, flags } = parseArgs(argv);
   const lang = flags.lang ?? readLang(ROOT);
@@ -102,22 +116,29 @@ export async function runPulse(argv) {
   }
 
   if (sub === 'init') {
-    const role = flags.role ?? 'dev';
-    const agentId = `claude-code/${_sanitizeHostname(hostname())}`;
-    const outPath = join(ROOT, '.claude', 'agents', agentId.replace('/', '-'), 'pouls.md');
+    const rawHostname = hostname();
+    const existingAgent = findCurrentAgentPouls(ROOT, rawHostname);
+    const agentId = existingAgent?.parsed.agent?.id ?? buildAgentId(rawHostname);
+    const role = flags.role ?? existingAgent?.parsed.agent?.role ?? 'dev';
+    const outPath = existingAgent?.filePath ?? join(ROOT, '.claude', 'agents', agentId.replace('/', '-'), 'pouls.md');
     const phase = readPhase(ROOT);
     const profile = getProfile(role);
     const intensity = computeIntensity(role, phase);
 
     writePoulsMd(outPath, {
-      agent: { id: agentId, name: `Claude Code — ${_sanitizeHostname(hostname())}`, role, provider: 'claude' },
+      agent: {
+        id: agentId,
+        name: existingAgent?.parsed.agent?.name ?? buildAgentName(rawHostname),
+        role,
+        provider: existingAgent?.parsed.agent?.provider ?? 'claude',
+      },
       status: intensityToStatus(intensity),
       lastPulse: new Date().toISOString(),
       ttl: profile.ceiling <= 0.3 ? 600 : profile.ceiling <= 0.6 ? 900 : 300,
       phase: phase || '—',
       intensity: { current: intensity, ceiling: profile.ceiling },
       lang,
-    }, `## État courant\n\nInitialisé via \`claude-atelier pulse init\`.\n`);
+    }, existingAgent?.parsed._body ?? '## État courant\n\nInitialisé via `claude-atelier pulse init`.\n');
 
     process.stdout.write(`✓ pouls.md créé : ${outPath}\n`);
     process.stdout.write(`  Rôle: ${role} · Intensité: ${intensity.toFixed(2)} · Statut: ${intensityToStatus(intensity)}\n`);
@@ -126,12 +147,14 @@ export async function runPulse(argv) {
 
   if (sub === 'update') {
     const files = findPoulsMdFiles(ROOT);
-    const agentId = `claude-code/${_sanitizeHostname(hostname())}`;
+    const rawHostname = hostname();
+    const knownIds = new Set(buildKnownAgentIds(rawHostname));
+    const agentId = buildAgentId(rawHostname);
     let updated = 0;
 
     for (const f of files) {
       const existing = parsePoulsMd(f);
-      if (!existing || existing.agent?.id !== agentId) continue;
+      if (!existing || !knownIds.has(existing.agent?.id)) continue;
 
       const role = existing.agent.role ?? 'dev';
       const phase = flags.phase ?? readPhase(ROOT) ?? existing.phase;

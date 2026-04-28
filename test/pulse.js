@@ -8,6 +8,7 @@ import { parsePoulsMdContent, isExpired, ageSeconds } from '../src/pulse/parse.j
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
 import { serialisePoulsMd } from '../src/pulse/write.js';
 import { statusLabel, pulseIndicator, renderStatusTable, _clearCache } from '../src/pulse/format.js';
+import { sanitizeHostname, buildAgentId, buildKnownAgentIds } from '../src/pulse/identity.js';
 import { computePulseSummary } from '../src/pulse/summary.js';
 
 let pass = 0;
@@ -172,6 +173,28 @@ test('computePulseSummary compte tous les agents actifs, pas seulement le plus i
   ok(summary.active === 3, `active=${summary.active} attendu 3`);
   ok(summary.topStatus === 'high', `topStatus=${summary.topStatus} attendu high`);
   ok(summary.topIntensity === 0.7, `topIntensity=${summary.topIntensity} attendu 0.7`);
+});
+
+// ── identity.js ──────────────────────────────────────────────────────────────
+console.log('\n[identity.js]');
+
+test('sanitizeHostname normalise le hostname pour le slug', () => {
+  ok(sanitizeHostname('Malik\'s.MacBook Pro.local') === 'malik-s-macbook-pro-local', 'hostname sanitisé');
+});
+
+test('buildAgentId différencie deux hostnames qui convergent vers le même slug', () => {
+  const left = buildAgentId('Dev.Box');
+  const right = buildAgentId('Dev-Box');
+
+  ok(left !== right, `${left} ne doit pas égaler ${right}`);
+});
+
+test('buildKnownAgentIds garde la compatibilité avec les anciens identifiants agent', () => {
+  const ids = buildKnownAgentIds('Maliks-MacBook-Pro.local');
+
+  ok(ids.includes(buildAgentId('Maliks-MacBook-Pro.local')), 'doit inclure le nouvel id');
+  ok(ids.includes('claude-code/maliks-macbook-pro-local'), 'doit inclure le legacy sanitisé');
+  ok(ids.includes('claude-code/Maliks-MacBook-Pro.local'), 'doit inclure le legacy brut');
 });
 
 // ── write.js ─────────────────────────────────────────────────────────────────
