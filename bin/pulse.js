@@ -81,7 +81,7 @@ export async function runPulse(argv) {
 
   if (sub === 'status' || sub === 'list') {
     const files = findPoulsMdFiles(ROOT);
-    const agents = files
+    let agents = files
       .map(f => { try { return parsePoulsMd(f); } catch (e) { process.stderr.write(`⚠️  ${f}: ${e.message}\n`); return null; } })
       .filter(Boolean);
 
