@@ -8,7 +8,7 @@
 import { readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parsePoulsMd, isExpired } from '../src/pulse/parse.js';
+import { parsePoulsMd } from '../src/pulse/parse.js';
 import { writePoulsMd } from '../src/pulse/write.js';
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
 import { statusLabel } from '../src/pulse/format.js';
@@ -100,7 +100,7 @@ for (const f of files) {
 }
 
 // ── Écriture du statut pour model-metrics.sh ──
-const total = files.length;
+const total = updatedAgents.length;
 const { active, topStatus } = computePulseSummary(updatedAgents);
 const label = statusLabel(topStatus, lang);
 const indicator = `💓${label}·${active}/${total}`;

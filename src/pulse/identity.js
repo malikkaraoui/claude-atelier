@@ -13,6 +13,12 @@ export function sanitizeHostname(rawHostname) {
   return sanitized || 'unknown';
 }
 
+function legacySanitizeHostname(rawHostname) {
+  return String(rawHostname ?? 'unknown').trim().toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .slice(0, MAX_AGENT_SLUG_LENGTH);
+}
+
 export function buildAgentSlug(rawHostname) {
   const raw = String(rawHostname ?? 'unknown');
   const base = sanitizeHostname(raw);
@@ -33,10 +39,12 @@ export function buildAgentName(rawHostname) {
 
 export function buildKnownAgentIds(rawHostname) {
   const raw = String(rawHostname ?? 'unknown');
+  const legacy = legacySanitizeHostname(raw);
 
   return Array.from(new Set([
     buildAgentId(raw),
     `claude-code/${sanitizeHostname(raw)}`,
+    `claude-code/${legacy}`,
     `claude-code/${raw}`,
   ]));
 }

@@ -200,6 +200,16 @@ test('buildKnownAgentIds garde la compatibilité avec les anciens identifiants a
   ok(ids.includes('claude-code/Maliks-MacBook-Pro.local'), 'doit inclure le legacy brut');
 });
 
+test('buildKnownAgentIds inclut la variante legacy tronquée à 63 chars pour les hostnames longs', () => {
+  const hostname = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-devbox.local';
+  const ids = buildKnownAgentIds(hostname);
+  const legacyTruncated = hostname.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 63);
+
+  ok(ids.includes(buildAgentId(hostname)), 'doit inclure le nouvel id pour hostname long');
+  ok(ids.includes(`claude-code/${legacyTruncated}`), 'doit inclure le legacy sanitisé tronqué à 63 caractères');
+  ok(ids.includes(`claude-code/${hostname}`), 'doit inclure le legacy brut complet');
+});
+
 // ── write.js ─────────────────────────────────────────────────────────────────
 console.log('\n[write.js]');
 

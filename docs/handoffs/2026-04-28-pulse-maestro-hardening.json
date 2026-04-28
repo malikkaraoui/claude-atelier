@@ -28,9 +28,11 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
-    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-04-28-pulse-maestro-hardening.json.\""
+    "model": "github-copilot-pr-reviewer",
+    "content": "Oui, il reste un angle mort concret autour de la migration legacy. `buildKnownAgentIds` ajoute `claude-code/${sanitizeHostname(raw)}` comme variante legacy, mais l'ancienne implémentation n'appliquait pas `replace(/-+/g, '-')` ni `replace(/^-|-$/, '')` avant le `slice(0, 63)`. Pour un hostname avec tirets consécutifs ou tirets en bord (ex : `--devbox.local`), l'ancien ID persisté dans `pouls.md` serait `claude-code/--devbox-local` tronqué à 63 — alors que `sanitizeHostname` produit `devbox-local`. Ces deux variantes sont différentes : la migration ne reconnaît pas l'ancien agent, ce qui crée un doublon silencieux (un agent orphelin legacy + un agent canonique neuf) et fausse le comptage `active/total` pendant la période mixte. Le second risque est dans `computePulseSummary` : `topIntensity` était initialisé à `0`, donc si tous les agents actifs ont une intensité `0.00`, `topStatus` restait `idle` au lieu du statut réel de ces agents. Ces deux bugs sont désormais couverts par les correctifs de ce PR."
   },
-  "integration": null
+  "integration": {
+    "verdict": "Deux actions implémentées suite à la review Copilot : (1) `legacySanitizeHostname()` ajoutée dans `src/pulse/identity.js` pour reproduire l'ancienne logique (sans collapse ni trim des bords) avec `slice(0, 63)`, et incluse dans `buildKnownAgentIds` pour couvrir la migration des pouls.md existants générés avant le suffixe hashé. (2) `topIntensity` initialisé à `-Infinity` dans `computePulseSummary` pour que les agents avec intensité `0` soient correctement reflétés dans `topStatus`. Test long-hostname ajouté pour valider la couverture de la variante legacy tronquée.",
+    "retained_implement": ["legacySanitizeHostname dans identity.js", "topIntensity = -Infinity dans summary.js", "test long-hostname legacy truncation dans pulse.js", "total = updatedAgents.length dans pulse-maestro.js", "writePoulsMd try/finally + Windows rename fallback dans write.js"]
+  }
 }

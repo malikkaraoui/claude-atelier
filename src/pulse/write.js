@@ -33,10 +33,14 @@ export function writePoulsMd(filePath, data, body) {
   const tempPath = join(targetDir, `.pouls.${process.pid}.${randomUUID()}.tmp`);
 
   mkdirSync(targetDir, { recursive: true });
-  writeFileSync(tempPath, serialisePoulsMd(data, body), 'utf8');
-
   try {
-    renameSync(tempPath, filePath);
+    writeFileSync(tempPath, serialisePoulsMd(data, body), 'utf8');
+    try {
+      renameSync(tempPath, filePath);
+    } catch {
+      rmSync(filePath, { force: true });
+      renameSync(tempPath, filePath);
+    }
   } catch (error) {
     try { rmSync(tempPath, { force: true }); } catch {}
     throw error;

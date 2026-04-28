@@ -2,7 +2,7 @@ import { isExpired } from './parse.js';
 
 export function computePulseSummary(agents = []) {
   let active = 0;
-  let topIntensity = 0;
+  let topIntensity = -Infinity;
   let topStatus = 'idle';
 
   for (const agent of agents) {
@@ -17,9 +17,11 @@ export function computePulseSummary(agents = []) {
     }
   }
 
+  if (active === 0) topStatus = 'idle';
+
   return {
     active,
-    topIntensity,
+    topIntensity: active === 0 ? 0 : topIntensity,
     topStatus,
   };
 }
