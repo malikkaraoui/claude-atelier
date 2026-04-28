@@ -142,6 +142,17 @@ test('intensityToStatus: 0.5 → medium', () => ok(intensityToStatus(0.5) === 'm
 test('intensityToStatus: 0.7 → high', () => ok(intensityToStatus(0.7) === 'high', 'high'));
 test('intensityToStatus: 0.9 → critical', () => ok(intensityToStatus(0.9) === 'critical', 'critical'));
 
+test('intensityToStatus: 0.2 (exact) → idle', () => ok(intensityToStatus(0.2) === 'idle', 'idle at 0.2'));
+test('intensityToStatus: 0.4 (exact) → low', () => ok(intensityToStatus(0.4) === 'low', 'low at 0.4'));
+test('intensityToStatus: 0.6 (exact) → medium', () => ok(intensityToStatus(0.6) === 'medium', 'medium at 0.6'));
+test('intensityToStatus: 0.8 (exact) → high', () => ok(intensityToStatus(0.8) === 'high', 'high at 0.8'));
+
+test('computeIntensity: phase UPPERCASE → même résultat que lowercase', () => {
+  const low = computeIntensity('dev', 'impl');
+  const up  = computeIntensity('dev', 'IMPL');
+  ok(low === up, `lowercase(${low}) === uppercase(${up})`);
+});
+
 // ── résumé ────────────────────────────────────────────────────────────────────
 console.log(`\n  ${pass} passed · ${fail} failed\n`);
 if (fail > 0) process.exit(1);
