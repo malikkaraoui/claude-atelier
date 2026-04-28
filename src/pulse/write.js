@@ -37,7 +37,8 @@ export function writePoulsMd(filePath, data, body) {
     writeFileSync(tempPath, serialisePoulsMd(data, body), 'utf8');
     try {
       renameSync(tempPath, filePath);
-    } catch {
+    } catch (renameErr) {
+      if (renameErr.code !== 'EEXIST') throw renameErr;
       rmSync(filePath, { force: true });
       renameSync(tempPath, filePath);
     }

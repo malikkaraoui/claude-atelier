@@ -13,7 +13,7 @@ export function sanitizeHostname(rawHostname) {
   return sanitized || 'unknown';
 }
 
-function legacySanitizeHostname(rawHostname) {
+export function legacySanitizeHostname(rawHostname) {
   return String(rawHostname ?? 'unknown').trim().toLowerCase()
     .replace(/[^a-z0-9-]/g, '-')
     .slice(0, MAX_AGENT_SLUG_LENGTH);

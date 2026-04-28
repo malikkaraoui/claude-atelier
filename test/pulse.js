@@ -11,7 +11,7 @@ import { parsePoulsMd, parsePoulsMdContent, isExpired, ageSeconds } from '../src
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
 import { serialisePoulsMd, writePoulsMd } from '../src/pulse/write.js';
 import { statusLabel, pulseIndicator, renderStatusTable, _clearCache } from '../src/pulse/format.js';
-import { sanitizeHostname, buildAgentId, buildKnownAgentIds } from '../src/pulse/identity.js';
+import { sanitizeHostname, buildAgentId, buildKnownAgentIds, legacySanitizeHostname } from '../src/pulse/identity.js';
 import { computePulseSummary } from '../src/pulse/summary.js';
 
 let pass = 0;
@@ -203,7 +203,7 @@ test('buildKnownAgentIds garde la compatibilité avec les anciens identifiants a
 test('buildKnownAgentIds inclut la variante legacy tronquée à 63 chars pour les hostnames longs', () => {
   const hostname = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-devbox.local';
   const ids = buildKnownAgentIds(hostname);
-  const legacyTruncated = hostname.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 63);
+  const legacyTruncated = legacySanitizeHostname(hostname);
 
   ok(ids.includes(buildAgentId(hostname)), 'doit inclure le nouvel id pour hostname long');
   ok(ids.includes(`claude-code/${legacyTruncated}`), 'doit inclure le legacy sanitisé tronqué à 63 caractères');
