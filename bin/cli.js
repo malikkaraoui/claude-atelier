@@ -24,7 +24,7 @@ const pkg = JSON.parse(
 // ⚠️  BLOC GÉNÉRÉ — ne pas éditer manuellement.
 // Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
-claude-atelier v0.22.0-preview.0
+claude-atelier v0.22.0
 Framework complet Claude Code: 30 agents, 18 skills, MCP GitHub intégré, loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.
 
 Usage:
@@ -37,6 +37,7 @@ Commands:
   lint              Valide les références markdown et la longueur du core CLAUDE.md
   features          Tableau de contrôle des features (on/off par feature)
   review-local      Review automatique d'un handoff via Ollama local (anti-bypass auto-review Claude)
+  pulse             Gestion du pouls multi-agents (statut, init, mise à jour)
   apply             Injecte un profil de config dans un worktree cible (API Paperclip)
 
 Options:
@@ -51,6 +52,7 @@ Highlights:
   • Routing automatique Haiku/Sonnet/Opus selon la tâche
   • Skills slash commands (/handoff, /angle-mort, /token-routing…)
   • Hooks : horodatage, métriques, garde-fous commits
+  • Système de présence multi-agents (pouls.md) avec Maestro §0 watcher
 
 Repo: https://github.com/malikkaraoui/claude-atelier#readme
 `;
