@@ -8,10 +8,11 @@
 import { readdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parsePoulsMd, isExpired } from '../src/pulse/parse.js';
+import { parsePoulsMd } from '../src/pulse/parse.js';
 import { writePoulsMd } from '../src/pulse/write.js';
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
 import { statusLabel } from '../src/pulse/format.js';
+import { computePulseSummary } from '../src/pulse/summary.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CACHE_FILE = '/tmp/claude-atelier-last-phase';
@@ -70,9 +71,7 @@ if (phaseChanged && lastPhase) {
 
 // ── Mise à jour de tous les pouls.md ──
 const files = findPoulsMdFiles(ROOT);
-let active = 0;
-let topIntensity = 0;
-let topStatus = 'idle';
+const updatedAgents = [];
 
 for (const f of files) {
   try {
@@ -94,19 +93,15 @@ for (const f of files) {
     };
 
     writePoulsMd(f, updated, existing._body);
-
-    if (!isExpired(updated) && intensity > topIntensity) {
-      topIntensity = intensity;
-      topStatus = status;
-      active++;
-    }
+    updatedAgents.push(updated);
   } catch (e) {
     process.stderr.write(`[MAESTRO] erreur ${f}: ${e.message}\n`);
   }
 }
 
 // ── Écriture du statut pour model-metrics.sh ──
-const total = files.length;
+const total = updatedAgents.length;
+const { active, topStatus } = computePulseSummary(updatedAgents);
 const label = statusLabel(topStatus, lang);
 const indicator = `💓${label}·${active}/${total}`;
 

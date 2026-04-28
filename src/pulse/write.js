@@ -1,6 +1,7 @@
 // src/pulse/write.js
-import { writeFileSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { writeFileSync, mkdirSync, renameSync, rmSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { SCHEMA_VERSION } from './parse.js';
 
 export function serialisePoulsMd(data, body) {
@@ -28,6 +29,21 @@ export function serialisePoulsMd(data, body) {
 }
 
 export function writePoulsMd(filePath, data, body) {
-  mkdirSync(dirname(filePath), { recursive: true });
-  writeFileSync(filePath, serialisePoulsMd(data, body), 'utf8');
+  const targetDir = dirname(filePath);
+  const tempPath = join(targetDir, `.pouls.${process.pid}.${randomUUID()}.tmp`);
+
+  mkdirSync(targetDir, { recursive: true });
+  try {
+    writeFileSync(tempPath, serialisePoulsMd(data, body), 'utf8');
+    try {
+      renameSync(tempPath, filePath);
+    } catch (renameErr) {
+      if (renameErr.code !== 'EEXIST') throw renameErr;
+      rmSync(filePath, { force: true });
+      renameSync(tempPath, filePath);
+    }
+  } catch (error) {
+    try { rmSync(tempPath, { force: true }); } catch {}
+    throw error;
+  }
 }

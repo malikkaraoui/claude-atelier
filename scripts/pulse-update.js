@@ -11,9 +11,12 @@ import { hostname } from 'node:os';
 import { parsePoulsMd } from '../src/pulse/parse.js';
 import { writePoulsMd } from '../src/pulse/write.js';
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
+import { buildAgentId, buildKnownAgentIds } from '../src/pulse/identity.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const AGENT_ID = `claude-code/${hostname()}`;
+const RAW_HOSTNAME = hostname();
+const AGENT_ID = buildAgentId(RAW_HOSTNAME);
+const AGENT_IDS = new Set(buildKnownAgentIds(RAW_HOSTNAME));
 
 function findPoulsMdFiles(dir, depth = 0) {
   if (depth > 4) return [];
@@ -46,7 +49,7 @@ let updated = 0;
 for (const f of files) {
   try {
     const existing = parsePoulsMd(f);
-    if (!existing || existing.agent?.id !== AGENT_ID) continue;
+    if (!existing || !AGENT_IDS.has(existing.agent?.id)) continue;
 
     const role = existing.agent.role ?? 'dev';
     const profile = getProfile(role);
