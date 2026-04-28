@@ -4,7 +4,7 @@
     "date": "2026-04-28",
     "type": "review",
     "priority": "haute",
-    "reviewedRange": "f444ff0c7351a09b5a0f513116732b321421228e..e8a9ecaa03319baef68f0d611f52ce75a8d980ee"
+    "reviewedRange": "f444ff0c7351a09b5a0f513116732b321421228e..562ad6b4698a0000e192f22a28a9df26440505c5"
   },
   "from": {
     "model": "claude-sonnet-4-6",
