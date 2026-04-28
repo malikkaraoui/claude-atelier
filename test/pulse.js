@@ -5,6 +5,7 @@
  */
 
 import { parsePoulsMdContent, isExpired, ageSeconds } from '../src/pulse/parse.js';
+import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
 
 let pass = 0;
 let fail = 0;
@@ -96,6 +97,50 @@ test('ageSeconds: renvoie un nombre positif', () => {
   const age = ageSeconds(p);
   ok(age > 0 && isFinite(age), `age=${age} doit être positif fini`);
 });
+
+// ── intensity.js ─────────────────────────────────────────────────────────────
+console.log('\n[intensity.js]');
+
+test('getProfile dev: ceiling 0.8', () => {
+  const p = getProfile('dev');
+  ok(p.ceiling === 0.8, `ceiling=${p.ceiling}`);
+  ok(p.base === 0.3, `base=${p.base}`);
+});
+
+test('getProfile inconnu → profile par défaut', () => {
+  const p = getProfile('unknown_role');
+  ok(p.ceiling > 0, 'ceiling doit être positif');
+});
+
+test('computeIntensity dev + phase impl → boost', () => {
+  const base = computeIntensity('dev', '');
+  const boosted = computeIntensity('dev', 'Phase 2 — implémentation proxy');
+  ok(boosted > base, `boosted(${boosted}) > base(${base})`);
+});
+
+test('computeIntensity dev + phase freeze → réduit', () => {
+  const base = computeIntensity('dev', '');
+  const frozen = computeIntensity('dev', 'freeze release');
+  ok(frozen <= base, `frozen(${frozen}) <= base(${base})`);
+});
+
+test('computeIntensity ne dépasse jamais le ceiling', () => {
+  const profile = getProfile('secretary');
+  const val = computeIntensity('secretary', 'impl code fix feat deploy release');
+  ok(val <= profile.ceiling, `val(${val}) <= ceiling(${profile.ceiling})`);
+});
+
+test('computeIntensity toujours >= 0', () => {
+  const val = computeIntensity('ops', 'freeze pause repos');
+  ok(val >= 0, `val(${val}) doit être >= 0`);
+});
+
+test('intensityToStatus: 0 → off', () => ok(intensityToStatus(0) === 'off', 'off'));
+test('intensityToStatus: 0.15 → idle', () => ok(intensityToStatus(0.15) === 'idle', 'idle'));
+test('intensityToStatus: 0.3 → low', () => ok(intensityToStatus(0.3) === 'low', 'low'));
+test('intensityToStatus: 0.5 → medium', () => ok(intensityToStatus(0.5) === 'medium', 'medium'));
+test('intensityToStatus: 0.7 → high', () => ok(intensityToStatus(0.7) === 'high', 'high'));
+test('intensityToStatus: 0.9 → critical', () => ok(intensityToStatus(0.9) === 'critical', 'critical'));
 
 // ── résumé ────────────────────────────────────────────────────────────────────
 console.log(`\n  ${pass} passed · ${fail} failed\n`);
