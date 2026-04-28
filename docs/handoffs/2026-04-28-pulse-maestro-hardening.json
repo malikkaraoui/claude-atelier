@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "subject": "Pulse & Maestro v0.23.0 — durcissement runtime (compteur, identité agent, écriture atomique)",
+    "date": "2026-04-28",
+    "type": "review",
+    "priority": "haute",
+    "reviewedRange": "f444ff0c7351a09b5a0f513116732b321421228e..f0ef26663a989929ab77e6457f1cea6517351624"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "Range complet depuis le dernier handoff intégré. Commits feat/fix couverts : (1) 637186b fix: appliquer review Copilot #27 — tests skills/ + concurrence + handoff intégré ; (2) 45dc4ba feat(pulse): templates YAML de rôles ; (3) bc87f5c feat + d7b3d85 fix: src/pulse/parse.js ; (4) 842d67b feat: src/pulse/intensity.js ; (5) 81be79e feat + 942e8e4 fix: src/pulse/write.js ; (6) e01a9e3 feat: src/pulse/format.js + i18n FR/EN ; (7) e671bc8 feat: feature flags pulse + pulse_header ; (8) c31b50e feat + bcc1500 fix: hooks/stop-pulse.sh + scripts/pulse-update.js ; (9) e9f4fb2 feat + 814798e fix: hooks/start-maestro.sh + scripts/pulse-maestro.js + injection [PULSE] ; (10) 80307bc feat + b0c71d1 fix + 8240290 fix: bin/pulse.js CLI ; (11) 725fb22 feat(cli): routage commande pulse ; (12) a3e30bc feat(pulse): prompt langue interactif ; (13) 25672b5 feat(pulse): test:pulse + HELP ; (14) e55922f fix: hooks-manifest Pulse ; (15) e8a9eca feat: §0 v0.23.0 + README Pulse ; (16) 27cec11 feat(pulse): merge Pulse & Maestro v0.23.0 ; (17) 244920d fix(pulse): corriger le comptage des agents actifs ; (18) 97e9df9 fix(pulse): unifier l identite des agents ; (19) f0ef266 fix(pulse): rendre l ecriture pouls atomique. Bilan : la feature Pulse est livrée, puis trois corrections ciblées ont été ajoutées pour traiter les angles morts constatés en review locale.",
+    "question": "Après ces trois correctifs ciblés — compteur active exact dans scripts/pulse-maestro.js, identité agent partagée avec compat legacy + suffixe hashé dans bin/pulse.js/scripts-pulse-update.js, et writePoulsMd atomique — reste-t-il un bug logique ou de migration qui ferait que Pulse ment encore sur l'état réel ou casse la compatibilité avec des pouls.md existants ? Je cherche un angle mort concret sur la migration legacy, le comptage active/total, ou l'écriture/lecture concurrente, pas une refonte générale.",
+    "filesToRead": [
+      "scripts/pulse-maestro.js",
+      "scripts/pulse-update.js",
+      "bin/pulse.js",
+      "src/pulse/identity.js",
+      "src/pulse/summary.js",
+      "src/pulse/write.js",
+      "src/pulse/parse.js",
+      "test/pulse.js"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-04-28-pulse-maestro-hardening.json.\""
+  },
+  "integration": null
+}
