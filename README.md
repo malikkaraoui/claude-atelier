@@ -45,6 +45,7 @@ npx claude-atelier init
 | **Verrou review avant push/release** | `git push` et `npm version` bloqués tant qu'un handoff §25 externe n'a pas été intégré |
 | **Cockpit §1 — heads-up display** | Chaque réponse s'ouvre sur `` `[2026-04-20 15:12 \| claude-sonnet-4-6] 🟢 M \| 🦙❌ \| 🔌❌` ``. En un coup d'œil : horodatage, modèle actif, pastille fit (`🟢 optimal` / `⬆️ upgrade` / `⬇️ downgrade`), mode (`M`=Anthropic direct / `A`=proxy actif — basé sur healthcheck réel, pas la config), état Ollama (`🦙✅ qwen3.5` si actif, `🦙⚡` si triage dynamique, `🦙❌` si off), état proxy port 4000 (`🔌✅`/`🔌❌`). Un vrai tableau de bord pilote, pas un log. |
 | **PaperClip natif** | `applyProfile()` injecte hooks, skills et settings dans tout worktree agent — intégration profonde avec [PaperClip](https://github.com/paperclipai/paperclip) via `@paperclipai/plugin-atelier` |
+| **Présence multi-agents (Pulse)** | `claude-atelier pulse` — `pouls.md` par agent (YAML frontmatter), Maestro §0 watcher, indicateur `💓` dans l'entête §1 · rôles : secretary/dev/marketing/cyber/ops |
 | **Arsenal tout-en-un** | Hooks, skills, scripts, sécurité, satellites par stack, onboarding : un seul package npm |
 
 Un vrai arsenal de qualité supérieure : coût, contexte, mémoire, review, sécurité et agents — sans bricolage éparpillé.

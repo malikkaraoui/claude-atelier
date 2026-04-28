@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — v0.22.0-preview.0 livrée (applyProfile API + CLI apply) · next: proxy tool_use mapping |
+| Phase | Phase 2 — v0.23.0 livrée (Pulse & Maestro multi-agents) · next: proxy tool_use mapping |
 | Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
@@ -25,7 +25,7 @@ Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + comm
 ## §1 Horodatage + Modèle — EXIGENCE non négociable
 
 Extraire MODEL-ID de `[ROUTING] modèle actif: MODEL-ID` (jamais du system prompt). Source : `live > transcript > cache scoppé session > cache legacy` — si `transcript`, signaler fragilité.
-**Réponse DOIT commencer par** : `` `[YYYY-MM-DD HH:MM:SS | MODEL-ID] PASTILLE MODE` ``. Pastille de `[METRICS]` (`⬆️`/`⬇️`/`🟢`). Mode de `[SWITCH-MODE]` (`A`=auto, `M`=manuel, défaut `M`).
+**Réponse DOIT commencer par** : `` `[YYYY-MM-DD HH:MM:SS | MODEL-ID] PASTILLE MODE` ``. Pastille de `[METRICS]` (`⬆️`/`⬇️`/`🟢`). Mode de `[SWITCH-MODE]` (`A`=auto, `M`=manuel, défaut `M`). Si `[PULSE]` présent → appendre `| 💓<niveau>·<n>/<total>` à l'entête.
 **Mode A** : flèche `⬆️`/`⬇️` → `python3 scripts/switch_model.py <model>` immédiat. **Mode M** : annoncer reco, attendre validation. Toggle : "passe en auto" → `echo A > /tmp/claude-atelier-switch-mode`.
 Horodatage hook = contexte, **pas** ta sortie. Modèle indispo → `[date | modèle inconnu]`.
 
