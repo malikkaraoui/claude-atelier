@@ -31,6 +31,17 @@
       "flags": ["--model <nom>", "--handoff <path>", "--auto-integrate", "--list-models"]
     },
     {
+      "name": "pulse",
+      "description": "Gestion du pouls multi-agents (statut, init, mise à jour)",
+      "flags": [
+        "--role <secretary|dev|marketing|cyber|ops>",
+        "--json",
+        "--expired",
+        "--lang <fr|en>",
+        "--global"
+      ]
+    },
+    {
       "name": "apply",
       "description": "Injecte un profil de config dans un worktree cible (API Paperclip)",
       "flags": ["--profile <full|lean|review-only>", "--cwd <path>", "--merge <repo-wins|atelier-wins>", "--yes", "--dry-run"]
@@ -47,6 +58,7 @@
     "Gates de sécurité : secrets, lint, tests, pre-push",
     "Routing automatique Haiku/Sonnet/Opus selon la tâche",
     "Skills slash commands (/handoff, /angle-mort, /token-routing…)",
-    "Hooks : horodatage, métriques, garde-fous commits"
+    "Hooks : horodatage, métriques, garde-fous commits",
+    "Système de présence multi-agents (pouls.md) avec Maestro §0 watcher"
   ]
 }

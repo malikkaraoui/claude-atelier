@@ -21,9 +21,13 @@
       "label": "Copilot Loop",
       "features": ["auto_merge_after_review"]
     },
+    "orchestration": {
+      "label": "Orchestration",
+      "features": ["pulse", "pulse_header"]
+    },
     "entete": {
       "label": "Format entête §1",
-      "features": ["header_show_date", "header_show_time", "header_show_model", "header_show_pastille", "header_show_mode", "header_show_ollama", "header_show_proxy"]
+      "features": ["header_show_date", "header_show_time", "header_show_model", "header_show_pastille", "header_show_mode", "header_show_ollama", "header_show_proxy", "pulse_header"]
     }
   },
   "features": {
@@ -150,6 +154,16 @@
     "header_show_proxy": {
       "label": "Entête: statut proxy",
       "description": "Afficher 🔌✅/❌ (proxy :4000) dans l'entête §1",
+      "default": true
+    },
+    "pulse": {
+      "label": "Pulse multi-agents",
+      "description": "Système de présence multi-agents (pouls.md) avec Maestro §0 watcher",
+      "default": true
+    },
+    "pulse_header": {
+      "label": "Entête: pastille pouls",
+      "description": "Afficher 💓{niveau}·{n}/{total} dans l'entête §1",
       "default": true
     }
   },
