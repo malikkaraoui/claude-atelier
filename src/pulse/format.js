@@ -8,6 +8,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const _cache = {};
 
+export function _clearCache() {
+  for (const k of Object.keys(_cache)) delete _cache[k];
+}
+
 function _loadStrings(lang) {
   if (_cache[lang]) return _cache[lang];
   const p = join(__dirname, '..', lang, 'pulse', 'strings.json');

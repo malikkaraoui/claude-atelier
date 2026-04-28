@@ -7,7 +7,7 @@
 import { parsePoulsMdContent, isExpired, ageSeconds } from '../src/pulse/parse.js';
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
 import { serialisePoulsMd } from '../src/pulse/write.js';
-import { statusLabel, pulseIndicator, renderStatusTable } from '../src/pulse/format.js';
+import { statusLabel, pulseIndicator, renderStatusTable, _clearCache } from '../src/pulse/format.js';
 
 let pass = 0;
 let fail = 0;
@@ -192,6 +192,7 @@ test('serialisePoulsMd: agent.name avec ":" ne casse pas le round-trip', () => {
 
 // ── format.js ────────────────────────────────────────────────────────────────
 console.log('\n[format.js]');
+_clearCache();
 
 test('statusLabel FR: high → élevé', () => {
   ok(statusLabel('high', 'fr') === 'élevé', 'élevé');
