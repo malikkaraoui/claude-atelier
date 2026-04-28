@@ -99,7 +99,7 @@ async function main(argv) {
   }
 
   const command = args[0];
-  const knownCommands = ['init', 'update', 'doctor', 'lint', 'features', 'review-local', 'apply'];
+  const knownCommands = ['init', 'update', 'doctor', 'lint', 'features', 'review-local', 'apply', 'pulse'];
 
   if (!knownCommands.includes(command)) {
     process.stderr.write(`error: unknown command "${command}"\n`);
@@ -138,6 +138,11 @@ async function main(argv) {
   if (command === 'apply') {
     const { runApply } = await import('./apply.js');
     return runApply(process.argv);
+  }
+
+  if (command === 'pulse') {
+    const { runPulse } = await import('./pulse.js');
+    return runPulse(process.argv);
   }
 
   process.stderr.write(
