@@ -230,6 +230,45 @@
       "sha256": "fdc812990fe124ed"
     },
     {
+      "name": "start-maestro",
+      "file": "hooks/start-maestro.sh",
+      "type": "SessionStart",
+      "trigger": "session.start",
+      "purpose": "Maestro §0 watcher — met à jour pouls.md de tous les agents, détecte les changements de phase, émet [PULSE] indicator dans le contexte",
+      "inputs": [
+        "session.start event"
+      ],
+      "outputs": [
+        "additionalContext: [PULSE] 💓niveau·n/total si agents actifs",
+        "updates pouls.md for all agents via scripts/pulse-maestro.js"
+      ],
+      "rule": "§0 Phase watcher + présence multi-agents",
+      "test": null,
+      "exitCodes": {
+        "0": "always (silent update)"
+      },
+      "sha256": "pulse-maestro-v1"
+    },
+    {
+      "name": "stop-pulse",
+      "file": "hooks/stop-pulse.sh",
+      "type": "Stop",
+      "trigger": "session.stop",
+      "purpose": "Met à jour pouls.md de l'agent Claude Code courant à la fin de session (lastPulse + statut recalculé)",
+      "inputs": [
+        "session.stop event"
+      ],
+      "outputs": [
+        "updates pouls.md via scripts/pulse-update.js"
+      ],
+      "rule": "§0 Logbook de clôture + présence multi-agents",
+      "test": null,
+      "exitCodes": {
+        "0": "always (silent update)"
+      },
+      "sha256": "pulse-update-v1"
+    },
+    {
       "name": "detect-design-need",
       "file": "hooks/detect-design-need.sh",
       "type": "UserPromptSubmit",
@@ -252,17 +291,18 @@
     }
   ],
   "stats": {
-    "total": 12,
+    "total": 14,
     "byType": {
       "helper": 1,
-      "SessionStart": 1,
+      "SessionStart": 2,
+      "Stop": 1,
       "UserPromptSubmit": 3,
       "PreToolUse": 3,
       "PostToolUse": 3,
       "PreToolUse + PostToolUse": 1
     },
     "blocking": 3,
-    "warningOnly": 8,
+    "warningOnly": 10,
     "withTests": 3
   },
   "conventions": {
