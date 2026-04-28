@@ -57,6 +57,8 @@ test('parse frontmatter valide', () => {
   ok(p.schema === 'pouls/1.0', 'schema');
   ok(p.agent.id === 'claude-code/test', 'agent.id');
   ok(p.agent.role === 'dev', 'agent.role');
+  ok(p.agent.name === 'Test Agent', 'agent.name');
+  ok(p.agent.provider === 'claude', 'agent.provider');
   ok(p.status === 'idle', 'status');
   ok(p.ttl === 300, 'ttl number');
   ok(p.intensity.current === 0.30, 'intensity.current');

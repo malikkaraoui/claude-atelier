@@ -41,6 +41,7 @@ function _parseYaml(yaml) {
     const top    = line.match(/^(\w[\w-]*):\s*(.*)$/);
 
     if (nested && parent) {
+      if (!result[parent]) result[parent] = {};  // defensive init
       result[parent][nested[1]] = _coerce(nested[2]);
     } else if (top) {
       if (top[2] === '') {
@@ -62,5 +63,6 @@ function _coerce(v) {
   if (s === 'false') return false;
   if (s === '') return s;
   const n = Number(s);
-  return isNaN(n) ? s : n;
+  if (isNaN(n) || !isFinite(n)) return s;  // reject NaN and Infinity
+  return n;
 }
