@@ -92,6 +92,7 @@ function findCurrentAgentPouls(root, rawHostname) {
 export async function runPulse(argv) {
   const { sub, flags } = parseArgs(argv);
   const lang = flags.lang ?? readLang(ROOT);
+  const currentPhase = readPhase(ROOT);
 
   if (sub === 'status' || sub === 'list') {
     const files = findPoulsMdFiles(ROOT);
@@ -100,6 +101,8 @@ export async function runPulse(argv) {
       .filter(Boolean);
 
     if (flags.role) agents = agents.filter(a => a.agent?.role === flags.role);
+    if (flags.status) agents = agents.filter(a => a.status === flags.status);
+    if (flags.phase) agents = agents.filter(a => a.phase === flags.phase);
     if (flags.expired) agents = agents.filter(a => isExpired(a));
 
     if (agents.length === 0) {
@@ -110,7 +113,7 @@ export async function runPulse(argv) {
     if (flags.json) {
       process.stdout.write(JSON.stringify(agents, null, 2) + '\n');
     } else {
-      process.stdout.write(renderStatusTable(agents, lang) + '\n');
+      process.stdout.write(renderStatusTable(agents, lang, { phase: currentPhase || undefined }) + '\n');
     }
     return 0;
   }
@@ -134,8 +137,8 @@ export async function runPulse(argv) {
       },
       status: intensityToStatus(intensity),
       lastPulse: new Date().toISOString(),
-      ttl: profile.ceiling <= 0.3 ? 600 : profile.ceiling <= 0.6 ? 900 : 300,
-      phase: phase || '—',
+      ttl: profile.ttl,
+      phase: currentPhase || '—',
       intensity: { current: intensity, ceiling: profile.ceiling },
       lang,
     }, existingAgent?.parsed._body ?? '## État courant\n\nInitialisé via `claude-atelier pulse init`.\n');
@@ -153,11 +156,18 @@ export async function runPulse(argv) {
     let updated = 0;
 
     for (const f of files) {
-      const existing = parsePoulsMd(f);
+      let existing;
+      try {
+        existing = parsePoulsMd(f);
+      } catch (e) {
+        process.stderr.write(`⚠️  ${f}: ${e.message}\n`);
+        continue;
+      }
+
       if (!existing || !knownIds.has(existing.agent?.id)) continue;
 
       const role = existing.agent.role ?? 'dev';
-      const phase = flags.phase ?? readPhase(ROOT) ?? existing.phase;
+      const phase = flags.phase ?? (currentPhase || existing.phase);
       const intensity = computeIntensity(role, phase);
       const status = flags.status ?? intensityToStatus(intensity);
 

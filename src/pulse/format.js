@@ -37,9 +37,12 @@ export function formatAge(seconds, lang = 'fr') {
   return `${prefix}${Math.round(seconds / 3600)}h${suffix}`;
 }
 
-export function renderStatusTable(agents, lang = 'fr') {
+export function renderStatusTable(agents, lang = 'fr', options = {}) {
   const s = _loadStrings(lang);
-  const phase = agents[0]?.phase ?? '—';
+  const phase = options.phase
+    ?? agents.find(a => a && !isExpired(a))?.phase
+    ?? agents[0]?.phase
+    ?? '—';
   const active = agents.filter(a => !isExpired(a)).length;
   const expired = agents.filter(a => isExpired(a)).length;
   const sep = '─'.repeat(70);

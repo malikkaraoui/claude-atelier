@@ -84,10 +84,19 @@ Travail proxy tool_use. Disponible pour reviews Go/Node.
 ### Responsabilités
 1. Lire `§0.Phase` et `§0.Stack` depuis `.claude/CLAUDE.md`
 2. Détecter un changement de phase (comparer avec `lastPhase` en cache)
-3. Calculer l'intensité des agents actifs selon leur rôle + la phase courante
-4. Mettre à jour tous les `pouls.md` trouvés dans le projet
+3. Calculer l'intensité de l'agent courant selon son rôle + la phase courante
+4. Mettre à jour uniquement le `pouls.md` de l'agent courant
 5. Injecter la pastille `💓` dans l'entête §1 (via env var lue par le hook horodatage)
 6. Si changement de phase → afficher recommandation de nouvelle session
+
+### Sémantique retenue
+
+Pulse mesure la **présence réelle par agent**.
+
+Conséquence : Maestro ne doit jamais rafraîchir indistinctement tous les
+`pouls.md`. Les agents non courants sont lus pour calculer `actifs/total`,
+mais leur `lastPulse` reste intact. Sinon, le start hook ferait croire que
+des agents inactifs sont présents.
 
 ### Logique de détection de changement de phase
 
@@ -123,7 +132,7 @@ Ajouté à l'entête obligatoire, après les autres indicateurs :
 
 - `💓élevé·3/5` = niveau FR + agents actifs / total détectés
 - `💓high·3/5` = niveau EN (si `lang: en` dans `atelier-config`)
-- Le compte `3/5` = fichiers `pouls.md` non expirés / total trouvés
+- Le compte `3/5` = fichiers `pouls.md` non expirés / total lisible
 
 ---
 

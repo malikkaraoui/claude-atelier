@@ -1,14 +1,14 @@
 // src/pulse/intensity.js
 
 const ROLE_PROFILES = {
-  secretary: { ceiling: 0.3, base: 0.2 },
-  dev:       { ceiling: 0.8, base: 0.3 },
-  marketing: { ceiling: 0.6, base: 0.3 },
-  cyber:     { ceiling: 1.0, base: 0.4 },
-  ops:       { ceiling: 0.7, base: 0.4 },
+  secretary: { ceiling: 0.3, base: 0.2, ttl: 600 },
+  dev:       { ceiling: 0.8, base: 0.3, ttl: 300 },
+  marketing: { ceiling: 0.6, base: 0.3, ttl: 900 },
+  cyber:     { ceiling: 1.0, base: 0.4, ttl: 120 },
+  ops:       { ceiling: 0.7, base: 0.4, ttl: 180 },
 };
 
-const DEFAULT_PROFILE = { ceiling: 0.5, base: 0.2 };
+const DEFAULT_PROFILE = { ceiling: 0.5, base: 0.2, ttl: 300 };
 
 const PHASE_BOOSTS = [
   { keywords: ['archi', 'conception', 'design', 'spec'],        boosts: { dev: 0.3, ops: 0.2 } },

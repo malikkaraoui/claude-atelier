@@ -4,7 +4,7 @@
  * Usage: node test/pulse.js  (ou: npm run test:pulse)
  */
 
-import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, rmSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parsePoulsMd, parsePoulsMdContent, isExpired, ageSeconds } from '../src/pulse/parse.js';
@@ -13,6 +13,7 @@ import { serialisePoulsMd, writePoulsMd } from '../src/pulse/write.js';
 import { statusLabel, pulseIndicator, renderStatusTable, _clearCache } from '../src/pulse/format.js';
 import { sanitizeHostname, buildAgentId, buildKnownAgentIds, legacySanitizeHostname } from '../src/pulse/identity.js';
 import { computePulseSummary } from '../src/pulse/summary.js';
+import { runMaestro } from '../scripts/pulse-maestro.js';
 
 let pass = 0;
 let fail = 0;
@@ -112,11 +113,20 @@ test('getProfile dev: ceiling 0.8', () => {
   const p = getProfile('dev');
   ok(p.ceiling === 0.8, `ceiling=${p.ceiling}`);
   ok(p.base === 0.3, `base=${p.base}`);
+  ok(p.ttl === 300, `ttl=${p.ttl}`);
 });
 
 test('getProfile inconnu → profile par défaut', () => {
   const p = getProfile('unknown_role');
   ok(p.ceiling > 0, 'ceiling doit être positif');
+  ok(p.ttl === 300, `ttl=${p.ttl} attendu 300`);
+});
+
+test('getProfile aligne les TTL des rôles avec les templates', () => {
+  ok(getProfile('secretary').ttl === 600, 'secretary ttl=600');
+  ok(getProfile('marketing').ttl === 900, 'marketing ttl=900');
+  ok(getProfile('cyber').ttl === 120, 'cyber ttl=120');
+  ok(getProfile('ops').ttl === 180, 'ops ttl=180');
 });
 
 test('computeIntensity dev + phase impl → boost', () => {
@@ -300,6 +310,83 @@ test('renderStatusTable contient la séparation et le récapitulatif', () => {
   ok(table.includes('💓'), 'doit contenir 💓');
   ok(table.includes('agents'), 'doit contenir "agents"');
   ok(table.includes('EXPIRÉ'), 'doit contenir EXPIRÉ pour le 2e agent');
+});
+
+test('renderStatusTable utilise la phase fournie en priorité', () => {
+  const agents = [
+    { agent: { id: 'a/b', role: 'dev' }, status: 'idle', lastPulse: '2020-01-01T00:00:00Z', ttl: 300, phase: 'Ancienne phase', intensity: { current: 0.1, ceiling: 0.8 } },
+    { agent: { id: 'c/d', role: 'ops' }, status: 'high', lastPulse: new Date().toISOString(), ttl: 300, phase: 'Phase active', intensity: { current: 0.7, ceiling: 0.7 } },
+  ];
+  const table = renderStatusTable(agents, 'fr', { phase: 'Phase workspace' });
+  ok(table.startsWith('💓 Agents actifs — Phase workspace'), 'doit afficher la phase workspace');
+});
+
+// ── Maestro start hook ──────────────────────────────────────────────────────
+console.log('\n[pulse-maestro.js]');
+
+test('runMaestro rafraîchit seulement le pouls de l’agent courant', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'claude-atelier-maestro-'));
+  const currentOldPulse = '2020-01-01T00:00:00.000Z';
+  const otherOldPulse = '2020-01-02T00:00:00.000Z';
+
+  try {
+    mkdirSync(join(dir, '.claude'), { recursive: true });
+    writeFileSync(join(dir, '.claude', 'CLAUDE.md'), [
+      '| Clé | Valeur |',
+      '| --- | --- |',
+      '| Phase | Phase test impl code |',
+    ].join('\n'), 'utf8');
+    writeFileSync(join(dir, '.claude', 'atelier-config.json'), JSON.stringify({ lang: 'fr' }), 'utf8');
+
+    const currentPath = join(dir, '.claude', 'agents', 'current', 'pouls.md');
+    const otherPath = join(dir, '.claude', 'agents', 'other', 'pouls.md');
+
+    writePoulsMd(currentPath, {
+      agent: { id: buildAgentId('current-host'), name: 'Current', role: 'dev', provider: 'claude' },
+      status: 'idle',
+      lastPulse: currentOldPulse,
+      ttl: 300,
+      phase: 'Ancienne phase courant',
+      intensity: { current: 0.1, ceiling: 0.8 },
+      lang: 'fr',
+    }, '## Courant\n');
+
+    writePoulsMd(otherPath, {
+      agent: { id: buildAgentId('other-host'), name: 'Other', role: 'ops', provider: 'claude' },
+      status: 'high',
+      lastPulse: otherOldPulse,
+      ttl: 300,
+      phase: 'Ancienne phase autre',
+      intensity: { current: 0.7, ceiling: 0.7 },
+      lang: 'fr',
+    }, '## Autre\n');
+
+    let stdout = '';
+    let stderr = '';
+    const code = runMaestro({
+      root: dir,
+      cacheFile: join(dir, 'last-phase'),
+      statusFile: join(dir, 'pulse-status'),
+      rawHostname: 'current-host',
+      stdout: { write: chunk => { stdout += chunk; } },
+      stderr: { write: chunk => { stderr += chunk; } },
+    });
+
+    const current = parsePoulsMd(currentPath);
+    const other = parsePoulsMd(otherPath);
+    const indicator = readFileSync(join(dir, 'pulse-status'), 'utf8');
+
+    ok(code === 0, `code=${code}`);
+    ok(stdout.includes('[PULSE]'), 'doit écrire la ligne PULSE');
+    ok(!stderr.includes('erreur'), `stderr inattendu: ${stderr}`);
+    ok(current.lastPulse !== currentOldPulse, 'agent courant doit être rafraîchi');
+    ok(current.phase === 'Phase test impl code', `phase courant=${current.phase}`);
+    ok(other.lastPulse === otherOldPulse, 'agent non courant ne doit pas être rafraîchi');
+    ok(other.phase === 'Ancienne phase autre', `phase autre=${other.phase}`);
+    ok(indicator.includes('1/2'), `indicator=${indicator} attendu actif/total 1/2`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 // ── résumé ────────────────────────────────────────────────────────────────────
