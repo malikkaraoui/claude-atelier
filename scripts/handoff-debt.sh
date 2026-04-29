@@ -48,17 +48,18 @@ if [[ -d "$HANDOFF_DIR" ]]; then
     find "$HANDOFF_DIR" -maxdepth 1 \( -name "202*.md" -o -name "202*.json" \) \
       -not -name "_template*" -print0 2>/dev/null
   )
-  SORTED=$([[ ${#_hfiles[@]} -gt 0 ]] && ls -t "${_hfiles[@]}" 2>/dev/null || true)
+  # Itérer tous les handoffs pour trouver celui avec le TO_SHA le plus récent dans git
+  # (ls -t trie par mtime fichier, pas par sha git → on compare tous et on garde le meilleur)
+  _all_files=()
+  [[ ${#_hfiles[@]} -gt 0 ]] && while IFS= read -r f; do _all_files+=("$f"); done < <(ls "${_hfiles[@]}" 2>/dev/null)
 
-  while IFS= read -r f; do
+  for f in "${_all_files[@]:-}"; do
     [[ -z "$f" ]] && continue
 
-    # Vérifier intégration selon le format
     CONTENT_LEN=0
     REVIEWED_RANGE=""
 
     if [[ "$f" == *.json ]]; then
-      # Format JSON : lire via python3
       INTEG_CHECK=$(python3 -c "
 import json, sys
 try:
@@ -84,7 +85,6 @@ except Exception:
 " 2>/dev/null || echo "")
       fi
     else
-      # Format Markdown
       INTEGRATION=$(awk '/^## Intégration/{flag=1; next} flag' "$f" 2>/dev/null || echo "")
       REAL_CONTENT=$(echo "$INTEGRATION" | sed 's/<!--.*-->//g' | grep -v "^##\|^$" | tr -d '[:space:]' || echo "")
       CONTENT_LEN=${#REAL_CONTENT}
@@ -99,12 +99,18 @@ except Exception:
       fi
       if [[ "$REVIEWED_RANGE" =~ ^[a-f0-9]{7,40}\.\.[a-f0-9]{7,40}$ ]]; then
         TO_SHA="${REVIEWED_RANGE##*..}"
-        LATEST_INTEGRATED="$f"
-        LATEST_SHA="$TO_SHA"
-        break
+        # Garder le sha le plus récent dans git (descendant du sha courant)
+        if [[ -z "$LATEST_SHA" ]]; then
+          LATEST_INTEGRATED="$f"
+          LATEST_SHA="$TO_SHA"
+        elif git -C "$REPO_ROOT" merge-base --is-ancestor "$LATEST_SHA" "$TO_SHA" 2>/dev/null; then
+          # TO_SHA est plus récent que LATEST_SHA → remplacer
+          LATEST_INTEGRATED="$f"
+          LATEST_SHA="$TO_SHA"
+        fi
       fi
     fi
-  done <<< "$SORTED"
+  done
 fi
 
 # ─── Calculer la dette depuis git ──────────────────────────────────────────
