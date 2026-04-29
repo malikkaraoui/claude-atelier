@@ -29,9 +29,24 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
-    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-04-29-marketplace-alignment.json.\""
+    "model": "github-copilot-pr-reviewer",
+    "content": "Review non fournie sur le fond. Sur PR #32 (handoff/2026-04-29-marketplace-alignment), Copilot n'a posté qu'un seul commentaire inline, exclusivement procédural : il a signalé que `response.content` et `integration` étaient null et que `npm run validate:handoffs` rejetterait le handoff. Aucun avis sur les angles morts demandés (A : viabilité économique du marché secondaire, B : couplage marketplace/ToM-protocol, C : tension axiome friction-zéro vs pitch rentabilité, D : risque légal Microsoft/GitHub TOS sur le scénario D). Sur PR #33 (qui contient `docs/proposals/marketplace-inter-agents.md`), Copilot a posté 6 commentaires inline tous portant sur la forme : 4 sont des hallucinations (allègue des `||` doubles dans des tableaux qui utilisent déjà la syntaxe Markdown standard `|...|`, vérifié `grep '^||'` = 0 match), 2 sont valides (typo `relay`→`relais` ligne 279, statut contradictoire `draft v0` vs `closed` ligne 385 levé via précision « décisions Q1–Q5 figées »). Conclusion : pour la review de fond demandée dans ce handoff, Copilot n'a rien produit. Les angles morts A/B/C/D restent ouverts et nécessitent soit un autre reviewer (GPT/Mistral via /la-bise), soit une re-soumission ciblée à Copilot avec un prompt plus explicite. Ne pas merger PR #32 en pensant que la review a eu lieu."
   },
-  "integration": null
+  "integration": {
+    "status": "no-review-content",
+    "validatedTarget": "review absente — pas de fixes à appliquer",
+    "summary": "Aucune fix n'est appliquée car Copilot n'a pas fourni de review sur les angles morts A/B/C/D. Les 2 fixes valides identifiés sur PR #33 (relay→relais, statut figé) ont été commités en 4f9005f sur feature/marketplace mais concernent la forme de la doc, pas le raisonnement. La doc d'alignement reste intacte (Q1-Q5 figées, axiome constitutionnel inchangé). Action recommandée : demander une 2e review à GPT-5.4 ou Mistral via /la-bise sur les questions A/B/C/D, ou itérer un nouveau handoff plus ciblé pour Copilot.",
+    "appliedFixes": [
+      "Aucun — pas de review de fond reçue"
+    ],
+    "rejectedSuggestions": [
+      "4 commentaires Copilot sur PR #33 alléguant `||` dans les tableaux Markdown lignes 58/83/163/374 — hallucinations, vérifié par grep, le doc utilise déjà `|...|`",
+      "Suggestion implicite de mettre la doc en `closed` partout — refusée, le statut `draft v0` reste valide pour la phase d'alignement"
+    ],
+    "notes": [
+      "PR #33 fixes valides commités en 4f9005f (relay→relais + statut)",
+      "Cette intégration documente l'absence de review de fond, pas une review réussie",
+      "Prochaine étape : second avis externe sur A/B/C/D avant POC marketplace"
+    ]
+  }
 }
