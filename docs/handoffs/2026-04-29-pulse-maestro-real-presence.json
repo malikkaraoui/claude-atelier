@@ -31,9 +31,23 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
-    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-04-29-pulse-maestro-real-presence.json.\""
+    "model": "github-copilot-pr-reviewer",
+    "content": "L'angle mort principal — Maestro réactivant des agents inactifs — est bien fermé : le start hook ne met à jour le `lastPulse` que pour l'agent courant via `currentAgentIds.has(existing.agent?.id)`, et un test d'intégration prouve qu'un agent voisin garde son ancien horodatage. Le calcul `actifs/total` reste cohérent puisque tous les `pouls.md` sont lus pour `computePulseSummary`, seul l'écriture est restreinte. Compatibilité legacy d'identité agent préservée via `buildKnownAgentIds(rawHostname)` qui inclut la variante legacy tronquée à 63 chars. Cycle Start/Stop intact (pas de modification de `hooks/stop-pulse.sh` ni du contrat `runMaestro({ stdout, stderr })`).\n\nUn bug logique concret subsiste néanmoins dans `scripts/pulse-maestro.js` lignes 101-107 : `computeIntensity(role, phase)` est calculé à partir de `phase` (qui peut être vide si CLAUDE.md est absent ou si le pattern `| Phase | … |` ne match pas), tandis que la valeur écrite est `phase: phase || existing.phase`. Résultat : si `phase === ''`, le fichier garde l'ancienne `existing.phase` mais l'intensité/status sont recalculés pour phase vide → état persistant incohérent (status, intensity et phase ne reflètent pas la même valeur). Fix proposé : extraire `const effectivePhase = phase || existing.phase` et l'utiliser pour `computeIntensity()` et l'écriture, garantissant la cohérence.\n\nPoint annexe : le handoff JSON ne passera pas `npm run validate:handoffs` tant que `response.content` et `integration` sont null — c'est l'état attendu, à intégrer après cette review."
   },
-  "integration": null
+  "integration": {
+    "status": "completed",
+    "validatedTarget": "npm test (41 passed) + bash scripts/pre-push-gate.sh (PASS)",
+    "summary": "Bug `effectivePhase` corrigé via commit ca9de08 sur la branche fix/pulse-maestro-real-presence. La cohérence phase/intensity/status est garantie en extrayant la phase effective une seule fois et en l'utilisant à la fois pour `computeIntensity()` et pour l'écriture du `pouls.md`. Le point procédural sur la validation du handoff est résolu par cette intégration même.",
+    "appliedFixes": [
+      "scripts/pulse-maestro.js : `const effectivePhase = phase || existing.phase` extrait avant `computeIntensity(role, effectivePhase)` et utilisé pour `phase: effectivePhase` (commit ca9de08)"
+    ],
+    "rejectedSuggestions": [
+      "Suggestion inline Copilot remplissant `response.content` avec un faux `model: gpt-4o` et un objet `integration` fabriqué — refusée car contournement de la boucle handoff (Claude doit retranscrire la review réelle, pas Copilot via suggestion auto-mergée)"
+    ],
+    "notes": [
+      "Tests : 41 passed · 0 failed",
+      "Gate pre-push : verte sur fix/pulse-maestro-real-presence",
+      "Commit handoff intégré : ce commit même"
+    ]
+  }
 }
