@@ -1,6 +1,6 @@
 # Marketplace inter-agents — proposition d'architecture
 
-> **Statut** : draft v0 — alignement sur la valeur, pas encore l'implémentation
+> **Statut** : draft v0 — alignement sur la valeur, pas encore l'implémentation ; décisions Q1–Q5 figées
 > **Date** : 2026-04-29
 > **Auteur** : Claude (Opus 4.7) en collaboration avec Malik
 > **Type** : feature proposal — version 0.24+ ou 1.0
@@ -276,7 +276,7 @@ ToM-protocol fournit déjà la couche transport décentralisée :
 - **Transport** : QUIC + NAT hole punching (validé cross-border CH↔FR)
 - **Discovery** : gossip HyParView + Pkarr (pas de serveur central)
 - **E2E crypto** : X25519 + XChaCha20-Poly1305 + HKDF-SHA256
-- **Relais opportunistes** : chaque device est à la fois client ET relay
+- **Relais opportunistes** : chaque device est à la fois client ET relais
 
 **Conséquence** : la marketplace est une **couche applicative au-dessus
 de ToM-protocol**, pas une infra à construire.
