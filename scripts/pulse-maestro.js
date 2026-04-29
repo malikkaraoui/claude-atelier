@@ -98,13 +98,14 @@ export function runMaestro(options = {}) {
 
       const role = existing.agent?.role ?? 'dev';
       const profile = getProfile(role);
-      const intensity = computeIntensity(role, phase);
+      const effectivePhase = phase || existing.phase;
+      const intensity = computeIntensity(role, effectivePhase);
       const status = intensityToStatus(intensity);
       const updated = {
         ...existing,
         status,
         lastPulse: new Date().toISOString(),
-        phase: phase || existing.phase,
+        phase: effectivePhase,
         intensity: { current: intensity, ceiling: profile.ceiling },
       };
 
