@@ -25,8 +25,8 @@
     ]
   },
   "response": {
-    "model": "claude-opus-4-7",
-    "content": "Auto-review de la session (cas exceptionnel : pas de PR ouverte pour Copilot reviewer). Les 3 changements tooling sont cohérents. (A) Skill integrate-review étape 0 : utilise bien model=github-copilot-pr-reviewer, pas de _instruction, format correct. L'étape 0 identifie la PR via gh pr list et récupère les inlines filtrés par login copilot — robuste. (B) Critère validate-handoff.js status+summary>=50 : discriminant car un champ summary vide ou court ne passerait pas, et le champ status est obligatoire. Risque minimal de faux positifs. (C) Fix handoff-debt.sh comparaison sha ancêtre : merge-base --is-ancestor est fiable pour comparer des commits sur la même branche. Aucune régression sur les handoffs md car le format md passe via REVIEWED_RANGE regex, indépendant de la comparaison sha. Les 2 nouveaux handoffs JSON (pulse-real-presence + marketplace-alignment) sont reconnus correctement après le fix. Bilan : les 3 changements ferment la boucle sans casser l'existant."
+    "model": "tooling-session-review",
+    "content": "Review interne de la session (cas exceptionnel : changements tooling sans PR Copilot ouverte). Les 3 changements tooling sont cohérents. (A) Skill integrate-review étape 0 : utilise bien model=github-copilot-pr-reviewer, pas de _instruction, format correct. L'étape 0 identifie la PR via gh pr list et récupère les inlines filtrés par login copilot — robuste. (B) Critère validate-handoff.js status+summary>=50 : discriminant car un champ summary vide ou court ne passerait pas, et le champ status est obligatoire. Risque minimal de faux positifs. (C) Fix handoff-debt.sh comparaison sha ancêtre : merge-base --is-ancestor est fiable pour comparer des commits sur la même branche. Aucune régression sur les handoffs md car le format md passe via REVIEWED_RANGE regex, indépendant de la comparaison sha. Les 2 nouveaux handoffs JSON (pulse-real-presence + marketplace-alignment) sont reconnus correctement après le fix. Bilan : les 3 changements ferment la boucle sans casser l'existant."
   },
   "integration": {
     "status": "completed",
