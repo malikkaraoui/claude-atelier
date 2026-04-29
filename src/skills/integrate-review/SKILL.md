@@ -1,6 +1,6 @@
 ---
 name: integrate-review
-description: "Ferme la boucle d'un handoff inter-LLM. Lit la réponse de Copilot/GPT dans docs/handoffs/, classe les points, génère la section Intégration et une checklist d'actions. Utiliser quand Copilot a répondu à un handoff."
+description: "Ferme la boucle d'un handoff inter-LLM. Si response.content est null, va chercher les inline Copilot sur la PR GitHub associée et les retranscrit automatiquement. Puis classe les points, applique les fixes, génère l'intégration. Utiliser quand Copilot a reviewé une PR portant un handoff."
 figure: Greffier
 ---
 
@@ -9,35 +9,98 @@ figure: Greffier
 > Le Greffier revient avec le dossier de l'autre atelier sous le bras.
 > Il ouvre, trie, classe : retenu, à garder en tête, écarté.
 
-Fermeture de boucle inter-LLM. Copilot/GPT a répondu → lire, trier,
-transformer en actions concrètes.
+Fermeture de boucle inter-LLM. Copilot/GPT a reviewé une PR →
+récupérer les inline GitHub, vérifier, retranscrire, appliquer, committer.
 
 ## Procédure
 
-### Étape 1 — Trouver le handoff
-
-Lis le dernier fichier modifié dans `docs/handoffs/` (format `.json`, excluant `_template`) :
+### Étape 0 — Trouver le handoff et les inline Copilot
 
 ```bash
-ls -lt docs/handoffs/*.json | grep -v _template | head -1
+# Handoff le plus récent non intégré
+ls -lt docs/handoffs/*.json | grep -v _template | head -5
 ```
 
-Si `response.content` est `null` → « Copilot n'a pas encore
-répondu. Attends sa réponse puis relance /integrate-review. »
+Identifie le handoff cible (argument `/integrate-review <fichier>` ou le plus récent
+avec `response.content: null`).
 
-### Étape 2 — Lire et analyser la réponse
+**Si `response.content` est non-null** → aller directement à l'Étape 2.
 
-Lis la réponse complète de Copilot/GPT. Pour chaque point soulevé,
-classe-le dans une des 3 catégories :
+**Si `response.content` est null** → aller chercher les inline Copilot via GitHub API :
 
-- **Retenu — à implémenter** : le point est valide ET actionnable
-  maintenant. Inclure l'action concrète.
-- **Retenu — à garder en tête** : le point est valide MAIS pas
-  actionnable immédiatement (manque de contexte, pas prioritaire,
-  dépend d'un besoin futur). Expliquer pourquoi on ne le fait pas
-  maintenant.
-- **Écarté** : le point n'est pas pertinent, est déjà traité, ou
-  contredit une décision prise. Expliquer pourquoi.
+```bash
+# Trouver la PR qui touche ce handoff (chercher par nom de fichier)
+HANDOFF_FILE="docs/handoffs/<nom-du-fichier>.json"
+gh pr list --state open --json number,headRefName,files 2>/dev/null | \
+  python3 -c "import sys,json; prs=json.load(sys.stdin); \
+  [print(p['number'],p['headRefName']) for p in prs \
+  if any('$HANDOFF_FILE' in (f.get('path','') if isinstance(f,dict) else '') \
+  for f in (p.get('files') or []))]"
+
+# Ou plus simple : lister les PRs et trouver celle dont la branche contient le handoff
+gh pr list --state open --json number,title,headRefName
+# Puis cibler le numéro de PR
+PR_NUM=<N>
+```
+
+Récupérer les inline reviews Copilot de cette PR :
+
+```bash
+gh api repos/<owner>/<repo>/pulls/<PR_NUM>/comments \
+  --jq '.[] | select(.user.login | test("copilot"; "i")) | {id, path, line, body}'
+```
+
+Récupérer aussi la review globale (body du review Copilot) :
+
+```bash
+gh api repos/<owner>/<repo>/pulls/<PR_NUM>/reviews \
+  --jq '.[] | select(.user.login | test("copilot"; "i")) | {id, body, state}'
+```
+
+**Vérification anti-hallucination obligatoire** — pour chaque commentaire inline,
+vérifier que le point soulevé correspond à un vrai problème dans le code :
+
+| Type de commentaire | Vérification |
+|---|---|
+| Syntaxe/formatage (ex: `||` dans Markdown) | `grep '<pattern>' <fichier>` → 0 match = hallucination |
+| Bug logique (ex: variable non utilisée) | Lire le code autour de la ligne citée |
+| Missing field / null value | Vérifier dans le fichier JSON |
+| Typo/cohérence linguistique | Chercher le terme dans le fichier |
+
+**Tout commentaire non vérifiable est écarté** (ne jamais accepter sans grep/lecture).
+
+Après vérification, écrire `response.content` dans le handoff JSON :
+
+```json
+"response": {
+  "model": "github-copilot-pr-reviewer",
+  "content": "<synthèse des points valides + verdict global>"
+}
+```
+
+Règles pour `response.content` :
+- Inclure le **verdict** sur la question posée dans `from.question`
+- Lister les **points valides** retenus avec mécanisme de défaillance précis
+- Lister les **hallucinations détectées** (pour traçabilité)
+- Si Copilot n'a pas répondu au fond (que des commentaires procéduraux/forme) : l'écrire honnêtement + recommander second reviewer
+
+### Étape 1 — Identifier les fixes à appliquer
+
+Pour chaque point valide dans `response.content`, classer :
+
+- **À implémenter maintenant** : bug réel, actionnable
+- **À garder en tête** : valide mais pas prioritaire
+- **Écarté** : hallucination, déjà traité, contredit une décision
+
+### Étape 2 — Appliquer les fixes
+
+Pour chaque point **à implémenter maintenant** :
+- Identifier le fichier et la ligne
+- Faire le fix minimal (Edit ciblé)
+- `npm test` doit passer
+- Commit atomique sur la branche du PR
+
+Ne pas toucher au code source si Copilot est en mode reviewer pur.
 
 ### Étape 3 — Écrire le champ `integration`
 
@@ -45,49 +108,71 @@ Dans le fichier handoff `.json`, remplace `"integration": null` par :
 
 ```json
 "integration": {
-  "date": "YYYY-MM-DD",
-  "model": "claude-sonnet-4-6",
-  "retained_implement": [
-    { "point": "...", "action": "..." }
+  "status": "completed",
+  "validatedTarget": "npm test + bash scripts/pre-push-gate.sh",
+  "summary": "...",
+  "appliedFixes": [
+    "<description fix 1> (commit <sha>)"
   ],
-  "retained_later": [
-    { "point": "...", "why_not_now": "..." }
+  "rejectedSuggestions": [
+    "<commentaire hallucination> — rejeté : <grep ou preuve>"
   ],
-  "discarded": [
-    { "point": "...", "why": "..." }
-  ],
-  "verdict": "1-2 phrases sur la qualité globale + le point le plus actionnable"
+  "notes": [
+    "Tests : N passed · 0 failed",
+    "Gate pre-push : verte"
+  ]
 }
 ```
 
-### Étape 4 — Générer la checklist d'actions
+Si aucun fix applicable (review de fond absente) :
+```json
+"integration": {
+  "status": "no-review-content",
+  "summary": "...",
+  "appliedFixes": ["Aucun"],
+  "notes": ["Prochaine étape : second avis via /la-bise"]
+}
+```
 
-Pour chaque point « Retenu — à implémenter », créer une tâche dans
-TodoWrite pour tracker l'exécution.
-
-### Étape 5 — Proposer l'exécution
-
-"Intégration terminée. [N] points retenus à implémenter :
-
-1. [action 1]
-2. [action 2]
-3. ...
-
-Tu veux que j'implémente maintenant, ou on priorise d'abord ?"
-
-### Étape 6 — Committer l'intégration
+### Étape 4 — Valider et committer
 
 ```bash
-git add docs/handoffs/[fichier].json
-git commit -m "docs: integrer review [sujet] de Copilot/GPT"
+node test/validate-handoff.js docs/handoffs/<fichier>.json
+git add docs/handoffs/<fichier>.json [<autres fichiers fixes>]
+git commit -m "docs: intégrer review Copilot handoff <sujet>"
+git push origin <branche>
+```
+
+### Étape 5 — Répondre aux commentaires GitHub
+
+Pour chaque inline Copilot sur la PR :
+
+```bash
+# Commentaire accepté
+gh api repos/<owner>/<repo>/pulls/<PR_NUM>/comments/<ID>/replies \
+  -X POST -f body="✅ Appliqué — commit \`<sha>\`. <explication>"
+
+# Commentaire rejeté (hallucination)
+gh api repos/<owner>/<repo>/pulls/<PR_NUM>/comments/<ID>/replies \
+  -X POST -f body="❌ Hallucination — vérifié \`grep '<pattern>' <fichier>\` = 0 match. <explication>"
+
+# Review de fond absente
+gh api repos/<owner>/<repo>/pulls/<PR_NUM>/comments/<ID>/replies \
+  -X POST -f body="✅ Handoff intégré — commit \`<sha>\`. Note : review de fond absente (voir handoff)."
+```
+
+### Étape 6 — Merger la PR (si gate verte)
+
+```bash
+bash scripts/pre-push-gate.sh
+gh pr merge <PR_NUM> --merge --delete-branch
 ```
 
 ## Règles
 
-- Ne jamais rejeter un point sans explication
-- Ne jamais accepter un point aveuglément (vérifier qu'il est pertinent
-  et cohérent avec les décisions prises)
-- La section Intégration est remplie par Claude, pas par l'utilisateur
-- Chaque point retenu doit avoir une action concrète, pas un vague
-  "à améliorer"
-- §5 prime : ne pas inventer des actions pour remplir le tableau
+- Ne jamais accepter un commentaire Copilot sans vérification (§5 prime)
+- Hallucinations connues fréquentes : `||` dans Markdown, imports fictifs, APIs inexistantes
+- La source réelle de `response.content` est toujours `github-copilot-pr-reviewer` (inline GitHub)
+- Le SWE agent (`copilot-swe-agent[bot]`) remplit parfois le handoff directement — dans ce cas, aller directement à l'Étape 2
+- `integration` est rempli par Claude, jamais par Copilot
+- `meta` et `from` sont intouchables (ancrés à la création du handoff)
