@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "subject": "Pulse & Maestro — présence réelle par agent et start hook non mensonger",
+    "date": "2026-04-29",
+    "type": "review",
+    "priority": "haute",
+    "reviewedRange": "f0ef26663a989929ab77e6457f1cea6517351624..b3698b36d6c1ad750eddfdd44e7fe08570328824"
+  },
+  "from": {
+    "model": "github-copilot",
+    "context": "Range depuis le dernier handoff intégré. Commits couverts : (1) 85af87f fix(pulse): appliquer review Copilot — legacy compat, topIntensity, write atomique, handoff intégré ; (2) 58fb931 fix(pulse): affiner review — export legacySanitizeHostname, vérifier EEXIST avant rmSync ; (3) b3698b3 fix(pulse): préserver la présence réelle dans Maestro. Le dernier commit tranche la sémantique Pulse : Pulse mesure la présence réelle par agent, pas la coordination abstraite d'un parc déclaré. `scripts/pulse-maestro.js` ne rafraîchit plus indistinctement tous les `pouls.md` au start hook : il lit tous les agents pour `actifs/total`, mais ne met à jour que l'agent courant. Un test d'intégration léger dans `test/pulse.js` prouve que l'agent courant est rafraîchi et qu'un autre agent garde son ancien `lastPulse`.",
+    "question": "Est-ce que le nouveau comportement de `scripts/pulse-maestro.js` ferme bien l'angle mort principal — éviter que Maestro mente en réactivant des agents inactifs — sans casser l'indicateur `💓niveau·actifs/total`, la compatibilité legacy d'identité agent, ou le cycle Start/Stop attendu ? Cherche surtout un bug logique concret dans la sélection de l'agent courant, le calcul active/total ou le cas aucun pouls courant.",
+    "filesToRead": [
+      "scripts/pulse-maestro.js",
+      "scripts/pulse-update.js",
+      "test/pulse.js",
+      "src/pulse/identity.js",
+      "src/pulse/summary.js",
+      "src/pulse/parse.js",
+      "src/pulse/write.js",
+      "src/pulse/intensity.js",
+      "src/pulse/format.js",
+      "docs/superpowers/specs/2026-04-28-pulse-maestro-design.md"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par GitHub Copilot",
+      "Répondre dans response.content et renseigner response.model sans modifier integration"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-04-29-pulse-maestro-real-presence.json.\""
+  },
+  "integration": null
+}
