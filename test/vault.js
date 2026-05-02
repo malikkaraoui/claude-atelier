@@ -31,6 +31,14 @@ function ok(cond, msg) {
   if (!cond) throw new Error(msg || 'assertion échouée');
 }
 
+function countPeterHooks(settings) {
+  const sessionStart = settings.hooks?.SessionStart ?? [];
+  return sessionStart.reduce((count, entry) => {
+    const hooks = Array.isArray(entry.hooks) ? entry.hooks : [];
+    return count + hooks.filter(hook => hook?.command?.includes('vault-context.sh')).length;
+  }, 0);
+}
+
 function cli(args, cwd) {
   return spawnSync(process.execPath, [join(ROOT, 'bin', 'cli.js'), ...args], {
     cwd,
@@ -65,6 +73,9 @@ test('vault init est idempotent', () => {
     const r = cli(['vault', 'init', '--cwd', dir], dir);
     ok(r.status === 0, 'deuxième init doit passer');
     ok(r.stdout.includes('[SKIP]'), 'les fichiers existants doivent être skippés');
+    const settings = JSON.parse(readFileSync(join(dir, '.claude', 'settings.json'), 'utf8'));
+    ok(countPeterHooks(settings) === 1, 'le hook Peter ne doit être installé qu’une seule fois');
+    ok(settings.hooks.SessionStart[0].hooks[0].command.includes('vault-context.sh'), 'le hook Peter doit rester dans SessionStart');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

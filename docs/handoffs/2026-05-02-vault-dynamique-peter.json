@@ -32,9 +32,21 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
+    "model": "copilot-pull-request-reviewer",
+    "content": "Copilot a commenté la PR #35 le 2026-05-02 avec 3 points valides : 1) hooks/vault-context.sh n'expose pas la fraîcheur des fichiers injectés, donc Claude peut raisonner sur un brief/mailbox/roadmap obsolète ; ajouter la date de dernière modification pour chaque fichier. 2) test/vault.js ne couvre pas l'idempotence réelle de l'installation dans .claude/settings.json ; ajouter une assertion après deux vault init pour vérifier une seule occurrence de vault-context.sh dans hooks.SessionStart. 3) hooks/vault-context.sh tronque seulement au nombre de lignes ; une ligne très longue peut exploser le contexte SessionStart ; ajouter une limite dure en caractères/bytes ou une troncature par ligne.",
     "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-05-02-vault-dynamique-peter.json.\""
   },
-  "integration": null
+  "integration": {
+    "status": "applied",
+    "summary": "Corrections appliquées : le hook Peter affiche désormais la date de dernière modification de chaque fichier injecté, limite chaque fichier à 8000 caractères et chaque ligne à 500 caractères, et l'installation CLI détecte correctement les hooks déjà présents dans les entrées imbriquées de .claude/settings.json. Le test vault vérifie l'idempotence de l'installation du hook après deux exécutions.",
+    "filesChanged": [
+      "hooks/vault-context.sh",
+      "bin/vault.js",
+      "test/vault.js"
+    ],
+    "verification": [
+      "npm test — OK",
+      "bash scripts/pre-push-gate.sh — OK"
+    ]
+  }
 }

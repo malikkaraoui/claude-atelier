@@ -67,7 +67,7 @@
       "exitCodes": {
         "0": "always (injection only, silent if no vault/)"
       },
-      "sha256": "7979462aa9f98466"
+      "sha256": "766154b8f3e4bc60"
     },
     {
       "name": "routing-check",

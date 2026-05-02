@@ -206,6 +206,11 @@ function readJsonIfExists(filePath, fallback = {}) {
   }
 }
 
+function entryContainsVaultHook(entry) {
+  if (!entry || !Array.isArray(entry.hooks)) return false;
+  return entry.hooks.some(hook => hook && typeof hook.command === 'string' && hook.command.includes('vault-context.sh'));
+}
+
 function installPeterHook(cwd, dryRun = false) {
   const projectHookDir = join(cwd, 'hooks');
   const projectHook = join(projectHookDir, 'vault-context.sh');
@@ -226,7 +231,7 @@ function installPeterHook(cwd, dryRun = false) {
   const hooks = settings.hooks ?? {};
   const sessionStart = Array.isArray(hooks.SessionStart) ? hooks.SessionStart : [];
   const command = `bash "${projectHook}"`;
-  const alreadyInstalled = sessionStart.some(entry => String(entry).includes('vault-context.sh'));
+  const alreadyInstalled = sessionStart.some(entryContainsVaultHook);
 
   if (!alreadyInstalled) {
     const targetEntry = sessionStart.find(entry => entry && entry.matcher === '');
