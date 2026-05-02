@@ -67,6 +67,7 @@ workflow-vscode-xcode.md
 .claude/projects/
 .claude/todos/
 .claude/shell-snapshots/
+.claude/scheduled_tasks.lock
 watchdog-report-*.txt
 .claude/worktrees/
 
