@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "subject": "vault report + vault stale + hook SessionStart PETER_REPORT.md",
+    "date": "2026-05-02",
+    "type": "review",
+    "priority": "moyenne",
+    "reviewedRange": "57e37a01f1f592118c3cf72ea7ec1ba988aee94a..4dd3d77f5f4c40a0c24f4eca2623e1dae6a254a7"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "Phase A du plan peter-vault-graphify-plus : Peter devient une vraie carte générée. Commits feat/fix du range : (1) feat(vault): ajoute vault report + vault stale — nouvelles commandes CLI `vault report` (génère vault/PETER_REPORT.md structuré depuis les fichiers du vault : brief, mailbox, decisions, roadmap) et `vault stale` (audite la fraîcheur des fichiers avec seuils configurables : brief 7j, roadmap 14j, report 24h, mailbox_warn 3 entrées). (2) feat(vault): hook SessionStart préfère PETER_REPORT.md si présent et récent — vault-context.sh modifié : si PETER_REPORT.md < 24h il est injecté en priorité, sinon fallback sur les 3 fichiers source avec alerte stale. (3) fix: intègre la review Copilot du vault Peter — fix pré-existant. Bonus : bug fix dans src/pulse/marketplace.js — isOpportunityRelevant utilisait new Date() au lieu du param now injectable par les tests (deadline passée à heure réelle vs heure mockée). 10 tests vault ajoutés (13/13). 639 lignes +, 50 -.",
+    "question": "La fonction generateReport dans bin/vault.js extrait les données des fichiers vault par parsing Markdown naïf (regex/startsWith). Est-ce que les patterns d'extraction couvrent bien les formats réels des fichiers générés par vault init ? En particulier : (1) extractBulletItems s'arrête au premier heading de même niveau rencontré — est-ce robuste si un fichier a des sections imbriquées ? (2) extractDecisions retourne les 5 premières entrées — ce devrait être les 5 les plus récentes (bas du fichier) mais en pratique slice(0,5) prend les premières. Y a-t-il un risque de confusion ? (3) Le seuil REPORT_MAX_AGE_HOURS=24 dans le hook est-il aligné avec STALE_DAYS.report=1 dans vault.js — ou un utilisateur qui relance vault report quelques secondes après ne verra-t-il pas le hook afficher une alerte stale incorrectement ?",
+    "filesToRead": [
+      "bin/vault.js",
+      "hooks/vault-context.sh",
+      "test/vault.js",
+      "src/pulse/marketplace.js",
+      "docs/proposals/peter-vault-graphify-plus-plan.md"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+  },
+  "integration": null
+}
