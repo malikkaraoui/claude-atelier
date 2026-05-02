@@ -1,63 +1,81 @@
 ---
 name: atelier-config
-description: "Tableau de contrôle des features claude-atelier (on/off, paramètres). Affiche l'état de chaque rail et permet de les activer/désactiver."
+description: "Tableau de contrôle des features claude-atelier (on/off, paramètres). Affiche l'état de chaque rail et permet de les activer/désactiver interactivement."
 figure: Régie
 ---
 
-# Atelier Config — Tableau de contrôle
+# Atelier Config — Tableau de contrôle interactif
 
 > La régie. Tous les rails sous les yeux. On allume, on éteint, on règle.
 
 ## Procédure
 
-1. Lance `npx claude-atelier features` (ou `node bin/cli.js features` dans le repo source) et affiche le résultat.
-2. Présente le tableau de bord avec l'état actuel de chaque feature (ON ✅ / OFF ❌).
-3. Si l'utilisateur veut modifier un paramètre → exécute la commande correspondante.
-4. Confirme le changement et rappelle que **Claude Code doit être relancé pour l'appliquer**.
+### 1. Lire features.json
 
-## Commandes disponibles
+Chemin : `.claude/features.json` (racine du repo).
 
-```bash
-# Afficher le tableau complet
-npx claude-atelier features
-
-# Activer / désactiver une feature
-npx claude-atelier features --on  <feature>
-npx claude-atelier features --off <feature>
-npx claude-atelier features --toggle <feature>
-
-# Cibler la config globale (~/.claude/features.json)
-npx claude-atelier features --global
-
-# Restaurer tous les défauts
-npx claude-atelier features --reset
+Si le fichier est absent ou vide `{}`, créer avec ces defaults avant de continuer :
+```json
+{
+  "header": true,
+  "pulse": false,
+  "askUserQuestion": {
+    "enabled": true,
+    "triggers": ["vault-ingest", "review-copilot", "model-switch"]
+  }
+}
 ```
 
-## Features disponibles
+### 2. Afficher la config actuelle
 
-| ID | Groupe | Description |
+Extraire et afficher le tableau suivant (valeurs réelles depuis features.json, défaut si absente) :
+
+| Feature | Valeur | Défaut |
 |---|---|---|
-| `header` | Runtime | En-tête §1 cockpit à chaque réponse |
-| `ollama_status` | Runtime | Statut Ollama + proxy à chaque message |
-| `model_routing_hints` | Runtime | Suggestions Haiku (exploration) / alerte Opus (tâche courte) |
-| `session_length_warning` | Runtime | Alerte contexte > 300KB / 600KB |
-| `review_copilot` | Qualité | Handoff §25 auto (feat terminée, 100+ lignes) |
-| `stack_detection` | Qualité | Agent nommé selon stack détectée (Steve, Gaëlle…) |
-| `design_detection` | Qualité | Propose Séréna si besoin UI/UX/design |
-| `diagnostic` | Qualité | Vérification QMD / §0 / gate toutes les 30 min |
-| `anti_loop` | Qualité | Bloque après 3 tentatives identiques consécutives |
-| `git_guard_sign` | Guards Git | Bloque commits signés (Co-Authored-By) |
-| `git_guard_french` | Guards Git | Messages de commit en français obligatoires |
-| `git_guard_tests` | Guards Git | npm test doit passer avant git push |
-| `skill_bmad` | Skills & Outils | Cycle complet analyse→plan→archi→implem (gros projets) |
-| `skill_design_promax` | Skills & Outils | Propose Séréna + installe UI/UX Pro Max si besoin design |
-| `skill_qmd` | Skills & Outils | QMD-first sur tous les .md (moteur recherche hybride) |
-| `skill_copilot_loop` | Skills & Outils | Loop autonome PR→Copilot review→handoff→fixes→merge |
-| `skill_ollama_router` | Skills & Outils | Setup et routing automatique Ollama local (proxy :4000) |
+| `header` | ✅ ON / ❌ OFF | `true` |
+| `pulse` | ✅ ON / ❌ OFF | `false` |
+| `askUserQuestion` | ✅ ON / ❌ OFF | `true` |
+
+### 3. Poser la question via AskUserQuestion
+
+Appeler l'outil **AskUserQuestion** (natif Claude Code — ne pas créer de wrapper) :
+
+- **question** : `"Que voulez-vous modifier ?"`
+- **options** :
+  1. `"Toggle askUserQuestion — activer/désactiver les questions interactives"`
+  2. `"Toggle header — activer/désactiver l'en-tête §1"`
+  3. `"Toggle pulse — activer/désactiver le pouls Maestro"`
+  4. `"Quitter sans modification"`
+
+### 4. Appliquer la modification
+
+**Option 4 — Quitter** : répondre `"Aucune modification."` et s'arrêter.
+
+**Options 1–3 — Toggle** :
+- Lire la valeur actuelle dans features.json (défaut si clé absente)
+- Inverser la valeur :
+  - `askUserQuestion` → inverser `askUserQuestion.enabled` (bool)
+  - `header` → inverser la valeur bool de `header`
+  - `pulse` → inverser la valeur bool de `pulse`
+- Écrire avec **Edit** (jamais réécriture complète si d'autres clés existent)
+- Confirmer en une ligne : `` ✅ `<feature>` → `<nouvelle valeur>` ``
+
+### 5. Commit atomique
+
+Après toute modification de features.json :
+```bash
+git add .claude/features.json
+git commit -m "config: toggle <feature>"
+```
+
+## Règles strictes
+
+- Pas de commentaires dans features.json — JSON strict
+- Si features.json absent → le créer avec defaults, puis appliquer la modification
+- AskUserQuestion = outil natif, pas de wrapper shell ni script intermédiaire
+- Un seul toggle par appel — relancer `/atelier-config` si plusieurs changements
 
 ## Agents disponibles — commandes slash
-
-Après avoir affiché le tableau de contrôle, affiche **toujours** ce tableau d'agents :
 
 | Commande | Agent | Rôle |
 |---|---|---|
@@ -81,10 +99,3 @@ Après avoir affiché le tableau de contrôle, affiche **toujours** ce tableau d
 | `/ios-setup` | iOS Setup | Workflow iOS/tvOS : VS Code + Xcode + Makefile |
 | `/freebox-init` | Freebox Init | Bootstrap autorisation app Freebox |
 | `/handoff-debt` | Handoff Debt | Affiche la dette §25 + draft handoff |
-
-## Conseils d'usage
-
-- **Début de projet (build from scratch)** : désactive `review_copilot` et `diagnostic` pour aller vite sans friction.
-- **Mode focus** : désactive `session_length_warning` si tu sais que le contexte sera long.
-- **Mode revue qualité** : tout ON — aucun rail ne doit être ignoré.
-- **La config vit dans** `.claude/features.json` — commitable dans le repo pour aligner l'équipe.
