@@ -72,7 +72,7 @@ echo ""
 
 report_age=$(file_age_hours "$REPORT")
 
-if [ -f "$REPORT" ] && [ "$report_age" -lt "$REPORT_MAX_AGE_HOURS" ]; then
+if [ -f "$REPORT" ] && [ "$report_age" -le "$REPORT_MAX_AGE_HOURS" ]; then
   echo "## vault/PETER_REPORT.md"
   echo "Dernière modification : $(print_mtime "$REPORT")"
   echo ""
