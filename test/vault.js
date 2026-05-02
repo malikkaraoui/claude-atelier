@@ -153,6 +153,31 @@ test('vault report extrait décisions depuis 20-decisions.md', () => {
   }
 });
 
+test('vault report limite à 5 décisions et prend les premières (comportement documenté)', () => {
+  const dir = initTestVault();
+  try {
+    const decisionsPath = join(dir, 'vault', '20-decisions.md');
+    // 7 décisions : les 5 premières doivent apparaître, la 6e et 7e non
+    const entries = Array.from({ length: 7 }, (_, i) => {
+      const n = i + 1;
+      return `### 2026-0${n}-01 — Décision ${n}\n\n- Contexte : ctx\n- Décision : choix ${n}\n- Conséquence : aucune\n- À revalider si : jamais\n`;
+    });
+    writeFileSync(decisionsPath, `# Décisions projet\n\n## Décisions durables\n\n${entries.join('\n')}`, 'utf8');
+
+    cli(['vault', 'report', '--cwd', dir], dir);
+    const content = readFileSync(join(dir, 'vault', 'PETER_REPORT.md'), 'utf8');
+    // Les 5 premières doivent figurer
+    for (let i = 1; i <= 5; i++) {
+      ok(content.includes(`Décision ${i}`), `décision ${i} doit figurer dans le rapport`);
+    }
+    // La 6e et 7e ne doivent pas figurer (slice(0,5))
+    ok(!content.includes('Décision 6'), 'décision 6 ne doit pas figurer (limite 5)');
+    ok(!content.includes('Décision 7'), 'décision 7 ne doit pas figurer (limite 5)');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('vault report sans vault retourne exit 1', () => {
   const dir = mkdtempSync(join(tmpdir(), 'atelier-vault-'));
   try {
