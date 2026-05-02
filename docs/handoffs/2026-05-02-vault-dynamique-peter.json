@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "subject": "Vault dynamique projet maintenu par Peter",
+    "date": "2026-05-02",
+    "type": "review",
+    "priority": "haute",
+    "reviewedRange": "58ea635..57e37a01f1f592118c3cf72ea7ec1ba988aee94a"
+  },
+  "from": {
+    "model": "github-copilot",
+    "context": "Ajout d'un MVP de vault dynamique projet dans claude-atelier. La commande `claude-atelier vault init` crée un dossier `vault/` par projet avec brief, mailbox, décisions, discoveries, roadmap, sources et charte Peter. Le hook `vault-context.sh` injecte au SessionStart un contexte court `[VAULT-PETER]` depuis `00-brief.md`, `10-mailbox.md` et `40-roadmap.md`, afin d'éviter de relire tout le repo et de réduire les tokens. README, manifest hooks, aide CLI, tests hooks et tests vault ont été mis à jour. Le range inclut aussi le commit précédent sur atelier-config/AskUserQuestion déjà présent sur main depuis le dernier handoff intégré.",
+    "question": "Quels sont les points fragiles ou manquants dans ce MVP de vault dynamique Peter, en particulier autour de l'installation du hook dans `.claude/settings.json`, de l'injection SessionStart et du risque de contexte vault obsolète ou trop volumineux ?",
+    "filesToRead": [
+      "bin/vault.js",
+      "hooks/vault-context.sh",
+      "bin/init.js",
+      "README.md",
+      ".claude/hooks-manifest.json",
+      "test/vault.js",
+      "test/hooks.js",
+      "docs/proposals/vault-dynamique-peter-mvp.md",
+      "docs/proposals/mirror-besoin-reel.md",
+      "src/features.json"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "Vérifier la cohérence avec le pattern Graphify : carte courte always-on, pas ingestion massive",
+      "Vérifier les risques de duplication de hooks ou de settings cassé",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-05-02-vault-dynamique-peter.json.\""
+  },
+  "integration": null
+}
