@@ -1,6 +1,6 @@
 {
   "name": "claude-atelier",
-  "version": "0.23.1",
+  "version": "0.23.4",
   "description": "Framework complet Claude Code: 30 agents, 18 skills, MCP GitHub intégré, loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.",
   "keywords": [
     "claude",
@@ -68,7 +68,8 @@
     "test:merge": "node test/merge.js",
     "test:apply-profile": "node test/apply-profile.js",
     "test:pulse": "node test/pulse.js",
-    "test": "npm run lint && npm run doctor && npm run test:hooks && npm run test:merge && npm run test:apply-profile && npm run test:pulse"
+    "test:vault": "node test/vault.js",
+    "test": "npm run lint && npm run doctor && npm run test:hooks && npm run test:merge && npm run test:apply-profile && npm run test:pulse && npm run test:vault"
   },
   "publishConfig": {
     "access": "public"

@@ -542,6 +542,49 @@ test('silencieux sur prompt sans rapport avec le design', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// vault-context.sh — Peter injecte le vault projet au SessionStart
+// ─────────────────────────────────────────────────────────────
+console.log('\n── vault-context.sh ──');
+
+test('silencieux si aucun vault projet', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'vault-hook-'));
+  try {
+    const r = spawnSync('bash', [resolve(ROOT, 'hooks', 'vault-context.sh')], {
+      cwd: dir,
+      input: JSON.stringify({ hook_event_name: 'SessionStart' }),
+      encoding: 'utf8',
+    });
+    ok(r.status === 0, 'exit 0');
+    ok(r.stdout.trim() === '', 'aucune sortie sans vault/');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('injecte brief et mailbox si vault projet présent', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'vault-hook-'));
+  try {
+    mkdirSync(resolve(dir, 'vault'), { recursive: true });
+    writeFileSync(resolve(dir, 'vault', '00-brief.md'), '# Brief projet\n\nObjectif courant : livrer le MVP.\n');
+    writeFileSync(resolve(dir, 'vault', '10-mailbox.md'), `# Mailbox projet\n\nIdée vendredi soir : challenger Peter.\n${'x'.repeat(900)}\n`);
+    const r = spawnSync('bash', [resolve(ROOT, 'hooks', 'vault-context.sh')], {
+      cwd: dir,
+      input: JSON.stringify({ hook_event_name: 'SessionStart' }),
+      encoding: 'utf8',
+    });
+    ok(r.status === 0, 'exit 0');
+    ok(r.stdout.includes('[VAULT-PETER]'), 'marqueur Peter attendu');
+    ok(r.stdout.includes('Objectif courant'), 'brief injecté');
+    ok(r.stdout.includes('Idée vendredi soir'), 'mailbox injectée');
+    ok(r.stdout.includes('Dernière modification :'), 'mtime attendu pour éviter la mémoire stale');
+    ok(r.stdout.includes('[ligne tronquée]'), 'ligne longue tronquée attendue');
+    ok(!r.stdout.includes('x'.repeat(700)), 'une ligne longue ne doit pas passer entière');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // ollama-proxy — tests Go (go test)
 // ─────────────────────────────────────────────────────────────
 console.log('\n── ollama-proxy (Go) ──');

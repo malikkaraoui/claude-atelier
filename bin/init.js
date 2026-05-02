@@ -70,6 +70,7 @@ function generateHooksSection(hooksDir, scriptsDir) {
       matcher: '',
       hooks: [
         { type: 'command', command: h('session-model.sh') },
+        { type: 'command', command: h('vault-context.sh') },
         { type: 'command', command: n('memory-read.js', '--episodes-only', '--timeout', '2000') },
       ],
     }],

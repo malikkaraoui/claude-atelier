@@ -14,7 +14,7 @@
 
 ## ⚡ From vibes to rails — Claude Code, disciplined
 
-30 agents · 18 skills · MCP GitHub intégré · mémoire persistante · Context7 dynamique · mode éco · verrou review
+31 agents · 18 skills · MCP GitHub intégré · mémoire persistante · vault dynamique · Context7 dynamique · mode éco · verrou review
 
 [![npm version](https://img.shields.io/npm/v/claude-atelier.svg?style=flat-square&color=CB3837)](https://www.npmjs.com/package/claude-atelier)
 [![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/claude-atelier)
@@ -39,6 +39,7 @@ npx claude-atelier init
 | **Token killer** | Routing Haiku/Sonnet/Opus, `/compact`, QMD-first, `maxBudgetUsd` → beaucoup moins de tokens brûlés pour rien |
 | **Contexte dynamique du Context7** | Le contexte doc se calibre selon `§0` (phase + stack) → tu charges les bonnes libs au bon moment, pas toute la bibliothèque du monde |
 | **Mémoire persistante intelligente** | Mémoire locale par projet + feedback user + règles de lecture/écriture → Claude reprend entre sessions sans repartir de zéro |
+| **Vault dynamique projet — Peter** | `claude-atelier vault init` crée un vault vivant par projet. Peter injecte le brief, la mailbox et la roadmap au démarrage sans relire tout le repo. |
 | **Agents spécialisés** | 30 agents nommés + 18 slash commands → le bon spécialiste au bon moment |
 | **Loop Copilot autonome** | MCP GitHub intégré → polling auto des reviews Copilot, merge auto après validation, handoff structuré, zéro intervention |
 | **La Bise 🌬️** | Échanges inter-LLM : prépare le brief pour GPT/Mistral et intègre leurs réponses — vent léger, pas d'embrassade |
@@ -128,7 +129,38 @@ npx claude-atelier doctor --json   # output structuré CI-friendly
 
 # Mettre à jour (préserve le §0 du projet)
 npx claude-atelier update
+
+# Créer un vault dynamique projet maintenu par Peter
+npx claude-atelier vault init
+npx claude-atelier vault status
 ```
+
+---
+
+### 🗂️ Vault dynamique projet — Peter
+
+Le vault projet est la mémoire opérationnelle locale de Claude. Il évite de relire tout le repo, de brûler des tokens, ou de réexpliquer le contexte à chaque session.
+
+```bash
+npx claude-atelier vault init
+```
+
+Crée :
+
+```text
+vault/
+├── PETER.md          # charte de Peter, mainteneur du vault
+├── 00-brief.md       # contexte court injecté au SessionStart
+├── 10-mailbox.md     # courrier entrant : notes, vocaux, captures, liens
+├── 20-decisions.md   # décisions durables
+├── 30-discoveries.md # apprentissages projet
+├── 40-roadmap.md     # roadmap vivante
+└── 90-sources.md     # sources liées au projet
+```
+
+À chaque démarrage de session, `vault-context.sh` détecte `vault/` et injecte seulement les fichiers courts (`00-brief.md`, `10-mailbox.md`, `40-roadmap.md`) avec un marqueur `[VAULT-PETER]`.
+
+Inspiration Graphify : une carte utile avant la fouille brute. Adaptation atelier : Markdown vivant, hook léger, pas de graphe obligatoire au MVP.
 
 ---
 
@@ -173,12 +205,13 @@ Les règles critiques ne sont pas dans un README. Elles sont dans des hooks qui 
 | Challenger (review + angle-mort + archi) | `guard-review-auto.sh` PostToolUse | Commit feat/refactor, 100+ lignes, 10 commits |
 | Rechargement hooks/MCP requis | `guard-hooks-reload.sh` PostToolUse | Edit/Write sur hooks, settings.json, .mcp.json |
 | QMD-first : redirige `.md` → QMD | `guard-qmd-first.sh` PreToolUse | `Read` sur tout `.md` projet |
+| Vault dynamique projet — Peter | `vault-context.sh` SessionStart | Démarrage si `vault/` existe |
 | Longueur de session (300KB/600KB) | `routing-check.sh` UserPromptSubmit | Chaque message |
 | Suggestion Haiku (prompt court + mots d'exploration) | `routing-check.sh` UserPromptSubmit | Chaque message |
 | Détection besoin design → propose Séréna | `detect-design-need.sh` UserPromptSubmit | Chaque message |
 | **Cockpit §1** — en-tête heads-up display : `[timestamp \| model] PASTILLE MODE \| 🦙state \| 🔌proxy`. Mode `A`/`M` basé sur healthcheck `:4000/health` (proxy off → `M` de fait). Pastille `⬆️/🟢/⬇️` issue de `model-metrics.sh`. Ollama : `🦙✅ model` (intercept), `🦙⚡ model` (triage dynamique), `🦙❌` (off). | `routing-check.sh` + `model-metrics.sh` UserPromptSubmit | Chaque message |
 
-**Bilan : 16 rails actifs.** Les règles purement de jugement (anti-hallucination, qualité code) restent du ressort du modèle.
+**Bilan : 17 rails actifs.** Les règles purement de jugement (anti-hallucination, qualité code) restent du ressort du modèle.
 
 ---
 
@@ -201,6 +234,7 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 | **Jeffrey** 🦙 | Ollama | `Modelfile`, `**/ollama*`... | Local first, quantization Q4/Q5/Q8, embeddings, API OpenAI-compat |
 | **Nael** 🔷 | JavaScript / TypeScript | `*.js`, `*.ts`, `*.tsx`, `*.mjs`... | Zéro `any`, zéro `var`, erreurs typées, Vitest/Playwright |
 | **Séréna** 🎨 | Design / UI/UX / Charte | `design`, `ui`, `ux`, `landing page`, `charte`... | Design-first : design system, palette, typo, composants 21st.dev (MCP magic) |
+| **Peter** 🗂️ | Vault projet / mémoire dynamique | `claude-atelier vault init`, `vault/` présent au SessionStart | Maintient brief, mailbox, décisions, discoveries et roadmap sans cramer les tokens |
 
 *« Stay hungry, stay foolish — mais build depuis le Makefile. »* — Steve
 *« npm install — deux mots qui doivent toujours marcher. »* — Isaac
@@ -215,8 +249,9 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 *« Local first. Always. »* — Jeffrey
 *« Le compilateur ne pardonne pas. Moi non plus. »* — Nael
 *« Le code vient après. D'abord, on conçoit. »* — Séréna
+*« Une mémoire utile prépare une action. Le reste, c'est du stockage. »* — Peter
 
-Steve et Isaac sont injectés via `routing-check.sh` sur détection de stack. Mohamed arrive via les hooks Challenger (`guard-review-auto.sh`) et le cross-session check. Amine vérifie que chaque feat commit inclut des tests — automatiquement, sans que tu aies à y penser. Séréna s'active via `detect-design-need.sh` dès qu'un besoin UI/UX/design est détecté dans le prompt.
+Steve et Isaac sont injectés via `routing-check.sh` sur détection de stack. Mohamed arrive via les hooks Challenger (`guard-review-auto.sh`) et le cross-session check. Amine vérifie que chaque feat commit inclut des tests — automatiquement, sans que tu aies à y penser. Séréna s'active via `detect-design-need.sh` dès qu'un besoin UI/UX/design est détecté dans le prompt. Peter s'active au `SessionStart` dès qu'un `vault/` projet existe.
 
 ---
 
