@@ -204,11 +204,11 @@
         "additionalContext: [METRICS] fit:VERDICT(Xh/Xm/Xl/Xt) | model:MODEL | verdict → suggestion PASTILLE"
       ],
       "rule": "§1 Horodatage + pastille · §15 Auto-métriques",
-      "test": "test/hooks.js → model-metrics.sh (4 tests)",
+      "test": "test/hooks.js → model-metrics.sh (5 tests)",
       "exitCodes": {
         "0": "always (warning only, never blocks)"
       },
-      "sha256": "7f7908ffec6d3771"
+      "sha256": "ee66e8a79d4587c4"
     },
     {
       "name": "guard-hooks-reload",
