@@ -9,13 +9,14 @@
 
 1. [Contexte & Vision](#1-contexte--vision)
 2. [Graphify — Brique Infrastructure](#2-graphify--brique-infrastructure)
-3. [Superpowers — Patterns Skills & Bootstrap](#3-superpowers--patterns-skills--bootstrap)
-4. [AskUserQuestion — Dialogues Q&A Structurés](#4-askuserquestion--dialogues-qa-structurés)
-5. [Écosystème Obsidian+LLM (02.05.2026)](#5-écosystème-obsidianllm-02052026)
-6. [Architecture Recommandée pour Malik](#6-architecture-recommandée-pour-malik)
-7. [Stack Technique](#7-stack-technique)
-8. [Roadmap d'Implémentation](#8-roadmap-dimplémentation)
-9. [Références](#9-références)
+3. [Cyrus Agents — Orchestration Multi-Agents + Mémoire de Session](#3-cyrus-agents--orchestration-multi-agents--mémoire-de-session)
+4. [Superpowers — Patterns Skills & Bootstrap](#4-superpowers--patterns-skills--bootstrap)
+5. [AskUserQuestion — Dialogues Q&A Structurés](#5-askuserquestion--dialogues-qa-structurés)
+6. [Écosystème Obsidian+LLM (02.05.2026)](#6-écosystème-obsidianllm-02052026)
+7. [Architecture Recommandée pour Malik](#7-architecture-recommandée-pour-malik)
+8. [Stack Technique](#8-stack-technique)
+9. [Roadmap d'Implémentation](#9-roadmap-dimplémentation)
+10. [Références](#10-références)
 
 ---
 
@@ -288,7 +289,7 @@ related: [autre-doc-slug]
 
 ---
 
-## 4. AskUserQuestion — Dialogues Q&A Structurés
+## 5. AskUserQuestion — Dialogues Q&A Structurés
 
 ### Ce que c'est
 
@@ -366,7 +367,7 @@ Avant d'ingérer, clarifier le type de source :
 
 ---
 
-## 5. Écosystème Obsidian+LLM (02.05.2026)
+## 6. Écosystème Obsidian+LLM (02.05.2026)
 
 ### Top 5 Plugins Obsidian pour LLM
 
@@ -421,7 +422,7 @@ Avant d'ingérer, clarifier le type de source :
 
 ---
 
-## 6. Architecture Recommandée pour Malik
+## 7. Architecture Recommandée pour Malik
 
 ### Structure du vault
 
@@ -485,7 +486,7 @@ Claude Code (n'importe quel projet)
 
 ---
 
-## 7. Stack Technique
+## 8. Stack Technique
 
 ### Tier 1 — Socle (~2h)
 
@@ -535,7 +536,7 @@ Claude Code (n'importe quel projet)
 
 ---
 
-## 8. Roadmap d'Implémentation
+## 9. Roadmap d'Implémentation
 
 ### Phase 1 — Bootstrap vault (1-2h)
 - [ ] Installer Obsidian + Graphify (`uv tool install graphifyy`)
@@ -568,7 +569,7 @@ Claude Code (n'importe quel projet)
 
 ---
 
-## 9. Références
+## 10. Références
 
 ### Repos analysés
 - [Graphify](https://github.com/safishamsi/graphify) — Infrastructure graphe de connaissances

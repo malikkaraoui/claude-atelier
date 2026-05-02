@@ -167,7 +167,7 @@ _PASTILLE=$(printf '%s' "$METRICS" | grep -oE '(⬆️|⬇️|🟢)' | tail -1)
 # Mode proxy : A si proxy actif, M sinon
 # Validation stricte JSON {"status":"ok"} — évite les faux positifs (Vite, autres serveurs sur :4000)
 _PROXY_HEALTH=$(curl -s --max-time 1 http://localhost:4000/health 2>/dev/null)
-_PROXY_OK=$(echo "$_PROXY_HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); print('ok' if d.get('status')=='ok' else '')" 2>/dev/null)
+_PROXY_OK=$(echo "$_PROXY_HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); print('ok' if d.get('status')=='ok' and d.get('proxy')=='ollama' else '')" 2>/dev/null)
 if [ -n "$_PROXY_OK" ]; then
   _MMODE="A"
 else
