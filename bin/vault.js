@@ -12,6 +12,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, resolve, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
@@ -541,6 +542,22 @@ function staleVault(cwd) {
       count > 0 ? `${count} entrée(s) en attente (nouveau|à challenger)` : 'Mailbox à jour');
   }
 
+  const manifestPath = join(vaultDir, 'index', 'manifest.json');
+  const statePath = join(vaultDir, '.peter', 'state.json');
+  if (!existsSync(manifestPath)) {
+    // Phase B optionnelle : INFO ne bloque pas "Vault à jour"
+    add('vault/index/manifest.json', 'INFO', 'Index absent — lancez : claude-atelier vault update (Phase B)');
+  } else {
+    const d = daysSince(manifestPath);
+    const state = loadState(statePath);
+    const needsUpdate = state?.needsUpdate === true;
+    add('vault/index/manifest.json',
+      needsUpdate ? 'STALE' : d > 1 ? 'WARN' : 'OK',
+      needsUpdate
+        ? 'Marqué comme dépassé — lancez : claude-atelier vault update'
+        : `${state?.fileCount ?? '?'} fichiers indexés, mis à jour il y a ${Math.floor(d * 24)}h`);
+  }
+
   return { ok: true, checks };
 }
 
@@ -599,14 +616,246 @@ function printStale(result) {
     process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
     return;
   }
-  const COLORS = { OK: GREEN, WARN: YELLOW, STALE: RED, MANQUANT: RED };
+  const COLORS = { OK: GREEN, WARN: YELLOW, STALE: RED, MANQUANT: RED, INFO: CYAN };
   console.log(`\n${CYAN}[PETER] vault stale${NC}`);
   for (const c of result.checks) {
     const col = COLORS[c.status] ?? NC;
-    console.log(`  ${col}[${c.status}]${NC} ${c.file.padEnd(20)} ${c.msg}`);
+    console.log(`  ${col}[${c.status}]${NC} ${c.file.padEnd(30)} ${c.msg}`);
   }
-  const hasIssue = result.checks.some(c => c.status !== 'OK');
+  // INFO n'est pas un problème — ne bloque pas "Vault à jour"
+  const hasIssue = result.checks.some(c => c.status !== 'OK' && c.status !== 'INFO');
   console.log(`\n${hasIssue ? YELLOW : GREEN}${hasIssue ? '⚠' : '✓'}${NC} ${hasIssue ? 'Certains éléments nécessitent attention.' : 'Vault à jour.'}`);
+}
+
+// ─── Phase B — Index incrémental ──────────────────────────────────────────────
+
+const MANIFEST_VERSION = 1;
+const STATE_VERSION = 1;
+
+const DEFAULT_IGNORE_DIRS = new Set([
+  'node_modules', '.git', 'dist', 'build', '.next', 'coverage',
+  '__pycache__', '.turbo', '.svelte-kit', 'out', '.output',
+]);
+
+const DEFAULT_IGNORE_PATTERNS = [
+  '*.lock', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml',
+  '*.min.js', '*.min.css', '*.map', '.DS_Store', 'Thumbs.db',
+];
+
+function parseIgnoreFile(filePath) {
+  if (!existsSync(filePath)) return [];
+  return readFileSync(filePath, 'utf8')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#'));
+}
+
+function globToRegex(pattern) {
+  let re = '';
+  for (let i = 0; i < pattern.length; i++) {
+    const c = pattern[i];
+    if (c === '*' && pattern[i + 1] === '*') {
+      re += '.*'; i++;
+      if (pattern[i + 1] === '/') i++;
+    } else if (c === '*') {
+      re += '[^/]*';
+    } else if (c === '?') {
+      re += '[^/]';
+    } else if ('.+^${}()|[]\\'.includes(c)) {
+      re += '\\' + c;
+    } else {
+      re += c;
+    }
+  }
+  return new RegExp('^' + re + '$');
+}
+
+function buildIgnoreMatcher(extraPatterns = [], prefixExclusions = []) {
+  const patterns = [...DEFAULT_IGNORE_PATTERNS, ...extraPatterns]
+    .filter(p => !p.startsWith('!'))
+    .map(p => {
+      const anchored = p.startsWith('/');
+      const dirOnly = p.endsWith('/');
+      const clean = p.replace(/^\//, '').replace(/\/$/, '');
+      try {
+        return { raw: clean, anchored, dirOnly, re: globToRegex(clean) };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+
+  return (relPath, isDir) => {
+    // Exclusions de sous-arborescences entières (vault/.peter, vault/index, etc.)
+    for (const prefix of prefixExclusions) {
+      if (relPath === prefix || relPath.startsWith(prefix + '/')) return true;
+    }
+    const name = relPath.split('/').pop();
+    for (const pat of patterns) {
+      if (pat.dirOnly && !isDir) continue;
+      const test = pat.anchored
+        ? pat.re.test(relPath)
+        : pat.re.test(relPath) || pat.re.test(name);
+      if (test) return true;
+    }
+    return false;
+  };
+}
+
+function computeFileSHA256(filePath) {
+  const hash = createHash('sha256');
+  hash.update(readFileSync(filePath));
+  return hash.digest('hex');
+}
+
+function* walkDir(dir, isIgnored, relPrefix = '') {
+  let entries;
+  try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+  for (const entry of entries) {
+    const relPath = relPrefix ? `${relPrefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      if (DEFAULT_IGNORE_DIRS.has(entry.name)) continue;
+      if (isIgnored(relPath, true)) continue;
+      yield* walkDir(join(dir, entry.name), isIgnored, relPath);
+    } else if (entry.isFile()) {
+      if (isIgnored(relPath, false)) continue;
+      yield relPath;
+    }
+  }
+}
+
+function loadManifest(manifestPath) {
+  if (!existsSync(manifestPath)) return null;
+  try { return JSON.parse(readFileSync(manifestPath, 'utf8')); } catch { return null; }
+}
+
+function saveManifest(manifestPath, manifest) {
+  mkdirSync(dirname(manifestPath), { recursive: true });
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+}
+
+function loadState(statePath) {
+  if (!existsSync(statePath)) return null;
+  try { return JSON.parse(readFileSync(statePath, 'utf8')); } catch { return null; }
+}
+
+function saveState(statePath, state) {
+  mkdirSync(dirname(statePath), { recursive: true });
+  writeFileSync(statePath, JSON.stringify(state, null, 2) + '\n', 'utf8');
+}
+
+function updateVault(cwd) {
+  const vaultDir = join(cwd, 'vault');
+  if (!existsSync(vaultDir)) {
+    return { ok: false, error: 'Aucun vault projet. Lancez : claude-atelier vault init' };
+  }
+
+  const manifestPath = join(vaultDir, 'index', 'manifest.json');
+  const statePath = join(vaultDir, '.peter', 'state.json');
+  const cachePath = join(vaultDir, '.peter', 'cache');
+
+  mkdirSync(join(vaultDir, 'index'), { recursive: true });
+  mkdirSync(cachePath, { recursive: true });
+
+  const oldManifest = loadManifest(manifestPath);
+  const oldByPath = new Map((oldManifest?.files ?? []).map(f => [f.path, f]));
+
+  const ignorePatterns = [
+    ...parseIgnoreFile(join(cwd, '.gitignore')),
+    ...parseIgnoreFile(join(cwd, '.peterignore')),
+    ...parseIgnoreFile(join(cwd, '.claudeignore')),
+  ];
+  // Exclure les répertoires internes de Peter (état, cache, sorties générées)
+  const peterInternalDirs = ['vault/.peter', 'vault/index'];
+  const isIgnored = buildIgnoreMatcher(ignorePatterns, peterInternalDirs);
+
+  const now = new Date().toISOString();
+  const files = [];
+  let newCount = 0;
+  let modCount = 0;
+  let unchanged = 0;
+
+  for (const relPath of walkDir(cwd, isIgnored)) {
+    const absPath = join(cwd, relPath);
+    let stat;
+    try { stat = statSync(absPath); } catch { continue; }
+    const mtime = stat.mtime.toISOString();
+    const old = oldByPath.get(relPath);
+
+    let sha256;
+    if (old && old.mtime === mtime) {
+      sha256 = old.sha256;
+      unchanged++;
+    } else {
+      try { sha256 = computeFileSHA256(absPath); } catch { continue; }
+      if (old) modCount++; else newCount++;
+    }
+
+    files.push({
+      path: relPath,
+      sha256,
+      mtime,
+      size: stat.size,
+      ext: relPath.includes('.') ? '.' + relPath.split('.').pop() : '',
+    });
+  }
+
+  const deletedCount = Math.max(0, (oldManifest?.fileCount ?? 0) - (files.length - newCount));
+
+  const manifest = {
+    version: MANIFEST_VERSION,
+    generatedAt: now,
+    root: cwd,
+    fileCount: files.length,
+    files,
+  };
+  saveManifest(manifestPath, manifest);
+
+  const state = {
+    version: STATE_VERSION,
+    lastRun: now,
+    lastCommand: 'update',
+    needsUpdate: false,
+    health: 'ok',
+    fileCount: files.length,
+    newFiles: newCount,
+    modifiedFiles: modCount,
+    unchangedFiles: unchanged,
+    deletedFiles: deletedCount,
+  };
+  saveState(statePath, state);
+
+  return {
+    ok: true,
+    manifestPath,
+    statePath,
+    cachePath,
+    fileCount: files.length,
+    newCount,
+    modCount,
+    unchanged,
+    deletedCount,
+    ignorePatternCount: ignorePatterns.length,
+  };
+}
+
+function printUpdate(result, cwd) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+    return;
+  }
+  console.log(`\n${CYAN}[PETER] vault update${NC}`);
+  console.log(`  Projet  : ${cwd}`);
+  console.log(`  Ignorés : defaults + ${result.ignorePatternCount} patterns lus`);
+  console.log('');
+  if (result.newCount > 0) console.log(`  ${GREEN}[NEW]${NC}      ${result.newCount} fichier(s) nouveaux`);
+  if (result.modCount > 0) console.log(`  ${YELLOW}[MOD]${NC}      ${result.modCount} fichier(s) modifiés`);
+  if (result.deletedCount > 0) console.log(`  ${RED}[DEL]${NC}      ${result.deletedCount} fichier(s) supprimés`);
+  if (result.unchanged > 0) console.log(`  ${GREEN}[SKIP]${NC}     ${result.unchanged} fichier(s) inchangés (cache mtime)`);
+  console.log('');
+  console.log(`  → ${relative(cwd, result.manifestPath)} mis à jour (${result.fileCount} fichiers)`);
+  console.log(`  → ${relative(cwd, result.statePath)} mis à jour`);
+  console.log(`\n${GREEN}✓${NC} Index incrémental Peter à jour.`);
 }
 
 export async function runVault(argv) {
@@ -641,7 +890,14 @@ export async function runVault(argv) {
     return result.ok ? 0 : 1;
   }
 
+  if (sub === 'update') {
+    const result = updateVault(cwd);
+    if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    else printUpdate(result, cwd);
+    return result.ok ? 0 : 1;
+  }
+
   process.stderr.write(`${RED}error${NC}: sous-commande vault inconnue "${sub}"\n`);
-  process.stderr.write('Usage: claude-atelier vault [init|status|report|stale] [--cwd <path>] [--dry-run] [--json]\n');
+  process.stderr.write('Usage: claude-atelier vault [init|status|report|stale|update] [--cwd <path>] [--dry-run] [--json]\n');
   return 1;
 }
