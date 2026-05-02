@@ -23,7 +23,7 @@
     },
     "orchestration": {
       "label": "Orchestration",
-      "features": ["pulse", "pulse_header"]
+      "features": ["pulse", "pulse_header", "marketplace_watch"]
     },
     "entete": {
       "label": "Format entête §1",
@@ -165,6 +165,11 @@
       "label": "Entête: pastille pouls",
       "description": "Afficher 💓{niveau}·{n}/{total} dans l'entête §1",
       "default": true
+    },
+    "marketplace_watch": {
+      "label": "Veille marketplace",
+      "description": "Daemon léger lié au pouls : scan périodique, purge des offres ouvertes stale publiées par nous, pénalité anti-spam et détection d'offres pertinentes",
+      "default": false
     }
   },
   "params": {
@@ -229,6 +234,50 @@
       "unit": "tentatives",
       "min": 3,
       "max": 48
+    },
+    "marketplace_agent_id": {
+      "label": "Marketplace: agent id",
+      "description": "Identité locale sur la marketplace (format projet@user)",
+      "type": "string",
+      "default": ""
+    },
+    "marketplace_repo_path": {
+      "label": "Marketplace: repo path",
+      "description": "Chemin local vers le checkout git du repo marketplace",
+      "type": "string",
+      "default": ""
+    },
+    "marketplace_watch_poll_sec": {
+      "label": "Marketplace: intervalle veille",
+      "description": "Délai entre deux scans marketplace par le watcher lié au pouls",
+      "default": 15,
+      "unit": "sec",
+      "min": 5,
+      "max": 300
+    },
+    "marketplace_stale_open_sec": {
+      "label": "Marketplace: délai stale",
+      "description": "Au-delà de ce délai sans preneur, une annonce ouverte publiée par nous est purgeée et pénalisée",
+      "default": 120,
+      "unit": "sec",
+      "min": 30,
+      "max": 1800
+    },
+    "marketplace_spam_penalty": {
+      "label": "Marketplace: pénalité spam",
+      "description": "Points retirés à la réputation quand une annonce stale reste ouverte jusqu'à purge automatique",
+      "default": 5,
+      "unit": "pts",
+      "min": 1,
+      "max": 100
+    },
+    "marketplace_spam_soft_limit": {
+      "label": "Marketplace: seuil spam",
+      "description": "Nombre de pénalités stale avant marquage indisponible de l'agent",
+      "default": 3,
+      "unit": "pénalités",
+      "min": 1,
+      "max": 20
     }
   }
 }

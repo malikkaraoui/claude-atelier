@@ -76,6 +76,21 @@ wants_full_anthropic_help() {
   printf '%s' "$PROMPT" | grep -qiE "(full[[:space:]]+anthropic|anthropic[[:space:]]+direct|direct[[:space:]]+anthropic|mode[[:space:]]+anthropic|repasser([^[:alnum:]]|.*)anthropic|passer([^[:alnum:]]|.*)anthropic|retour([^[:alnum:]]|.*)anthropic|désactiver[[:space:]]+le[[:space:]]+proxy|desactiver[[:space:]]+le[[:space:]]+proxy|arrêter[[:space:]]+le[[:space:]]+proxy|arreter[[:space:]]+le[[:space:]]+proxy|stop[[:space:]]+proxy|sans[[:space:]]+proxy)"
 }
 
+is_ollama_proxy_healthy() {
+  local health=""
+  health=$(curl -s --max-time 1 http://localhost:4000/health 2>/dev/null || true)
+  [ -n "$health" ] || return 1
+
+  printf '%s' "$health" | python3 -c "
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+sys.exit(0 if d.get('status') == 'ok' and d.get('proxy') == 'ollama' else 1)
+" >/dev/null 2>&1
+}
+
 cache_scope_key() {
   if [ -n "$1" ]; then
     printf '%s' "$1"
@@ -208,7 +223,7 @@ fi
 # ANTHROPIC_BASE_URL est une config, pas un état — un proxy éteint = mode M de fait.
 SWITCH_MODE_FILE="/tmp/claude-atelier-switch-mode"
 
-if curl -s --max-time 1 http://localhost:4000/health &>/dev/null; then
+if is_ollama_proxy_healthy; then
   SWITCH_MODE="A"
   echo "A" > "$SWITCH_MODE_FILE"
 else
@@ -223,7 +238,7 @@ ACTIVE_LLM=""
 if [ -n "$_F_OLLAMA" ] && command -v ollama &>/dev/null; then
   OLLAMA_HEALTH=$(curl -s --max-time 1 http://localhost:11434/api/tags 2>/dev/null || echo "")
   if [ -n "$OLLAMA_HEALTH" ]; then
-    PROXY_RUNNING=$(curl -s --max-time 1 http://localhost:4000/health 2>/dev/null || echo "")
+    PROXY_RUNNING=$(is_ollama_proxy_healthy && echo "ok" || echo "")
     if [ -n "$PROXY_RUNNING" ]; then
       if [ -f "$PROXY_CONFIG" ]; then
         ACTIVE_LLM=$(python3 -c "
@@ -255,7 +270,7 @@ except: print('no')
       EMBED_TAG=""
       [ "$HAS_EMBED" = "yes" ] && EMBED_TAG=" +embed"
       if [ -n "$OLLAMA_MODELS" ]; then
-        OLLAMA_STATUS="🦙❌ ollama ready ($OLLAMA_MODELS)$EMBED_TAG — proxy off → /ollama-router"
+        OLLAMA_STATUS="🦙⚡ ollama ready ($OLLAMA_MODELS)$EMBED_TAG — proxy off → /ollama-router"
       else
         OLLAMA_STATUS="🦙⚠️ ollama (aucun modele LLM) → /ollama-router"
       fi
@@ -271,6 +286,8 @@ fi
 if [ -n "$_F_OLLAMA" ]; then
   if echo "$OLLAMA_STATUS" | grep -q "✅"; then
     _OLLAMA_IND="🦙✅${ACTIVE_LLM:+ $ACTIVE_LLM}"
+  elif echo "$OLLAMA_STATUS" | grep -q "⚡"; then
+    _OLLAMA_IND="🦙⚡"
   elif echo "$OLLAMA_STATUS" | grep -q "⚠️"; then
     _OLLAMA_IND="🦙⚠️"
   else
@@ -599,7 +616,7 @@ _HDR_MODEL="$MODEL"
 _HDR_MODE="$SWITCH_MODE"
 _HDR_OLLAMA=$(cat /tmp/claude-atelier-ollama-indicator 2>/dev/null | tr -d '\r\n')
 _HDR_OLLAMA_PART="${_HDR_OLLAMA:+ | $_HDR_OLLAMA}"
-_HDR_PROXY=$(curl -s --max-time 1 http://localhost:4000/health &>/dev/null && echo "🔌✅" || echo "🔌❌")
+_HDR_PROXY=$(is_ollama_proxy_healthy && echo "🔌✅" || echo "🔌❌")
 echo ""
 echo "⚡⚡⚡ §1 ENTÊTE OBLIGATOIRE ⚡⚡⚡"
 echo "Ta réponse DOIT commencer par (1ère ligne, exactement) :"

@@ -12,6 +12,7 @@ import { parsePoulsMd } from '../src/pulse/parse.js';
 import { writePoulsMd } from '../src/pulse/write.js';
 import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/intensity.js';
 import { buildAgentId, buildKnownAgentIds } from '../src/pulse/identity.js';
+import { stopMarketplaceWatch } from '../src/pulse/marketplace.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const RAW_HOSTNAME = hostname();
@@ -74,4 +75,6 @@ for (const f of files) {
 if (updated === 0) {
   process.stderr.write(`[PULSE] aucun pouls.md trouvé pour ${AGENT_ID}\n`);
 }
+
+stopMarketplaceWatch({ root: ROOT });
 process.exit(0);

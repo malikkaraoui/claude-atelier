@@ -165,7 +165,10 @@ python3 -c "import json,sys,os; d=json.load(open(sys.argv[1])) if os.path.exists
 _PASTILLE=$(printf '%s' "$METRICS" | grep -oE '(⬆️|⬇️|🟢)' | tail -1)
 [ -z "$_PASTILLE" ] && _PASTILLE="🟢"
 # Mode proxy : A si proxy actif, M sinon
-if curl -s --max-time 1 http://localhost:4000/health &>/dev/null; then
+# Validation stricte JSON {"status":"ok"} — évite les faux positifs (Vite, autres serveurs sur :4000)
+_PROXY_HEALTH=$(curl -s --max-time 1 http://localhost:4000/health 2>/dev/null)
+_PROXY_OK=$(echo "$_PROXY_HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); print('ok' if d.get('status')=='ok' else '')" 2>/dev/null)
+if [ -n "$_PROXY_OK" ]; then
   _MMODE="A"
 else
   _MMODE="M"
@@ -174,7 +177,7 @@ fi
 _MOLLAMA=""
 _MPROXY="🔌❌"
 if command -v ollama &>/dev/null; then
-  if curl -s --max-time 1 http://localhost:4000/health &>/dev/null; then
+  if [ -n "$_PROXY_OK" ]; then
     _MPROXY="🔌✅"
     _PROXY_CFG="$(cd "$(dirname "$0")/.." && pwd)/scripts/ollama-proxy/config.json"
     _OLLAMA_LLM=$(python3 -c "

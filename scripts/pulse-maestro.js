@@ -15,6 +15,7 @@ import { computeIntensity, intensityToStatus, getProfile } from '../src/pulse/in
 import { statusLabel } from '../src/pulse/format.js';
 import { computePulseSummary } from '../src/pulse/summary.js';
 import { buildAgentId, buildKnownAgentIds } from '../src/pulse/identity.js';
+import { ensureMarketplaceWatch, sweepMarketplaceOnce } from '../src/pulse/marketplace.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CACHE_FILE = '/tmp/claude-atelier-last-phase';
@@ -120,6 +121,15 @@ export function runMaestro(options = {}) {
   if (refreshedCurrent === 0 && files.length > 0) {
     stderr.write(`[MAESTRO] aucun pouls.md trouvé pour ${canonicalAgentId}\n`);
   }
+
+  const currentPulse = agents.find(agent => currentAgentIds.has(agent.agent?.id)) ?? null;
+  sweepMarketplaceOnce({
+    root,
+    currentPulse,
+    force: false,
+    stderr,
+  });
+  ensureMarketplaceWatch({ root });
 
   // ── Écriture du statut pour model-metrics.sh ──
   const total = agents.length;

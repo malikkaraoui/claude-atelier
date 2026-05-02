@@ -172,9 +172,13 @@ function findFirstIntegratedCommitJson(filePath) {
       const d = JSON.parse(raw);
       const integ = d.integration;
       if (integ && typeof integ === 'object') {
+        // Format classique : verdict + retained_implement
         const verdict = stripTemplateContent(integ.verdict || '');
         const retainedText = JSON.stringify(integ.retained_implement || []);
         if ((verdict + retainedText).length >= 100) return sha;
+        // Format alternatif (status + summary) : status présent + summary >= 50 chars
+        const summary = stripTemplateContent(integ.summary || '');
+        if (integ.status && summary.length >= 50) return sha;
       }
     } catch {
       continue;

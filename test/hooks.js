@@ -323,7 +323,7 @@ test('routing-check remonte Ollama dans l’entête quand le proxy répond', () 
   writeFileSync(curlBin, `#!/bin/sh
 case "$*" in
   *11434/api/tags*) printf '%s' '{"models":[{"name":"qwen3.5:4b"},{"name":"nomic-embed-text:latest"}]}' ;;
-  *4000/health*) printf '%s' '{"status":"ok"}' ;;
+  *4000/health*) printf '%s' '{"status":"ok","proxy":"ollama"}' ;;
   *) exit 1 ;;
 esac
 `);

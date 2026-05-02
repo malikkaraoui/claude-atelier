@@ -29,11 +29,41 @@ HANDOFF_DIR="$REPO_ROOT/docs/handoffs"
 THRESHOLD_LINES="${HANDOFF_THRESHOLD_LINES:-300}"
 THRESHOLD_COMMITS="${HANDOFF_THRESHOLD_COMMITS:-15}"
 THRESHOLD_DAYS="${HANDOFF_THRESHOLD_DAYS:-7}"
+VALIDATE_TIMEOUT_SECONDS="${HANDOFF_VALIDATE_TIMEOUT_SECONDS:-3}"
 
 MODE="text"
 CHECK_ONLY=false
 [[ "${1:-}" == "--json" ]] && MODE="json"
 [[ "${1:-}" == "--check" ]] && CHECK_ONLY=true
+
+validate_handoff_with_timeout() {
+  local file="$1"
+  python3 - "$REPO_ROOT/test/validate-handoff.js" "$file" "$VALIDATE_TIMEOUT_SECONDS" <<'PY'
+import subprocess
+import sys
+
+validator, target, timeout_raw = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+  timeout = float(timeout_raw)
+except ValueError:
+  timeout = 3.0
+
+try:
+  result = subprocess.run(
+    ['node', validator, target],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+    timeout=timeout,
+    check=False,
+  )
+except subprocess.TimeoutExpired:
+  sys.exit(1)
+except Exception:
+  sys.exit(1)
+
+sys.exit(result.returncode)
+PY
+}
 
 # ─── Trouver le dernier handoff intégré ────────────────────────────────────
 
@@ -48,43 +78,31 @@ if [[ -d "$HANDOFF_DIR" ]]; then
     find "$HANDOFF_DIR" -maxdepth 1 \( -name "202*.md" -o -name "202*.json" \) \
       -not -name "_template*" -print0 2>/dev/null
   )
-  SORTED=$([[ ${#_hfiles[@]} -gt 0 ]] && ls -t "${_hfiles[@]}" 2>/dev/null || true)
+  # Itérer tous les handoffs pour trouver celui avec le TO_SHA le plus récent dans git
+  # (ls -t trie par mtime fichier, pas par sha git → on compare tous et on garde le meilleur)
+  _all_files=()
+  [[ ${#_hfiles[@]} -gt 0 ]] && while IFS= read -r f; do _all_files+=("$f"); done < <(ls "${_hfiles[@]}" 2>/dev/null)
 
-  while IFS= read -r f; do
+  for f in "${_all_files[@]:-}"; do
     [[ -z "$f" ]] && continue
 
-    # Vérifier intégration selon le format
     CONTENT_LEN=0
     REVIEWED_RANGE=""
 
     if [[ "$f" == *.json ]]; then
-      # Format JSON : lire via python3
-      INTEG_CHECK=$(python3 -c "
+      # Un seul appel python3 pour CONTENT_LEN + REVIEWED_RANGE (perf : 2× moins de sous-processus)
+      read -r CONTENT_LEN REVIEWED_RANGE < <(python3 -c "
 import json, sys
 try:
     d = json.load(open('$f'))
     integ = d.get('integration') or {}
-    if isinstance(integ, dict):
-        text = json.dumps(integ).replace(' ', '')
-        print(len(text))
-    else:
-        print(0)
+    length = len(json.dumps(integ).replace(' ', '')) if isinstance(integ, dict) else 0
+    rr = d.get('meta', {}).get('reviewedRange', '') if length > 100 else ''
+    print(length, rr)
 except Exception:
-    print(0)
-" 2>/dev/null || echo 0)
-      CONTENT_LEN=$INTEG_CHECK
-      if [[ $CONTENT_LEN -gt 100 ]]; then
-        REVIEWED_RANGE=$(python3 -c "
-import json, sys
-try:
-    d = json.load(open('$f'))
-    print(d.get('meta', {}).get('reviewedRange', ''))
-except Exception:
-    print('')
-" 2>/dev/null || echo "")
-      fi
+    print(0, '')
+" 2>/dev/null || echo "0 ")
     else
-      # Format Markdown
       INTEGRATION=$(awk '/^## Intégration/{flag=1; next} flag' "$f" 2>/dev/null || echo "")
       REAL_CONTENT=$(echo "$INTEGRATION" | sed 's/<!--.*-->//g' | grep -v "^##\|^$" | tr -d '[:space:]' || echo "")
       CONTENT_LEN=${#REAL_CONTENT}
@@ -93,18 +111,27 @@ except Exception:
       fi
     fi
 
-    if [[ $CONTENT_LEN -gt 100 ]]; then
-      if ! node "$REPO_ROOT/test/validate-handoff.js" "$f" >/dev/null 2>&1; then
-        continue
-      fi
-      if [[ "$REVIEWED_RANGE" =~ ^[a-f0-9]{7,40}\.\.[a-f0-9]{7,40}$ ]]; then
-        TO_SHA="${REVIEWED_RANGE##*..}"
+    # validate_handoff_with_timeout appelé UNE SEULE FOIS après la boucle sur le vainqueur
+    # (pas à chaque candidat → 59 validations → 1 validation)
+    if [[ $CONTENT_LEN -gt 100 ]] && [[ "$REVIEWED_RANGE" =~ ^[a-f0-9]{7,40}\.\.[a-f0-9]{7,40}$ ]]; then
+      TO_SHA="${REVIEWED_RANGE##*..}"
+      # Garder le sha le plus récent dans git (descendant du sha courant)
+      if [[ -z "$LATEST_SHA" ]]; then
         LATEST_INTEGRATED="$f"
         LATEST_SHA="$TO_SHA"
-        break
+      elif git -C "$REPO_ROOT" merge-base --is-ancestor "$LATEST_SHA" "$TO_SHA" 2>/dev/null; then
+        # TO_SHA est plus récent que LATEST_SHA → remplacer
+        LATEST_INTEGRATED="$f"
+        LATEST_SHA="$TO_SHA"
       fi
     fi
-  done <<< "$SORTED"
+  done
+
+  # Validation structurelle du vainqueur uniquement (1 appel au lieu de N)
+  if [[ -n "$LATEST_INTEGRATED" ]] && ! validate_handoff_with_timeout "$LATEST_INTEGRATED"; then
+    LATEST_INTEGRATED=""
+    LATEST_SHA=""
+  fi
 fi
 
 # ─── Calculer la dette depuis git ──────────────────────────────────────────
