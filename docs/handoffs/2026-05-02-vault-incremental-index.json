@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "subject": "vault update — index incrémental Peter Phase B",
+    "date": "2026-05-02",
+    "type": "review",
+    "priority": "moyenne",
+    "reviewedRange": "4dd3d77f5f4c40a0c24f4eca2623e1dae6a254a7..2faf46f4647180950819ffed074296c3d8119ce0"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "Phase B de peter-vault-graphify-plus-plan.md. Phase A (0.23.4) avait livré : vault init/status/report/stale + hook SessionStart + PETER_REPORT.md. Phase B ajoute : (1) `vault update` — scan incrémental du repo avec SHA256 par fichier, respect .gitignore/.peterignore/.claudeignore, exclusion DEFAULT_IGNORE_DIRS (node_modules, .git, dist, build...) + répertoires internes Peter (vault/.peter, vault/index) ; (2) génération de vault/index/manifest.json {version, generatedAt, root, fileCount, files[]} ; (3) génération de vault/.peter/state.json {needsUpdate, health, fileCount, lastRun...} ; (4) création de vault/.peter/cache/ (vide Phase B, peuplé Phase C) ; (5) cache incrémental par mtime — skip les fichiers inchangés sans recalculer SHA256 ; (6) vault stale amélioré : check manifest.json avec status INFO (non bloquant) si Phase B non initialisée, STALE/WARN/OK si initialisée. 35 nouveaux tests dans test/vault-update.js (35/35). Commits du range : feat vault update Phase B + feat init vault projet + feat vault dynamique Peter (Phase A merge #35) + fix review Copilot #36.",
+    "question": "La logique de cache incrémental dans `updateVault()` (bin/vault.js ~L640-710) compare uniquement la mtime ISO string pour décider si le SHA256 doit être recalculé. Est-ce suffisant comme critère d'incrémentalité, ou y a-t-il un risque de faux-négatifs (fichier modifié mais même mtime) en pratique Node.js/macOS ? Et le calcul de `deletedCount` (L~710 : `(oldManifest?.fileCount ?? 0) - (files.length - newCount)`) est-il correct ou peut-il retourner une valeur erronée dans certains cas ?",
+    "filesToRead": [
+      "bin/vault.js",
+      "test/vault-update.js",
+      "test/vault.js",
+      "docs/proposals/peter-vault-graphify-plus-plan.md"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-05-02-vault-incremental-index.json.\""
+  },
+  "integration": null
+}
