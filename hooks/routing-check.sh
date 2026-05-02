@@ -270,7 +270,7 @@ except: print('no')
       EMBED_TAG=""
       [ "$HAS_EMBED" = "yes" ] && EMBED_TAG=" +embed"
       if [ -n "$OLLAMA_MODELS" ]; then
-        OLLAMA_STATUS="🦙❌ ollama ready ($OLLAMA_MODELS)$EMBED_TAG — proxy off → /ollama-router"
+        OLLAMA_STATUS="🦙⚡ ollama ready ($OLLAMA_MODELS)$EMBED_TAG — proxy off → /ollama-router"
       else
         OLLAMA_STATUS="🦙⚠️ ollama (aucun modele LLM) → /ollama-router"
       fi
@@ -286,6 +286,8 @@ fi
 if [ -n "$_F_OLLAMA" ]; then
   if echo "$OLLAMA_STATUS" | grep -q "✅"; then
     _OLLAMA_IND="🦙✅${ACTIVE_LLM:+ $ACTIVE_LLM}"
+  elif echo "$OLLAMA_STATUS" | grep -q "⚡"; then
+    _OLLAMA_IND="🦙⚡"
   elif echo "$OLLAMA_STATUS" | grep -q "⚠️"; then
     _OLLAMA_IND="🦙⚠️"
   else
