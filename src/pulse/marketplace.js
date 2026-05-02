@@ -158,7 +158,7 @@ function listOpenAnnouncementFiles(repoPath) {
     .sort();
 }
 
-function isOpportunityRelevant(offer, currentPulse, localAgent) {
+function isOpportunityRelevant(offer, currentPulse, localAgent, now = new Date()) {
   if (!offer || typeof offer !== 'object') return false;
   if (!localAgent || typeof localAgent !== 'object') return false;
 
@@ -172,8 +172,8 @@ function isOpportunityRelevant(offer, currentPulse, localAgent) {
   const maxDeadlineHours = clampPositiveInt(accepts.max_deadline_hours ?? 0, 0, 0);
 
   if (!Number.isFinite(Number(offer.budget_credits)) || Number(offer.budget_credits) < minBudget) return false;
-  if (maxDeadlineHours > 0 && hoursUntil(offer.deadline, new Date()) > maxDeadlineHours) return false;
-  if (hoursUntil(offer.deadline, new Date()) <= 0) return false;
+  if (maxDeadlineHours > 0 && hoursUntil(offer.deadline, now) > maxDeadlineHours) return false;
+  if (hoursUntil(offer.deadline, now) <= 0) return false;
 
   return true;
 }
@@ -350,7 +350,7 @@ export function sweepMarketplaceOnce(options = {}) {
     }
 
     const localAgent = registry.agents?.[agentId];
-    if (!isOwnOffer && isOpportunityRelevant(offer, currentPulse, localAgent)) {
+    if (!isOwnOffer && isOpportunityRelevant(offer, currentPulse, localAgent, now)) {
       relevantOffers.push(buildRelevantOffer(offer, filePath, now));
     }
   }
