@@ -42,6 +42,11 @@
       ]
     },
     {
+      "name": "vault",
+      "description": "Initialise et inspecte le vault dynamique projet maintenu par Peter",
+      "flags": ["init", "status", "--cwd <path>", "--dry-run", "--json"]
+    },
+    {
       "name": "apply",
       "description": "Injecte un profil de config dans un worktree cible (API Paperclip)",
       "flags": ["--profile <full|lean|review-only>", "--cwd <path>", "--merge <repo-wins|atelier-wins>", "--yes", "--dry-run"]

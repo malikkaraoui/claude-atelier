@@ -24,7 +24,7 @@ const pkg = JSON.parse(
 // ⚠️  BLOC GÉNÉRÉ — ne pas éditer manuellement.
 // Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
-claude-atelier v0.23.0
+claude-atelier v0.23.2
 Framework complet Claude Code: 30 agents, 18 skills, MCP GitHub intégré, loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.
 
 Usage:
@@ -38,6 +38,7 @@ Commands:
   features          Tableau de contrôle des features (on/off par feature)
   review-local      Review automatique d'un handoff via Ollama local (anti-bypass auto-review Claude)
   pulse             Gestion du pouls multi-agents (statut, init, mise à jour)
+  vault             Initialise et inspecte le vault dynamique projet maintenu par Peter
   apply             Injecte un profil de config dans un worktree cible (API Paperclip)
 
 Options:
@@ -101,7 +102,7 @@ async function main(argv) {
   }
 
   const command = args[0];
-  const knownCommands = ['init', 'update', 'doctor', 'lint', 'features', 'review-local', 'apply', 'pulse'];
+  const knownCommands = ['init', 'update', 'doctor', 'lint', 'features', 'review-local', 'apply', 'pulse', 'vault'];
 
   if (!knownCommands.includes(command)) {
     process.stderr.write(`error: unknown command "${command}"\n`);
@@ -145,6 +146,11 @@ async function main(argv) {
   if (command === 'pulse') {
     const { runPulse } = await import('./pulse.js');
     return runPulse(process.argv);
+  }
+
+  if (command === 'vault') {
+    const { runVault } = await import('./vault.js');
+    return runVault(process.argv);
   }
 
   process.stderr.write(

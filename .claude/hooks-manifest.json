@@ -48,6 +48,28 @@
       "sha256": "c93a36c3fd711bc9"
     },
     {
+      "name": "vault-context",
+      "file": "hooks/vault-context.sh",
+      "type": "SessionStart",
+      "trigger": "session.start when project vault/ exists",
+      "purpose": "Peter injecte un résumé court du vault projet au démarrage : brief, mailbox et roadmap, sans relire tout le corpus",
+      "inputs": [
+        "current working directory",
+        "vault/00-brief.md",
+        "vault/10-mailbox.md",
+        "vault/40-roadmap.md"
+      ],
+      "outputs": [
+        "additionalContext: [VAULT-PETER] + extraits limités du vault projet"
+      ],
+      "rule": "MIRROR / Vault projet dynamique — Peter maintient la mémoire locale du projet",
+      "test": "test/hooks.js → vault-context.sh",
+      "exitCodes": {
+        "0": "always (injection only, silent if no vault/)"
+      },
+      "sha256": "7979462aa9f98466"
+    },
+    {
       "name": "routing-check",
       "file": "hooks/routing-check.sh",
       "type": "UserPromptSubmit",
@@ -291,10 +313,10 @@
     }
   ],
   "stats": {
-    "total": 14,
+    "total": 15,
     "byType": {
       "helper": 1,
-      "SessionStart": 2,
+      "SessionStart": 3,
       "Stop": 1,
       "UserPromptSubmit": 3,
       "PreToolUse": 3,
@@ -302,8 +324,8 @@
       "PreToolUse + PostToolUse": 1
     },
     "blocking": 3,
-    "warningOnly": 10,
-    "withTests": 3
+    "warningOnly": 11,
+    "withTests": 4
   },
   "conventions": {
     "sourcing": "Tous les hooks (sauf session-model et routing-check qui parsent eux-mêmes le stdin) sourcent _parse-input.sh pour l'extraction des variables.",
