@@ -1,4 +1,4 @@
-Lance `node bin/cli.js features` (dans le repo source) ou `npx claude-atelier features` (hors repo) et affiche le tableau de contrôle.
+Lance `claude-atelier features` et affiche le tableau de contrôle.
 
 **AVANT** d'afficher le tableau, exécute ces 3 commandes en parallèle pour construire le bloc état système :
 
@@ -29,16 +29,16 @@ Puis affiche ce bloc en tête de réponse (avant le tableau features) :
 Si l'utilisateur demande à modifier une feature ou un paramètre, exécute la commande correspondante :
 
 **Features (on/off) :**
-- Activer   : `node bin/cli.js features --on <feature>`
-- Désactiver : `node bin/cli.js features --off <feature>`
-- Basculer  : `node bin/cli.js features --toggle <feature>`
+- Activer   : `claude-atelier features --on <feature>`
+- Désactiver : `claude-atelier features --off <feature>`
+- Basculer  : `claude-atelier features --toggle <feature>`
 
 **Paramètres configurables (valeurs numériques) :**
-- Modifier : `node bin/cli.js features --set <param> <valeur>`
+- Modifier : `claude-atelier features --set <param> <valeur>`
 - Exemples de params : `handoff_threshold_lines`, `context_warning_kb`, `context_critical_kb`, `anti_loop_count`, `diagnostic_interval_min`
 
 **Réinitialiser tout :**
-- `node bin/cli.js features --reset`
+- `claude-atelier features --reset`
 
 Après chaque modification, rappelle que Claude Code doit être relancé pour appliquer le changement.
 
