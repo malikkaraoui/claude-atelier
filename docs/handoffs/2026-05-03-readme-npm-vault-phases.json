@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "subject": "README + npm description après vault Phases A/B/C livrées (Peter)",
+    "date": "2026-05-03",
+    "type": "review",
+    "priority": "moyenne",
+    "reviewedRange": "618aef2..3873565"
+  },
+  "from": {
+    "model": "claude-opus-4-7",
+    "context": "PR #41 (docs only, sans bump version). 48h ont livré 7 versions (0.23.1 → 0.23.7) qui transforment Peter d'idée d'agent en système de mémoire projet exécutable : vault dynamique Phase A (init, status, report, stale + hook SessionStart), Phase B (vault update — index incrémental SHA256 → manifest.json), Phase C (vault graph — graph.json + nœuds typés project/vault_file/decision/roadmap_item/source/markdown_document/concept/protected_artifact + relations contains/documents/mentions/blocks/suggests/derived_from_source/protected_by_method + centralité pondérée, vault query avec score sur id+label+tags+excerpt + voisins 1-hop). Le commit docs (3873565) met à jour : (1) tagline FR L17 vault dynamique → vault Peter (graphe + query), (2) ligne killer bundle L42 enrichie (index SHA256 + graphe + query), (3) bloc Installation FR + EN avec vault report/stale/update/graph/query, (4) section Vault dynamique projet — Peter FR avec sous-sections Phase B et Phase C détaillées (types nœuds/relations + exemple query), (5) section Dynamic project vault — Peter EN miroir, (6) ajout ligne vault-context.sh dans la table hooks EN, (7) ajout agent Peter 🗂️ dans le tableau Named Agents EN avec citation, (8) package.json description npm enrichie (vault Peter graphe + query, 31 agents au lieu de 30), keywords vault + knowledge-graph. Tests verts : lint (refs 144 fichiers, length 127/150, hooks-manifest 15, runtime-skills 21), doctor 28 checks, hooks 60/60, vault 29/29, vault-update 37/37.",
+    "question": "Le README et la description npm reflètent-ils fidèlement et de façon utile pour un nouvel arrivant ce qui a été livré en Phase B + Phase C ? En particulier : (a) la section Phase C explique-t-elle le bénéfice de vault query au-delà de l'énumération des types de nœuds, (b) faut-il un encart distinct pour PETER_REPORT.md (mécanique d'injection, fraîcheur, rôle de pivot) ou la mention actuelle suffit-elle, (c) la nouvelle description npm est-elle toujours sous la limite de visibilité (~200 chars) sur la page npmjs.com et hiérarchise-t-elle les bons mots-clés (vault Peter + graphe arrive en milieu de phrase, est-ce le bon ordre vs loop Copilot autonome) ?",
+    "filesToRead": [
+      "README.md",
+      "package.json",
+      "bin/vault.js",
+      "hooks/vault-context.sh",
+      "vault/PETER_REPORT.md",
+      "test/vault.js",
+      "test/vault-update.js",
+      "docs/proposals/peter-vault-graphify-plus-plan.md"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile dans la doc utilisateur",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude",
+      "Pas de bump version proposé — c'est explicitement hors scope",
+      "Les sections FR sont source de vérité, EN suit"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-05-03-readme-npm-vault-phases.json.\""
+  },
+  "integration": null
+}
