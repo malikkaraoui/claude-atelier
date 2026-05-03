@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { showWelcome } from './welcome.js';
 import { runPostInstallChecks } from './post-install-checks.js';
+import { generateHooksSection } from './hooks-gen.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
@@ -232,6 +233,19 @@ export async function runUpdate(argv) {
   // 2. Copy/merge all template files (skip backup dir as exclude)
   const report = [];
   copyDirRecursive(templateDir, targetDir, opts.dryRun, report);
+
+  // 2a. Always regenerate hooks — paths are machine-specific
+  if (!opts.dryRun) {
+    const hooksDir = opts.global ? join(homedir(), '.claude', 'hooks') : join(process.cwd(), 'hooks');
+    const scriptsDir = opts.global ? join(homedir(), '.claude', 'scripts') : join(process.cwd(), 'scripts');
+    const settingsDest = join(targetDir, 'settings.json');
+    if (existsSync(settingsDest)) {
+      const s = JSON.parse(readFileSync(settingsDest, 'utf8'));
+      s.hooks = generateHooksSection(hooksDir, scriptsDir);
+      writeFileSync(settingsDest, JSON.stringify(s, null, 2) + '\n');
+      report.push({ tag: 'MERGED', path: settingsDest + ' (hooks régénérés)' });
+    }
+  }
 
   // 2b. AGENTS.md — additive copy to project root (or ~/.claude/ for global)
   {

@@ -17,6 +17,7 @@ import { execSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { showWelcome } from './welcome.js';
 import { runPostInstallChecks } from './post-install-checks.js';
+import { generateHooksSection } from './hooks-gen.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
@@ -59,58 +60,6 @@ function bridgeSkillsToGithub(claudeSkillsDir, projectRoot) {
   } else if (skipped > 0) {
     console.log(`${YELLOW}[SKIP]${NC} .github/skills/ — ${skipped} skill(s) déjà présents`);
   }
-}
-
-// ── Génère la section hooks avec chemins absolus résolus à l'install ─────────
-function generateHooksSection(hooksDir, scriptsDir) {
-  const h = name => `bash "${join(hooksDir, name)}"`;
-  const n = (name, ...args) => `node "${join(scriptsDir, name)}" ${args.join(' ')}`;
-  return {
-    SessionStart: [{
-      matcher: '',
-      hooks: [
-        { type: 'command', command: h('session-model.sh') },
-        { type: 'command', command: h('vault-context.sh') },
-        { type: 'command', command: n('memory-read.js', '--episodes-only', '--timeout', '2000') },
-      ],
-    }],
-    UserPromptSubmit: [{
-      matcher: '',
-      hooks: [
-        { type: 'command', command: h('routing-check.sh') },
-        { type: 'command', command: h('model-metrics.sh') },
-        { type: 'command', command: h('detect-design-need.sh') },
-        { type: 'command', command: n('memory-read.js', '--context', '--timeout', '2000') },
-      ],
-    }],
-    PreToolUse: [
-      {
-        matcher: 'Read',
-        hooks: [{ type: 'command', command: h('guard-qmd-first.sh') }],
-      },
-      {
-        matcher: 'Bash',
-        hooks: [
-          { type: 'command', command: h('guard-no-sign.sh'), if: 'Bash(*git commit*)' },
-          { type: 'command', command: h('guard-commit-french.sh'), if: 'Bash(*git commit*)' },
-          { type: 'command', command: h('guard-tests-before-push.sh'), if: 'Bash(*git push*)' },
-        ],
-      },
-    ],
-    PostToolUse: [
-      {
-        matcher: 'Edit|Write',
-        hooks: [{ type: 'command', command: h('guard-hooks-reload.sh') }],
-      },
-      {
-        matcher: 'Bash',
-        hooks: [
-          { type: 'command', command: h('guard-review-auto.sh'), if: 'Bash(*git commit*)' },
-          { type: 'command', command: h('guard-anti-loop.sh') },
-        ],
-      },
-    ],
-  };
 }
 
 // ── Prompt oui/non interactif ─────────────────────────────────────────────────
@@ -311,10 +260,8 @@ export async function runInit(argv) {
       }
     } else {
       const merged = mergeSettings(settingsDest, settingsTemplate);
-      // Inject hooks only if not already present (preserves user customizations)
-      if (!merged.hooks) {
-        merged.hooks = generateHooksSection(hooksDir, scriptsDir);
-      }
+      // Always regenerate hooks — paths are machine-specific and must reflect the current install
+      merged.hooks = generateHooksSection(hooksDir, scriptsDir);
       if (!existsSync(dirname(settingsDest))) {
         mkdirSync(dirname(settingsDest), { recursive: true });
       }
