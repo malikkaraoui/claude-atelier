@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "subject": "vault Phase C — graphe minimal Peter (graph.json + vault query + PETER_REPORT enrichi)",
+    "date": "2026-05-03",
+    "type": "review",
+    "priority": "haute",
+    "reviewedRange": "76ac95bffa07e65dc0a413ebc84e05ad476f6c30..d318c8484dc2fde7b3583422c82d3c6810b8f3f5"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "Phase C livrée sur branche feat/vault-graph-minimal (PR #39). Un seul commit feat : d318c84 — 'feat: ajoute le graphe minimal Peter (Phase C)'. Impacte 4 fichiers : bin/vault.js (+477 lignes — fonctions buildGraph, graphVault, queryVaultGraph, printGraph, printQuery, scoreNode, slugify, extractConcepts, isBmadPath, readExcerpt, getFileMtime + enrichissement generateReport + staleVault + parseArgs fix), test/vault.js (+242 lignes — 15 nouveaux tests Phase C : 8 pour vault graph, 5 pour vault query, 2 pour PETER_REPORT), src/features.json (+2 flags : graph et query), docs/superpowers/plans/2026-05-03-vault-graph-minimal.md (plan). Fix notable dans parseArgs : filter(a => a !== 'vault') supprimait aussi le texte de requête quand l'utilisateur tapait 'vault query vault' — corrigé en ne supprimant que le premier positional 'vault'. 29/29 tests vault · 37/37 vault-update · gate CI verte.",
+    "question": "L'extraction des concepts (extractConcepts) et le calcul de centralité (degree + 2*decision_edges + 2*roadmap_edges) sont-ils assez robustes pour un vault projet réel avec des décisions et roadmap items en français ? Y a-t-il des cas où slugify ou le filtrage GENERIC_CONCEPTS_EXTRACT produirait des concepts vides, des collisions d'ids, ou des nœuds fantômes qui faussent la centralité ?",
+    "filesToRead": [
+      "bin/vault.js",
+      "test/vault.js",
+      "src/features.json"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+  },
+  "integration": null
+}
