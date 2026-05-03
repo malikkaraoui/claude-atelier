@@ -268,6 +268,248 @@ test('vault stale sans vault retourne exit 1', () => {
   }
 });
 
+// ─── Phase C — vault graph ─────────────────────────────────────────────────────
+
+console.log('\n── claude-atelier vault graph ──');
+
+test('vault graph crée vault/index/graph.json', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'graph', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(existsSync(join(dir, 'vault', 'index', 'graph.json')), 'graph.json doit exister');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('graph.json contient version, nodes, edges, stats', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    ok(typeof graph.version === 'number', 'version attendue');
+    ok(Array.isArray(graph.nodes), 'nodes array attendu');
+    ok(Array.isArray(graph.edges), 'edges array attendu');
+    ok(graph.stats && typeof graph.stats.nodeCount === 'number', 'stats.nodeCount attendu');
+    ok(typeof graph.stats.edgeCount === 'number', 'stats.edgeCount attendu');
+    ok(typeof graph.generatedAt === 'string', 'generatedAt attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault graph --json retourne JSON valide', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'graph', '--cwd', dir, '--json'], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.ok === true, 'ok:true attendu');
+    ok(typeof result.nodeCount === 'number', 'nodeCount attendu');
+    ok(typeof result.edgeCount === 'number', 'edgeCount attendu');
+    ok(typeof result.graphPath === 'string', 'graphPath attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('les fichiers vault de base deviennent des nodes', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const nodeIds = graph.nodes.map(n => n.id);
+    ok(nodeIds.includes('vault_file:vault/00-brief.md'), '00-brief.md doit être un node');
+    ok(nodeIds.includes('vault_file:vault/40-roadmap.md'), '40-roadmap.md doit être un node');
+    ok(nodeIds.includes('project:root'), 'project:root doit exister');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('une décision dans 20-decisions.md devient un node decision', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '20-decisions.md'),
+      '# Décisions\n\n## Décisions durables\n\n### 2026-05-01 — Choisir Node.js\n\n- Contexte : stack\n- Décision : Node.js\n- Conséquence : aucune\n- À revalider si : changement\n',
+      'utf8');
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const decisionNode = graph.nodes.find(n => n.type === 'decision' && n.label === 'Choisir Node.js');
+    ok(decisionNode, 'node decision attendu pour "Choisir Node.js"');
+    ok(decisionNode.id.startsWith('decision:'), 'id doit commencer par decision:');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('un item roadmap devient un node roadmap_item', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '40-roadmap.md'),
+      '# Roadmap\n\n## Roadmap vivante\n\n### Sur le feu\n\n- Phase C graphe minimal\n\n### Ensuite\n\n-\n',
+      'utf8');
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const roadmapNode = graph.nodes.find(n => n.type === 'roadmap_item');
+    ok(roadmapNode, 'node roadmap_item attendu');
+    ok(roadmapNode.tags.includes('sur_le_feu'), 'tag sur_le_feu attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('un Markdown BMAD devient protected_artifact et n\'est pas importé normalement', () => {
+  const dir = initTestVault();
+  try {
+    // Créer un faux fichier BMAD
+    mkdirSync(join(dir, '.bmad-method'), { recursive: true });
+    writeFileSync(join(dir, '.bmad-method', 'agent.md'), '# Agent BMAD\n\nContenu protégé.\n', 'utf8');
+    // Créer manifest minimal pour que buildGraph trouve le fichier
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    const manifest = {
+      version: 1, generatedAt: new Date().toISOString(), root: dir, fileCount: 1,
+      files: [{ path: '.bmad-method/agent.md', sha256: 'abc', mtime: new Date().toISOString(), size: 40, ext: '.md' }],
+    };
+    writeFileSync(join(dir, 'vault', 'index', 'manifest.json'), JSON.stringify(manifest), 'utf8');
+
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const pa = graph.nodes.find(n => n.type === 'protected_artifact');
+    ok(pa, 'node protected_artifact attendu pour fichier BMAD');
+    const bmadEdge = graph.edges.find(e => e.type === 'protected_by_method' && e.from === pa.id);
+    ok(bmadEdge, 'edge protected_by_method attendu');
+    // Ne doit pas être importé comme markdown_document
+    const asDoc = graph.nodes.find(n => n.type === 'markdown_document' && n.path === '.bmad-method/agent.md');
+    ok(!asDoc, 'fichier BMAD ne doit pas être un markdown_document');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('centralNodes est non vide dès qu\'il y a des edges', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '40-roadmap.md'),
+      '# Roadmap\n\n## Roadmap vivante\n\n### Sur le feu\n\n- Phase C\n\n### Ensuite\n\n-\n', 'utf8');
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    ok(graph.edges.length > 0, 'des edges doivent exister');
+    ok(Array.isArray(graph.stats.centralNodes) && graph.stats.centralNodes.length > 0, 'centralNodes doit être non vide');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ─── Phase C — vault query ─────────────────────────────────────────────────────
+
+console.log('\n── claude-atelier vault query ──');
+
+test('vault query sans graphe : exit 1 + message vault graph', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'query', 'peter', '--cwd', dir], dir);
+    ok(r.status === 1, `exit 1 attendu si pas de graphe, reçu ${r.status}`);
+    ok(r.stderr.includes('vault graph') || r.stdout.includes('vault graph'), 'message vault graph attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault query avec graphe retourne des résultats', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '00-brief.md'),
+      '# Brief\n\n## État court\n\n- Projet : peter-test\n- Phase : Phase C\n- Objectif courant : graphe minimal\n- Prochaine action utile : vault graph\n\n## À lire en priorité\n\n-\n\n## Décisions actives\n\n-\n\n## Risques / angles morts\n\n-\n',
+      'utf8');
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'query', 'peter', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(r.stdout.includes('Résultats'), 'section Résultats attendue');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault query --json retourne { ok, results, neighbors }', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'query', 'vault', '--cwd', dir, '--json'], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.ok === true, 'ok:true attendu');
+    ok(Array.isArray(result.results), 'results array attendu');
+    ok(Array.isArray(result.neighbors), 'neighbors array attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault query résultats bornés à max 10 par défaut', () => {
+  const dir = initTestVault();
+  try {
+    // Créer beaucoup de décisions avec "vault" dans le titre
+    const decisions = Array.from({ length: 15 }, (_, i) =>
+      `### 2026-05-${String(i + 1).padStart(2, '0')} — vault décision ${i + 1}\n\n- Contexte : x\n- Décision : vault choice\n- Conséquence : none\n- À revalider si : jamais\n`
+    ).join('\n');
+    writeFileSync(join(dir, 'vault', '20-decisions.md'),
+      `# Décisions\n\n## Décisions durables\n\n${decisions}`, 'utf8');
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'query', 'vault', '--cwd', dir, '--json'], dir);
+    const result = JSON.parse(r.stdout);
+    ok(result.results.length <= 10, `max 10 résultats attendus, reçu ${result.results.length}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault query résultats citent au moins un path', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'query', 'vault', '--cwd', dir, '--json'], dir);
+    const result = JSON.parse(r.stdout);
+    const hasSomePath = result.results.some(res => res.path && res.path.length > 0);
+    ok(hasSomePath, 'au moins un résultat doit citer un path');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ─── Phase C — PETER_REPORT avec graphe ───────────────────────────────────────
+
+console.log('\n── vault report + graphe ──');
+
+test('vault report après vault graph contient ## Nœuds centraux', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '40-roadmap.md'),
+      '# Roadmap\n\n## Roadmap vivante\n\n### Sur le feu\n\n- Phase C vault graph\n\n### Ensuite\n\n-\n', 'utf8');
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    cli(['vault', 'report', '--cwd', dir], dir);
+    const content = readFileSync(join(dir, 'vault', 'PETER_REPORT.md'), 'utf8');
+    ok(content.includes('## Nœuds centraux'), '## Nœuds centraux attendu après vault graph');
+    ok(content.includes('## Documents pivots'), '## Documents pivots attendu');
+    ok(content.includes('## Questions utiles'), '## Questions utiles attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault report sans graphe contient instruction vault graph', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'report', '--cwd', dir], dir);
+    const content = readFileSync(join(dir, 'vault', 'PETER_REPORT.md'), 'utf8');
+    ok(content.includes('vault graph'), 'instruction vault graph attendue si graphe absent');
+    ok(content.includes('Graphe absent'), 'message Graphe absent attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 const total = pass + fail;
 console.log(`\n── Vault : ${pass}/${total} tests passés${fail > 0 ? ` · ${fail} ÉCHECS` : ''} ──\n`);
 if (fail > 0) process.exit(1);
