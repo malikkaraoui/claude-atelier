@@ -139,12 +139,12 @@ function display(registry, features, featuresPath) {
 
   // ── Commands ────────────────────────────────────────────────────────────────
   console.log(`  ${DIM}Commandes :${NC}`);
-  console.log(`   ${CYAN}! node bin/cli.js features --on  <feature>${NC}`);
-  console.log(`   ${CYAN}! node bin/cli.js features --off <feature>${NC}`);
-  console.log(`   ${CYAN}! node bin/cli.js features --toggle <feature>${NC}`);
-  console.log(`   ${CYAN}! node bin/cli.js features --set <param> <valeur>${NC}`);
-  console.log(`   ${CYAN}! node bin/cli.js features --reset${NC}               ${DIM}(restaure tous les défauts)${NC}`);
-  console.log(`   ${CYAN}! node bin/cli.js features --global${NC}              ${DIM}(cible ~/.claude/features.json)${NC}\n`);
+  console.log(`   ${CYAN}! claude-atelier features --on  <feature>${NC}`);
+  console.log(`   ${CYAN}! claude-atelier features --off <feature>${NC}`);
+  console.log(`   ${CYAN}! claude-atelier features --toggle <feature>${NC}`);
+  console.log(`   ${CYAN}! claude-atelier features --set <param> <valeur>${NC}`);
+  console.log(`   ${CYAN}! claude-atelier features --reset${NC}               ${DIM}(restaure tous les défauts)${NC}`);
+  console.log(`   ${CYAN}! claude-atelier features --global${NC}              ${DIM}(cible ~/.claude/features.json)${NC}\n`);
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────

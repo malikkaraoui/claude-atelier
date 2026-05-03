@@ -38,42 +38,84 @@ Lire `.claude/CLAUDE.md` et vérifier que §0 est rempli :
 [?] Repo défini
 ```
 
-Si §0 est vide → demander à l'utilisateur :
-"Quel est le nom du projet ? La stack ? Le repo GitHub ?"
-Puis éditer §0 avec les réponses.
+Si §0 est partiellement ou totalement vide → **auto-découvrir** :
 
-### 3. Night Watchdog 🐶
+**Nom du projet :**
+```bash
+cat package.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('name',''))" 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+```
+
+**Stack (en parallèle)** — détecte la présence de :
+- `go.mod` → Go
+- `package.json` → Node.js / JavaScript
+- `Cargo.toml` → Rust
+- `pyproject.toml` ou `requirements.txt` → Python
+- `*.swift` → iOS
+- `pom.xml` ou `build.gradle` → Java
+
+```bash
+detect_stack() {
+  for f in go.mod package.json Cargo.toml pyproject.toml requirements.txt pom.xml build.gradle; do
+    [ -f "$f" ] && case "$f" in
+      go.mod) echo "Go"; return;;
+      package.json) echo "Node.js"; return;;
+      Cargo.toml) echo "Rust"; return;;
+      pyproject.toml|requirements.txt) echo "Python"; return;;
+      pom.xml|build.gradle) echo "Java"; return;;
+    esac
+  done
+  compgen -G "*.swift" > /dev/null 2>&1 && echo "iOS" && return
+  echo ""
+}
+detect_stack
+```
+
+**Repo GitHub :**
+```bash
+git remote get-url origin 2>/dev/null
+```
+
+**QMD enrichment** (optionnel) — si `.qmd/` existe ou `qmd status` fonctionne :
+```bash
+qmd query --searches '[{"type":"lex","query":"project stack technology"}]' 2>/dev/null || true
+```
+
+**Affichage et validation :**
+
+Afficher les résultats avec `[AUTO]` :
+```text
+[AUTO] Projet : {nom}
+[AUTO] Stack : {stack}
+[AUTO] Repo : {url}
+```
+
+Demander :
+"Valide ou corrige les découvertes avant que je les écrive dans §0.
+Tape [OK] pour valider, ou corrige et tape [OK]."
+
+Attendre réponse, puis éditer §0 avec les valeurs validées.
+
+**Champs manquants :** Seulement si un champ reste vide après tout ça →
+demander ce seul champ :
+"Le champ `{nom}` reste vide. Donne-moi la valeur :"
+
+### 3. Pouls Peter — agent mainteneur vault
 
 ```text
-[?] Tâche planifiée "Night Watchdog" configurée dans l'app Claude desktop
+[?] vault/.peter/state.json présent (Peter actif)
 ```
 
-Impossible à vérifier programmatiquement (c'est dans l'app desktop).
-Demander à l'utilisateur :
-
-"As-tu configuré la tâche planifiée **Night Watchdog 🐶** dans l'app
-Claude desktop (Programmé → + Nouvelle tâche) ?
-
-Si non, voici le prompt à coller :
-
-```
-Tu es un watchdog pour une session Claude Code de nuit.
-[... prompt v4 complet ici, voir src/fr/autonomy/night-mode.md ...]
+Vérifier :
+```bash
+[ -f vault/.peter/state.json ] && echo "ACTIF" || echo "ABSENT"
 ```
 
-Nom: `night-watchdog` | Modèle: Haiku 4.5 | Fréquence: Horaire
+Si absent → proposer :
+"Lance `claude-atelier vault update` pour initialiser Peter. Il tiendra le vault à jour en autonomie via son pouls (`CronCreate`)."
 
-Tape [OK] quand c'est fait, ou [SKIP] pour plus tard."
+> Le Night Watchdog manuel (Claude desktop → tâche planifiée) est **remplacé par le Pouls Peter** — cycle autonome géré par `CronCreate`, session-independent.
 
-### 4. Review Reminder
-
-```text
-[?] Tâche planifiée "Review Reminder" configurée
-```
-
-Même approche — demander, fournir le prompt, attendre confirmation.
-
-### 5. Séréna — Design Senior + MCP magic (optionnel)
+### 4. Séréna — Design Senior + MCP magic (optionnel)
 
 ```text
 [ ] Skill design-senior installé
@@ -108,7 +150,7 @@ claude mcp add magic --scope user --env API_KEY=\"ta-clé\" -- npx -y @21st-dev/
 
 [OUI] Installer magic | [SKIP] Continuer sans"
 
-### 6. BMAD-METHOD (optionnel)
+### 5. BMAD-METHOD (optionnel)
 
 ```text
 [ ] BMAD-METHOD pour les gros projets
@@ -127,7 +169,7 @@ script, ce n'est pas nécessaire.
 
 Si oui → `npx bmad-method install` dans le projet.
 
-### 7. QMD (optionnel, conditionnel)
+### 6. QMD (optionnel, conditionnel)
 
 Compter les fichiers `.md` dans le projet :
 `find . -name '*.md' -not -path './.git/*' -not -path './node_modules/*' | wc -l`
@@ -142,7 +184,7 @@ pour retrouver du contexte rapidement (plans, bugs, reviews).
 
 Si oui → guider l'installation de QMD (voir `src/fr/ecosystem/qmd-integration.md`).
 
-### 8. Résumé
+### 7. Résumé
 
 Afficher le résumé final :
 
@@ -152,8 +194,7 @@ Afficher le résumé final :
 ╠══════════════════════════════════════════════════╣
 ║  [✅] Config de base (5/5)                       ║
 ║  [✅] Contexte projet §0 rempli                  ║
-║  [✅] Night Watchdog 🐶 actif                    ║
-║  [✅] Review Reminder actif                      ║
+║  [✅] Pouls Peter actif (vault autonome)         ║
 ║  [✅] Séréna + MCP magic configurés             ║
 ║  [—]  BMAD : non installé (petit projet)        ║
 ║  [—]  QMD : non installé (< 5 fichiers .md)     ║

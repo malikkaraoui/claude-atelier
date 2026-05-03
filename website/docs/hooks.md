@@ -46,6 +46,9 @@ Un vrai tableau de bord pilote : modèle, coût, routage, infrastructure — en 
 | 10 | `guard-qmd-first.sh` | `PreToolUse` (Read) | Redirige `.md` vers QMD avant lecture complète |
 | 11 | `session-model.sh` | `SessionStart` | Cache le modèle de session pour routing cross-hooks |
 | 12 | `guard-no-force-push.sh` | `PreToolUse` (push) | Bloque `git push --force` |
+| 13 | `vault-context.sh` | `SessionStart` | Charge le résumé Peter (PETER_REPORT) en contexte |
+| 14 | `memory-read.js` | `SessionStart` + `UserPromptSubmit` | Injecte les épisodes et le contexte mémoire |
+| 15 | `detect-design-need.sh` | `UserPromptSubmit` | Détecte besoin UI/UX/design → propose Séréna 🎨 |
 
 ---
 
@@ -119,10 +122,20 @@ Le Challenger **propose**, il ne bloque pas. Exit code 0 toujours.
 
 ---
 
+## Hooks et chemins machine-spécifiques
+
+Les hooks dans `settings.json` contiennent des **chemins absolus** propres à chaque machine. `claude-atelier init` et `claude-atelier update` les **régénèrent systématiquement** — ils ne sont jamais réutilisés depuis une ancienne installation.
+
+:::caution Ne pas copier settings.json entre machines
+Les chemins de hooks sont absolus et machine-spécifiques. Lancer `claude-atelier init` sur chaque machine pour générer les bons chemins.
+:::
+
+---
+
 ## Tests des hooks
 
 ```bash
 npm test
 ```
 
-Amine 🧪 (`test/hooks.js`) — **58 tests** couvrant routing, METRICS, mode M/A, Ollama, race condition inter-hooks, gate handoff. Doit passer avant tout push.
+(`test/hooks.js`) — 37+ tests couvrant routing, METRICS, mode M/A, Ollama, race condition inter-hooks, gate handoff. Doit passer avant tout push.

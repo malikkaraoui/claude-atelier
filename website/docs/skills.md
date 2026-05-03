@@ -12,7 +12,7 @@ Les skills sont des slash commands disponibles dans Claude Code. Ils chargent dy
 | Skill | Commande | Description |
 |---|---|---|
 | Atelier Help | `/atelier-help` | Vue d'ensemble, navigation, aide |
-| Atelier Setup | `/atelier-setup` | Configuration initiale d'un nouveau projet |
+| Atelier Setup | `/atelier-setup` | Auto-découvre le projet (package.json, git, stack) et configure §0 |
 | Atelier Doctor | `/atelier-doctor` | Audit de l'installation |
 | Night Launch | `/night-launch` | Lance une session de nuit avec checklist |
 | Review Copilot | `/review-copilot` | Génère un handoff markdown pour GPT/Copilot |
@@ -32,12 +32,16 @@ Les skills sont des slash commands disponibles dans Claude Code. Ils chargent dy
 ```
 /review-copilot
       ↓
-docs/handoffs/YYYY-MM-DD-<feature>.md généré
+docs/handoffs/YYYY-MM-DD-<feature>.json généré
       ↓
-Colle dans Copilot ou ChatGPT
+Branche handoff/ → PR GitHub créée
       ↓
-/integrate-review — triage des retours
+Copilot review la PR automatiquement
+      ↓
+/integrate-review — intègre la réponse JSON
 ```
+
+Le JSON est lu directement par Copilot via la PR — pas de copier-coller.
 
 ---
 
