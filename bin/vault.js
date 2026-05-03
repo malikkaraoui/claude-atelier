@@ -10,9 +10,12 @@
  *   claude-atelier vault update  [--cwd <path>] [--json]
  *   claude-atelier vault graph   [--cwd <path>] [--json]
  *   claude-atelier vault query   "<texte>" [--cwd <path>] [--json]
+ *   claude-atelier vault maintain [--cwd <path>] [--json]
+ *   claude-atelier vault cron    start|stop|status [--cwd <path>] [--interval <15m|6h|1d>] [--json]
  */
 
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { dirname, resolve, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -169,7 +172,7 @@ function parseArgs(argv) {
   let args = argv.slice(2);
   if (args[0] === 'vault') args = args.slice(1);
   const sub = args[0] ?? 'status';
-  const flagsWithValues = new Set(['--cwd']);
+  const flagsWithValues = new Set(['--cwd', '--interval']);
   const positional = [];
   for (let i = 1; i < args.length; i++) {
     if (args[i].startsWith('-')) { if (flagsWithValues.has(args[i])) i++; continue; }
@@ -177,10 +180,12 @@ function parseArgs(argv) {
   }
   return {
     sub,
+    positional,
     queryText: positional.join(' '),
     cwd: resolve(getFlag(args, '--cwd') ?? process.cwd()),
     dryRun: args.includes('--dry-run'),
     json: args.includes('--json'),
+    intervalText: getFlag(args, '--interval'),
   };
 }
 
@@ -637,6 +642,20 @@ function staleVault(cwd) {
         : `Graphe à jour (${Math.floor(dg * 24)}h)`);
   }
 
+  const cronPath = join(vaultDir, '.peter', 'cron.json');
+  const cron = loadCronConfig(cronPath);
+  if (!cron) {
+    add('vault/.peter/cron.json', 'INFO', 'Autonomie désactivée — lancez : claude-atelier vault cron start');
+  } else if (!cron.enabled) {
+    add('vault/.peter/cron.json', 'WARN', 'Cron Peter désactivé — relancez : claude-atelier vault cron start');
+  } else {
+    const nextRunAt = cron.nextRunAt ? new Date(cron.nextRunAt).getTime() : 0;
+    const overdue = nextRunAt > 0 && nextRunAt < Date.now();
+    add('vault/.peter/cron.json', overdue ? 'WARN' : 'OK', overdue
+      ? `Réveil Peter dépassé (${cron.intervalLabel ?? `${cron.intervalMinutes}m`}) — relancer vault maintain`
+      : `Réveil autonome armé (${cron.intervalLabel ?? `${cron.intervalMinutes}m`})`);
+  }
+
   return { ok: true, checks };
 }
 
@@ -710,6 +729,8 @@ function printStale(result) {
 
 const MANIFEST_VERSION = 1;
 const STATE_VERSION = 1;
+const CRON_VERSION = 1;
+const DEFAULT_CRON_INTERVAL = '6h';
 
 const DEFAULT_IGNORE_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', '.next', 'coverage',
@@ -821,6 +842,159 @@ function loadState(statePath) {
 function saveState(statePath, state) {
   mkdirSync(dirname(statePath), { recursive: true });
   writeFileSync(statePath, JSON.stringify(state, null, 2) + '\n', 'utf8');
+}
+
+function loadCronConfig(cronPath) {
+  if (!existsSync(cronPath)) return null;
+  try { return JSON.parse(readFileSync(cronPath, 'utf8')); } catch { return null; }
+}
+
+function saveCronConfig(cronPath, config) {
+  mkdirSync(dirname(cronPath), { recursive: true });
+  writeFileSync(cronPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+}
+
+function appendEvent(eventsPath, event) {
+  mkdirSync(dirname(eventsPath), { recursive: true });
+  appendFileSync(eventsPath, JSON.stringify(event) + '\n', 'utf8');
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function shortSha(sha) {
+  return typeof sha === 'string' && sha ? sha.slice(0, 8) : 'inconnu';
+}
+
+function addMinutes(isoString, minutes) {
+  return new Date(new Date(isoString).getTime() + minutes * 60_000).toISOString();
+}
+
+function parseIntervalToMinutes(input = DEFAULT_CRON_INTERVAL) {
+  const raw = String(input || DEFAULT_CRON_INTERVAL).trim().toLowerCase();
+  const match = raw.match(/^(\d+)(m|h|d)$/);
+  if (!match) return null;
+  const value = Number(match[1]);
+  const unit = match[2];
+  if (!Number.isFinite(value) || value <= 0) return null;
+  const factor = unit === 'm' ? 1 : unit === 'h' ? 60 : 1440;
+  const minutes = value * factor;
+  if (minutes < 15) return null;
+  return { minutes, label: `${value}${unit}` };
+}
+
+function ensureMailboxFile(vaultDir) {
+  const mailboxPath = join(vaultDir, '10-mailbox.md');
+  if (!existsSync(mailboxPath)) {
+    const mailboxTemplate = VAULT_FILES.find(file => file.name === '10-mailbox.md');
+    if (mailboxTemplate) writeFileSync(mailboxPath, renderFile(mailboxTemplate), 'utf8');
+  }
+  return mailboxPath;
+}
+
+function appendMailboxAlerts(vaultDir, alerts, headSha) {
+  if (!alerts.length) return { written: 0, mailboxPath: join(vaultDir, '10-mailbox.md') };
+  const mailboxPath = ensureMailboxFile(vaultDir);
+  let content = readFileSync(mailboxPath, 'utf8').trimEnd();
+  const stamp = nowIso().slice(0, 16).replace('T', ' ');
+  for (const alert of alerts) {
+    const detailLine = alert.details?.length ? `\n- Détail : ${alert.details.join(', ')}` : '';
+    const refLine = headSha ? `\n- Réf : ${alert.type}:${shortSha(headSha)}` : '';
+    content += `\n\n### ${stamp} — Peter auto-maintenance\n\n- Source : Peter auto-maintenance\n- Statut : ${alert.status}\n- Résumé : ${alert.summary}\n- Pourquoi ici : ${alert.reason}\n- Action proposée : ${alert.action}${detailLine}${refLine}`;
+  }
+  writeFileSync(mailboxPath, content + '\n', 'utf8');
+  return { written: alerts.length, mailboxPath };
+}
+
+function gitChildEnv() {
+  const env = { ...process.env };
+  delete env.GIT_DIR;
+  delete env.GIT_WORK_TREE;
+  delete env.GIT_INDEX_FILE;
+  delete env.GIT_OBJECT_DIRECTORY;
+  delete env.GIT_ALTERNATE_OBJECT_DIRECTORIES;
+  return env;
+}
+
+function getGitHead(cwd) {
+  try {
+    return execSync('git rev-parse HEAD', {
+      cwd,
+      env: gitChildEnv(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim();
+  } catch {
+    return '';
+  }
+}
+
+function listChangedFilesSince(cwd, previousHead, currentHead) {
+  if (!previousHead || !currentHead || previousHead === currentHead) return [];
+  try {
+    const output = execSync(`git --no-pager diff --name-only ${previousHead}..${currentHead}`, {
+      cwd,
+      env: gitChildEnv(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim();
+    return output ? output.split('\n').map(line => line.trim()).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function isProductChangePath(filePath) {
+  return filePath === 'package.json'
+    || filePath === 'README.md'
+    || filePath === 'index.js'
+    || filePath.startsWith('bin/')
+    || filePath.startsWith('hooks/')
+    || filePath.startsWith('src/')
+    || filePath.startsWith('scripts/');
+}
+
+function isWebsiteDocsPath(filePath) {
+  return filePath.startsWith('website/docs/');
+}
+
+function collectMaintenanceAlerts(cwd, previousHead, currentHead) {
+  if (!previousHead) return { alerts: [], changedFiles: [], mode: 'baseline' };
+  const changedFiles = listChangedFilesSince(cwd, previousHead, currentHead);
+  if (!changedFiles.length) return { alerts: [], changedFiles, mode: 'no-change' };
+
+  const productFiles = changedFiles.filter(isProductChangePath);
+  const docsFiles = changedFiles.filter(isWebsiteDocsPath);
+  const alerts = [];
+
+  if (productFiles.length > 0 && docsFiles.length === 0) {
+    alerts.push({
+      type: 'stale-docs',
+      status: 'à challenger',
+      summary: `${productFiles.length} fichier(s) produit ont changé depuis ${shortSha(previousHead)} sans mise à jour de website/docs.`,
+      reason: 'website/docs/ fait partie du périmètre Peter et doit refléter l’état réel du package public.',
+      action: 'Mettre à jour website/docs puis relancer la boucle handoff/review.',
+      details: productFiles.slice(0, 5),
+    });
+  }
+
+  return { alerts, changedFiles, mode: 'diff' };
+}
+
+function updateCronHeartbeat(cwd, runAt) {
+  const cronPath = join(cwd, 'vault', '.peter', 'cron.json');
+  const cron = loadCronConfig(cronPath);
+  if (!cron?.enabled || !Number.isFinite(cron.intervalMinutes)) return null;
+  const updated = {
+    ...cron,
+    lastHeartbeat: runAt,
+    lastRunAt: runAt,
+    nextRunAt: addMinutes(runAt, cron.intervalMinutes),
+    updatedAt: runAt,
+  };
+  saveCronConfig(cronPath, updated);
+  return updated;
 }
 
 function updateVault(cwd) {
@@ -1316,8 +1490,217 @@ function printQuery(result, queryText) {
   }
 }
 
+function maintainVault(cwd) {
+  const vaultDir = join(cwd, 'vault');
+  if (!existsSync(vaultDir)) {
+    return { ok: false, error: 'Aucun vault projet. Lancez : claude-atelier vault init' };
+  }
+
+  const statePath = join(vaultDir, '.peter', 'state.json');
+  const eventsPath = join(vaultDir, '.peter', 'events.jsonl');
+  const previousState = loadState(statePath) ?? {};
+  const previousHead = previousState.git?.head ?? previousState.maintenance?.lastHead ?? '';
+  const currentHead = getGitHead(cwd);
+
+  const update = updateVault(cwd);
+  if (!update.ok) return update;
+
+  const graph = graphVault(cwd);
+  if (!graph.ok) return graph;
+
+  const maintenanceCheck = collectMaintenanceAlerts(cwd, previousHead, currentHead);
+  const mailbox = appendMailboxAlerts(vaultDir, maintenanceCheck.alerts, currentHead);
+  const report = reportVault(cwd);
+  if (!report.ok) return report;
+
+  const runAt = nowIso();
+  const cron = updateCronHeartbeat(cwd, runAt);
+  const state = {
+    ...loadState(statePath),
+    version: STATE_VERSION,
+    lastRun: runAt,
+    lastCommand: 'maintain',
+    health: maintenanceCheck.alerts.length > 0 ? 'warn' : 'ok',
+    git: currentHead ? { head: currentHead } : (previousState.git ?? {}),
+    maintenance: {
+      lastRun: runAt,
+      previousHead,
+      lastHead: currentHead || previousHead,
+      changedFiles: maintenanceCheck.changedFiles,
+      changedCount: maintenanceCheck.changedFiles.length,
+      alertsCount: maintenanceCheck.alerts.length,
+      mailboxWritten: mailbox.written,
+      docsCheck: maintenanceCheck.alerts.some(alert => alert.type === 'stale-docs') ? 'warn' : maintenanceCheck.mode,
+    },
+    pulse: {
+      status: maintenanceCheck.alerts.length > 0 ? 'warn' : 'ok',
+      mode: cron?.enabled ? 'cron' : 'manual',
+      lastBeatAt: runAt,
+      nextBeatAt: cron?.nextRunAt ?? null,
+    },
+  };
+  saveState(statePath, state);
+
+  appendEvent(eventsPath, {
+    ts: runAt,
+    type: 'maintain',
+    head: currentHead || null,
+    alerts: maintenanceCheck.alerts.map(alert => ({ type: alert.type, summary: alert.summary, details: alert.details ?? [] })),
+    update: {
+      fileCount: update.fileCount,
+      newCount: update.newCount,
+      modCount: update.modCount,
+      deletedCount: update.deletedCount,
+    },
+    graph: {
+      nodeCount: graph.nodeCount,
+      edgeCount: graph.edgeCount,
+    },
+    report: {
+      freshness: report.freshness,
+      reportPath: relative(cwd, report.reportPath),
+    },
+    cron: cron ? {
+      enabled: cron.enabled,
+      intervalLabel: cron.intervalLabel,
+      nextRunAt: cron.nextRunAt,
+    } : { enabled: false },
+  });
+
+  return {
+    ok: true,
+    update,
+    graph,
+    report,
+    alerts: maintenanceCheck.alerts,
+    mailboxWritten: mailbox.written,
+    mailboxPath: mailbox.mailboxPath,
+    statePath,
+    eventsPath,
+    cron,
+  };
+}
+
+function printMaintain(result, cwd) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+    return;
+  }
+  console.log(`\n${CYAN}[PETER] vault maintain${NC}`);
+  console.log(`  Projet   : ${cwd}`);
+  console.log(`  Fichiers : ${result.update.fileCount} (${result.update.newCount} new, ${result.update.modCount} mod, ${result.update.deletedCount} del)`);
+  console.log(`  Graphe   : ${result.graph.nodeCount} nœuds / ${result.graph.edgeCount} relations`);
+  console.log(`  Rapport  : ${relative(cwd, result.report.reportPath)}`);
+  console.log(`  Events   : ${relative(cwd, result.eventsPath)}`);
+  if (result.mailboxWritten > 0) {
+    console.log(`  ${YELLOW}[MAILBOX]${NC} ${result.mailboxWritten} alerte(s) écrite(s) dans ${relative(cwd, result.mailboxPath)}`);
+  }
+  if (result.cron?.enabled) {
+    console.log(`  ${GREEN}[PULSE]${NC} prochain réveil prévu : ${result.cron.nextRunAt}`);
+  }
+  console.log(`\n${result.alerts.length ? YELLOW : GREEN}${result.alerts.length ? '⚠' : '✓'}${NC} ${result.alerts.length ? `${result.alerts.length} alerte(s) détectée(s).` : 'Maintenance Peter terminée.'}`);
+}
+
+function startVaultCron(cwd, intervalText) {
+  const vaultDir = join(cwd, 'vault');
+  if (!existsSync(vaultDir)) {
+    return { ok: false, error: 'Aucun vault projet. Lancez : claude-atelier vault init' };
+  }
+  const parsed = parseIntervalToMinutes(intervalText);
+  if (!parsed) {
+    return { ok: false, error: 'Intervalle invalide. Utilisez par exemple --interval 30m, 6h ou 1d (minimum 15m).' };
+  }
+  const cronPath = join(vaultDir, '.peter', 'cron.json');
+  const eventsPath = join(vaultDir, '.peter', 'events.jsonl');
+  const now = nowIso();
+  const existing = loadCronConfig(cronPath) ?? {};
+  const config = {
+    ...existing,
+    version: CRON_VERSION,
+    enabled: true,
+    intervalMinutes: parsed.minutes,
+    intervalLabel: parsed.label,
+    startedAt: existing.startedAt ?? now,
+    updatedAt: now,
+    nextRunAt: addMinutes(now, parsed.minutes),
+  };
+  saveCronConfig(cronPath, config);
+  appendEvent(eventsPath, { ts: now, type: 'cron_start', intervalLabel: parsed.label, intervalMinutes: parsed.minutes });
+  return { ok: true, cronPath, eventsPath, config };
+}
+
+function stopVaultCron(cwd) {
+  const vaultDir = join(cwd, 'vault');
+  if (!existsSync(vaultDir)) {
+    return { ok: false, error: 'Aucun vault projet. Lancez : claude-atelier vault init' };
+  }
+  const cronPath = join(vaultDir, '.peter', 'cron.json');
+  const eventsPath = join(vaultDir, '.peter', 'events.jsonl');
+  const existing = loadCronConfig(cronPath) ?? { version: CRON_VERSION };
+  const now = nowIso();
+  const config = {
+    ...existing,
+    enabled: false,
+    updatedAt: now,
+    stoppedAt: now,
+  };
+  saveCronConfig(cronPath, config);
+  appendEvent(eventsPath, { ts: now, type: 'cron_stop' });
+  return { ok: true, cronPath, eventsPath, config };
+}
+
+function statusVaultCron(cwd) {
+  const vaultDir = join(cwd, 'vault');
+  if (!existsSync(vaultDir)) {
+    return { ok: false, error: 'Aucun vault projet. Lancez : claude-atelier vault init' };
+  }
+  const cronPath = join(vaultDir, '.peter', 'cron.json');
+  const statePath = join(vaultDir, '.peter', 'state.json');
+  const config = loadCronConfig(cronPath);
+  const state = loadState(statePath) ?? {};
+  return {
+    ok: true,
+    cronPath,
+    enabled: !!config?.enabled,
+    config,
+    lastRun: state.maintenance?.lastRun ?? state.lastRun ?? null,
+    pulse: state.pulse ?? null,
+  };
+}
+
+function printCron(result, cwd, action) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+    return;
+  }
+  if (action === 'start') {
+    console.log(`\n${CYAN}[PETER] vault cron start${NC}`);
+    console.log(`  Config  : ${relative(cwd, result.cronPath)}`);
+    console.log(`  Interval: ${result.config.intervalLabel} (${result.config.intervalMinutes} min)`);
+    console.log(`  Prochain réveil : ${result.config.nextRunAt}`);
+    console.log(`\n${GREEN}✓${NC} Pouls Peter armé. Brancher CronCreate/scheduler externe sur \`claude-atelier vault maintain\`.`);
+    return;
+  }
+  if (action === 'stop') {
+    console.log(`\n${CYAN}[PETER] vault cron stop${NC}`);
+    console.log(`  Config : ${relative(cwd, result.cronPath)}`);
+    console.log(`\n${YELLOW}✓${NC} Réveil autonome Peter désactivé.`);
+    return;
+  }
+  console.log(`\n${CYAN}[PETER] vault cron status${NC}`);
+  if (!result.config) {
+    console.log(`  ${YELLOW}[OFF]${NC} Aucun cron Peter configuré.`);
+    return;
+  }
+  console.log(`  État     : ${result.enabled ? `${GREEN}ON${NC}` : `${YELLOW}OFF${NC}`}`);
+  console.log(`  Interval : ${result.config.intervalLabel ?? `${result.config.intervalMinutes}m`}`);
+  if (result.config.lastHeartbeat) console.log(`  Dernier battement : ${result.config.lastHeartbeat}`);
+  if (result.config.nextRunAt) console.log(`  Prochain réveil   : ${result.config.nextRunAt}`);
+  if (result.lastRun) console.log(`  Dernière maintenance : ${result.lastRun}`);
+}
+
 export async function runVault(argv) {
-  const { sub, queryText, cwd, dryRun, json } = parseArgs(argv);
+  const { sub, positional, queryText, cwd, dryRun, json, intervalText } = parseArgs(argv);
 
   if (sub === 'init') {
     const result = initVault(cwd, dryRun);
@@ -1373,7 +1756,28 @@ export async function runVault(argv) {
     return result.ok ? 0 : 1;
   }
 
+  if (sub === 'maintain') {
+    const result = maintainVault(cwd);
+    if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    else printMaintain(result, cwd);
+    return result.ok ? 0 : 1;
+  }
+
+  if (sub === 'cron') {
+    const action = positional[0] ?? 'status';
+    const result = action === 'start'
+      ? startVaultCron(cwd, intervalText)
+      : action === 'stop'
+        ? stopVaultCron(cwd)
+        : action === 'status'
+          ? statusVaultCron(cwd)
+          : { ok: false, error: `Action cron inconnue "${action}"` };
+    if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    else printCron(result, cwd, action);
+    return result.ok ? 0 : 1;
+  }
+
   process.stderr.write(`${RED}error${NC}: sous-commande vault inconnue "${sub}"\n`);
-  process.stderr.write('Usage: claude-atelier vault [init|status|report|stale|update|graph|query] [--cwd <path>] [--dry-run] [--json]\n');
+  process.stderr.write('Usage: claude-atelier vault [init|status|report|stale|update|graph|query|maintain|cron] [--cwd <path>] [--dry-run] [--json]\n');
   return 1;
 }
