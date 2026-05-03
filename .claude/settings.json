@@ -88,7 +88,7 @@
           },
           {
             "type": "command",
-            "command": "bash \"/Users/malik/Documents/ATELIER PROJETS/Claude instructions/hooks/vault-context.sh\""
+            "command": "bash \"hooks/vault-context.sh\""
           }
         ]
       }

@@ -235,6 +235,27 @@ async function captureJSON(fn) {
   cleanup(dir);
 }
 
+// ─── Test 18: vault update détecte fichier supprimé (deletedCount) ───────────
+{
+  const dir = await setup();
+  // Run 1 : index initial
+  await runVault(['node', 'vault', 'vault', 'update', '--cwd', dir]);
+  // Ajouter un fichier extra
+  writeFileSync(join(dir, 'vault', 'EXTRA.md'), '# Extra\n');
+  // Run 2 : le fichier extra est indexé (newCount = 1)
+  await runVault(['node', 'vault', 'vault', 'update', '--cwd', dir]);
+  // Supprimer le fichier extra
+  rmSync(join(dir, 'vault', 'EXTRA.md'));
+  // Run 3 : doit détecter la suppression
+  const result = await captureJSON(() =>
+    runVault(['node', 'vault', 'vault', 'update', '--cwd', dir, '--json'])
+  );
+  assert(result?.deletedCount >= 1, 'vault update détecte un fichier supprimé (deletedCount >= 1)');
+  const s = readJSON(join(dir, 'vault', '.peter', 'state.json'));
+  assert(s?.deletedFiles >= 1, 'state.json.deletedFiles >= 1 après suppression');
+  cleanup(dir);
+}
+
 // ─── Résumé ───────────────────────────────────────────────────────────────────
 console.log('\nvault Phase B — tests\n');
 results.forEach(r => console.log(r));

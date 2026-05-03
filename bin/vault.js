@@ -233,7 +233,9 @@ function installPeterHook(cwd, dryRun = false) {
   const settings = readJsonIfExists(settingsPath, {});
   const hooks = settings.hooks ?? {};
   const sessionStart = Array.isArray(hooks.SessionStart) ? hooks.SessionStart : [];
-  const shellCommand = `bash "${projectHook}"`;
+  // Chemin relatif à la racine du projet — portable entre machines
+  const relHookPath = relative(cwd, projectHook);
+  const shellCommand = `bash "${relHookPath}"`;
   const alreadyInstalled = sessionStart.some(entryContainsVaultHook);
 
   if (!alreadyInstalled) {
