@@ -7,7 +7,7 @@ title: Agents nommés
 
 ---
 
-## Les 5 agents
+## Les 7 agents
 
 ### Steve 🍎 — iOS / Xcode
 
@@ -85,6 +85,38 @@ npm test
 ```
 
 Amine vérifie tous les guards bash — edge cases inclus.
+
+---
+
+### Séréna 🎨 — Design Senior + UI/UX
+
+Activée via `/design-senior` ou automatiquement dès qu'un besoin UI/UX est détecté dans le prompt (`detect-design-need.sh`).
+
+> La chef designer senior de l'atelier. Elle s'active quand tu parles design, UI/UX, charte.
+
+**Domaine :** composants UI, charte graphique, accessibilité, design system.
+
+**MCP optionnel :** magic (21st.dev) pour composants premium.
+
+**Skill :** `/design-senior`
+
+---
+
+### Peter 🗂️ — Vault projet / mémoire dynamique
+
+Activé au `SessionStart` dès qu'un `vault/` projet existe.
+
+> Peter injecte un seul `PETER_REPORT.md` au démarrage — décisions actives, prochaine action, nœuds centraux — et maintient la mémoire projet sans brûler les tokens.
+
+**Workflow :**
+```bash
+npx claude-atelier vault init    # crée le vault + hook SessionStart
+npx claude-atelier vault update  # index incrémental SHA256
+npx claude-atelier vault graph   # graphe navigable (graph.json)
+npx claude-atelier vault query "concept"  # recherche par concept
+```
+
+**Ce qu'il apporte :** index SHA256 (`manifest.json`), graphe minimal (nœuds fichiers/décisions/concepts + relations), centralité pondérée — top 8 nœuds remontés dans `PETER_REPORT.md` (section `## Nœuds centraux`). Local-first, aucun LLM externe.
 
 ---
 

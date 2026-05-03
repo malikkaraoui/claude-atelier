@@ -7,23 +7,30 @@ Les skills sont des slash commands disponibles dans Claude Code. Ils chargent dy
 
 ---
 
-## Les 13 skills
+## Les 20 skills
 
 | Skill | Commande | Description |
 |---|---|---|
 | Atelier Help | `/atelier-help` | Vue d'ensemble, navigation, aide |
 | Atelier Setup | `/atelier-setup` | Auto-découvre le projet (package.json, git, stack) et configure §0 |
-| Atelier Doctor | `/atelier-doctor` | Audit de l'installation |
+| Atelier Doctor | `/atelier-doctor` | Diagnostic complet installation (27+ checks) |
+| Atelier Config | `/atelier-config` | Tableau de contrôle features + état système |
 | Night Launch | `/night-launch` | Lance une session de nuit avec checklist |
-| Review Copilot | `/review-copilot` | Génère un handoff markdown pour GPT/Copilot |
-| Angle Mort | `/angle-mort` | Auto-review rapide, cherche les angles morts |
-| Integrate Review | `/integrate-review` | Trie les retours d'un review externe |
+| Review Copilot | `/review-copilot` | Génère un handoff JSON pour Copilot via PR GitHub |
+| Integrate Review | `/integrate-review` | Intègre la réponse Copilot depuis docs/handoffs/ |
+| Copilot Loop | `/copilot-loop` | Loop autonome PR → review → merge |
+| Angle Mort | `/angle-mort` | Auto-review anti-complaisance avant release |
 | Audit Safe | `/audit-safe` | Audit sécurité + secrets sur le diff staged |
 | BMAD Init | `/bmad-init` | Plan → validation → implémentation |
-| Compress | `/compress` | Résume le contexte pour `/compact` |
+| Compress | `/compress` | Compresse CLAUDE.md pour réduire les tokens |
 | QMD Init | `/qmd-init` | Configure l'intégration QMD |
-| iOS Setup | `/ios-setup` | Configure un projet iOS |
+| iOS Setup | `/ios-setup` | Workflow iOS/tvOS : VS Code + Xcode + Makefile |
 | Token Routing | `/token-routing` | Recommande le bon modèle pour la tâche |
+| Design Senior | `/design-senior` | Propose Séréna + installe UI/UX Pro Max |
+| La Bise | `/la-bise` | Échange inter-LLM (GPT/Mistral) |
+| Freebox Init | `/freebox-init` | Bootstrap autorisation app Freebox |
+| Ollama Router | `/ollama-router` | Setup Ollama bout-en-bout + proxy |
+| Handoff Debt | `/handoff-debt` | Affiche la dette §25 + draft handoff |
 
 ---
 

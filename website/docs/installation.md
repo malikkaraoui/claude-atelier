@@ -9,7 +9,7 @@ title: Installation
 npx claude-atelier init
 ```
 
-Une commande. Claude Code est configuré avec 14 rails d'enforcement dans `.claude/`.
+Une commande. Claude Code est configuré avec 15 rails d'enforcement dans `.claude/`.
 
 ---
 
@@ -30,13 +30,13 @@ Une commande. Claude Code est configuré avec 14 rails d'enforcement dans `.clau
 .claude/
 ├── CLAUDE.md              ← Runtime core (§0–§25)
 ├── settings.json          ← Permissions, hooks, budget
-├── hooks/                 ← 14 scripts d'enforcement
+├── hooks/                 ← 15 scripts d'enforcement
 ├── autonomy/              ← Mode nuit, watchdog, loop
 ├── orchestration/         ← Fork, Teammate, Worktree
 ├── runtime/               ← Todo, extended thinking, théâtre
 ├── security/              ← Gate, secrets, emergency
 ├── ecosystem/             ← Hooks, skills, agents, QMD
-└── skills/                ← 13 slash commands
+└── skills/                ← 20 slash commands
 .claudeignore              ← Patterns sensibles exclus
 .gitignore                 ← Template si absent
 scripts/

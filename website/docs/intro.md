@@ -32,9 +32,9 @@ C'est tout. Claude Code est configuré avec 12 rails d'enforcement et un cockpit
 
 `claude-atelier` installe dans `.claude/` :
 
-- **12 hooks bash** — s'exécutent automatiquement (message, commit, push, session)
+- **15 hooks bash** — s'exécutent automatiquement (message, commit, push, session)
 - **Cockpit §1** — chaque réponse s'ouvre sur `` `[timestamp | model] 🟢 M | 🦙❌ | 🔌❌` `` : horodatage, modèle, pastille fit, mode M/A, état Ollama, état proxy — en un coup d'œil
-- **16 slash commands** — `/review-copilot`, `/night-launch`, `/angle-mort`…
+- **20 slash commands** — `/review-copilot`, `/night-launch`, `/angle-mort`…
 - **Satellites de stack** — JS, Python, iOS, Docker… chargés selon le projet
 - **Mode nuit** — Claude travaille seul, watchdog surveille, vous dormez
 - **Gate pré-push** — 5 vérifications avant chaque `git push`
@@ -73,13 +73,13 @@ Pas de texte. Des rails.
 .claude/
 ├── CLAUDE.md              ← Runtime core (§0–§25)
 ├── settings.json          ← Permissions, hooks, budget
-├── hooks/                 ← 14 scripts d'enforcement
+├── hooks/                 ← 15 scripts d'enforcement
 ├── autonomy/              ← Mode nuit, watchdog, loop
 ├── orchestration/         ← Fork, Teammate, Worktree
 ├── runtime/               ← Todo, extended thinking
 ├── security/              ← Gate, secrets, emergency
 ├── ecosystem/             ← Hooks, skills, agents
-└── skills/                ← 13 slash commands
+└── skills/                ← 20 slash commands
 scripts/
 └── pre-push-gate.sh       ← Gate pré-push 5 étapes
 ```
@@ -90,9 +90,9 @@ scripts/
 
 - [Installation](./installation) — mise en place complète
 - [Hooks d'enforcement](./hooks) — les 12 rails + cockpit §1
-- [Agents nommés](./agents) — Steve, Isaac, Mohamed, Amine
+- [Agents nommés](./agents) — Steve, Isaac, Mohamed, Amine, Peter
 - [Mode Nuit](./mode-nuit) — autonomie supervisée + watchdog
-- [Skills](./skills) — 13 slash commands
+- [Skills](./skills) — 20 slash commands
 - [Satellites par stack](./stacks) — iOS, JS, Python…
 - [Sécurité](./securite) — gate, secrets, permissions
 - [Contribuer](./contribuer) — ajouter un hook, un satellite
