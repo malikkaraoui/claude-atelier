@@ -907,9 +907,24 @@ function appendMailboxAlerts(vaultDir, alerts, headSha) {
   return { written: alerts.length, mailboxPath };
 }
 
+function gitChildEnv() {
+  const env = { ...process.env };
+  delete env.GIT_DIR;
+  delete env.GIT_WORK_TREE;
+  delete env.GIT_INDEX_FILE;
+  delete env.GIT_OBJECT_DIRECTORY;
+  delete env.GIT_ALTERNATE_OBJECT_DIRECTORIES;
+  return env;
+}
+
 function getGitHead(cwd) {
   try {
-    return execSync('git rev-parse HEAD', { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    return execSync('git rev-parse HEAD', {
+      cwd,
+      env: gitChildEnv(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim();
   } catch {
     return '';
   }
@@ -920,6 +935,7 @@ function listChangedFilesSince(cwd, previousHead, currentHead) {
   try {
     const output = execSync(`git --no-pager diff --name-only ${previousHead}..${currentHead}`, {
       cwd,
+      env: gitChildEnv(),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore']
     }).trim();

@@ -39,10 +39,11 @@ function countPeterHooks(settings) {
   }, 0);
 }
 
-function cli(args, cwd) {
+function cli(args, cwd, env = {}) {
   return spawnSync(process.execPath, [join(ROOT, 'bin', 'cli.js'), ...args], {
     cwd,
     encoding: 'utf8',
+    env: { ...process.env, ...env },
   });
 }
 
@@ -642,6 +643,30 @@ test('vault maintain met à jour le heartbeat cron quand le pouls est armé', ()
     const state = JSON.parse(readFileSync(join(dir, 'vault', '.peter', 'state.json'), 'utf8'));
     ok(state.pulse?.mode === 'cron', 'pulse.mode=cron attendu');
     ok(state.pulse?.nextBeatAt === cron.nextRunAt, 'nextBeatAt doit suivre cron.nextRunAt');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault maintain ignore un GIT_DIR/GIT_WORK_TREE ambiant pollué', () => {
+  const dir = initTestVault();
+  try {
+    initGitRepo(dir);
+    commitAll(dir, 'chore: baseline peter');
+    cli(['vault', 'maintain', '--cwd', dir], dir);
+
+    mkdirSync(join(dir, 'bin'), { recursive: true });
+    writeFileSync(join(dir, 'bin', 'feature.js'), 'export const feature = true;\n', 'utf8');
+    commitAll(dir, 'feat: change produit sans doc');
+
+    const polluted = cli(['vault', 'maintain', '--cwd', dir], dir, {
+      GIT_DIR: join(ROOT, '.git', 'worktrees', 'peter-phase-d'),
+      GIT_WORK_TREE: ROOT,
+    });
+    ok(polluted.status === 0, `exit 0 attendu: ${polluted.stderr}`);
+
+    const mailbox = readFileSync(join(dir, 'vault', '10-mailbox.md'), 'utf8');
+    ok(mailbox.includes('website/docs'), 'l’alerte stale docs doit rester détectée malgré un contexte git ambiant pollué');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
