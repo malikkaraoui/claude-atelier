@@ -40,7 +40,8 @@ if [ -n "$LIVE_MODEL" ]; then
     MODEL=$(echo "$LIVE_MODEL" | sed 's/\[.*$//' | tr -d '\r\n')
 fi
 if [ -z "$MODEL" ]; then
-    MODEL=$(cat /tmp/claude-atelier-current-model 2>/dev/null | tr -d '\r\n')
+    BASE_TMP="${CLAUDE_ATELIER_TMPDIR:-/tmp}"
+    MODEL=$(cat "$BASE_TMP/claude-atelier-current-model" 2>/dev/null | tr -d '\r\n')
 fi
 [ -z "$MODEL" ] && exit 0
 

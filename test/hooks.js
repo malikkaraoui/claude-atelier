@@ -17,6 +17,10 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
+const TEST_TMP = mkdtempSync(resolve(tmpdir(), 'claude-atelier-hooks-'));
+const ROUTING_LEGACY_MODEL = resolve(TEST_TMP, 'claude-atelier-current-model');
+const ROUTING_CACHE_DIR = resolve(TEST_TMP, 'claude-atelier-model-cache');
+const ROUTING_DIAGNOSTIC_LAST = resolve(TEST_TMP, 'claude-atelier-diagnostic-last');
 
 let pass = 0;
 let fail = 0;
@@ -42,18 +46,18 @@ function hook(name, stdinObj = {}, env = {}) {
     input: JSON.stringify(stdinObj),
     encoding: 'utf8',
     cwd: ROOT,
-    env: { ...process.env, ...env }
+    env: { ...process.env, CLAUDE_ATELIER_TMPDIR: TEST_TMP, ...env }
   });
 }
 
 function resetRoutingEnv() {
   try {
-    rmSync('/tmp/claude-atelier-current-model');
+    rmSync(ROUTING_LEGACY_MODEL);
   } catch {}
   try {
-    rmSync('/tmp/claude-atelier-model-cache', { recursive: true, force: true });
+    rmSync(ROUTING_CACHE_DIR, { recursive: true, force: true });
   } catch {}
-  writeFileSync('/tmp/claude-atelier-diagnostic-last', `${Math.floor(Date.now() / 1000)}`);
+  writeFileSync(ROUTING_DIAGNOSTIC_LAST, `${Math.floor(Date.now() / 1000)}`);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -200,17 +204,17 @@ test('session-model capture le modèle depuis le JSON du hook', () => {
   resetRoutingEnv();
   const r = hook('session-model.sh', { model: 'claude-sonnet-4-6' });
   ok(r.status === 0, 'exit 0');
-  ok(readFileSync('/tmp/claude-atelier-current-model', 'utf8').trim() === 'claude-sonnet-4-6', 'modèle capturé');
+  ok(readFileSync(ROUTING_LEGACY_MODEL, 'utf8').trim() === 'claude-sonnet-4-6', 'modèle capturé');
 });
 
 test('routing-check préfère le modèle live au cache stale', () => {
   resetRoutingEnv();
-  writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-sonnet-4-6\n');
   const r = hook('routing-check.sh', { prompt: 'audit rapide', model: 'claude-opus-4-6[1m]' });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[ROUTING] modèle actif: claude-opus-4-6 (Opus (archi))'), 'le modèle live doit gagner');
   ok(r.stdout.includes('[ROUTING] source modèle: live'), 'la source doit être live');
-  ok(readFileSync('/tmp/claude-atelier-current-model', 'utf8').trim() === 'claude-opus-4-6', 'cache mis à jour');
+  ok(readFileSync(ROUTING_LEGACY_MODEL, 'utf8').trim() === 'claude-opus-4-6', 'cache mis à jour');
 });
 
 test("routing-check bascule sur le transcript si le modèle live est absent", () => {
@@ -251,7 +255,7 @@ test("routing-check accepte le format date claude-haiku-20240307 depuis le trans
 
 test('routing-check signale quand il ne lui reste que le cache', () => {
   resetRoutingEnv();
-  writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-sonnet-4-6\n');
   const r = hook('routing-check.sh', { prompt: 'bonjour' });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[ROUTING] source modèle: cache'), 'source cache attendue');
@@ -268,11 +272,11 @@ test('routing-check alerte fort si aucun modèle n’est disponible', () => {
 });
 
 test('garde-fou #1 : session-model à compact sans model invalide le cache', () => {
-  writeFileSync('/tmp/claude-atelier-current-model', 'claude-opus-4-6\n');
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-opus-4-6\n');
   const r = hook('session-model.sh', { source: 'compact', hook_event_name: 'SessionStart' });
   ok(r.status === 0, 'exit 0');
   let cacheExists = true;
-  try { readFileSync('/tmp/claude-atelier-current-model', 'utf8'); } catch { cacheExists = false; }
+  try { readFileSync(ROUTING_LEGACY_MODEL, 'utf8'); } catch { cacheExists = false; }
   ok(!cacheExists, 'cache supprimé post-compact sans model live');
 });
 
@@ -299,7 +303,7 @@ test('compact sur une session n’invalide pas le cache d’une autre session', 
 
 test("garde-fou #2 : routing-check transcript lit message.model (fix /model)", () => {
   resetRoutingEnv();
-  writeFileSync('/tmp/claude-atelier-current-model', 'claude-opus-4-6\n');
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-opus-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'claude-routing-'));
   const transcript = resolve(dir, 'session.jsonl');
   // JSONL avec une réponse assistant dont message.model = haiku
@@ -308,7 +312,7 @@ test("garde-fou #2 : routing-check transcript lit message.model (fix /model)", (
   ok(r.status === 0, 'exit 0');
   // transcript message.model (haiku) > cache (opus)
   ok(r.stdout.includes('[ROUTING] source mod\xe8le: transcript'), 'transcript doit primer sur cache');
-  ok(readFileSync('/tmp/claude-atelier-current-model', 'utf8').trim() === 'claude-haiku-4-5', 'cache mis a jour');
+  ok(readFileSync(ROUTING_LEGACY_MODEL, 'utf8').trim() === 'claude-haiku-4-5', 'cache mis a jour');
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -397,7 +401,7 @@ function makeTranscript(dir, turns) {
 }
 
 test('opus + 5 tours Read/Glob/Grep → surdimensionné ⬇️', () => {
-  writeFileSync('/tmp/claude-atelier-current-model', 'claude-opus-4-6\n');
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-opus-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
   const transcript = makeTranscript(dir, [
     ['Read'], ['Glob'], ['Grep'], ['Read', 'Glob'], ['Grep', 'Read'],
@@ -424,7 +428,7 @@ test('haiku + 5 tours Agent/WebSearch → insuffisant ⬆️', () => {
 });
 
 test('sonnet + 5 tours Edit/Write → optimal 🟢', () => {
-  writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-sonnet-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
   const transcript = makeTranscript(dir, [
     ['Edit', 'Write'], ['Edit'], ['Bash', 'Write'], ['Edit', 'Edit'], ['Write'],
@@ -443,7 +447,7 @@ test('silencieux si pas de transcript', () => {
 });
 
 test('format role/content (fallback) — sonnet + 5 tours Read → léger surplus ⬇️', () => {
-  writeFileSync('/tmp/claude-atelier-current-model', 'claude-sonnet-4-6\n');
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-sonnet-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'metrics-'));
   const transcript = resolve(dir, 'session.jsonl');
   // Format alternatif : {"role":"assistant","content":[...]}

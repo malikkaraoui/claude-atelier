@@ -25,10 +25,11 @@ _F_STACK=$(_feat stack_detection)
 _F_DIAG=$(_feat diagnostic)
 _F_SESSION=$(_feat session_length_warning)
 
-THROTTLE_FILE="/tmp/claude-atelier-diagnostic-last"
+BASE_TMP="${CLAUDE_ATELIER_TMPDIR:-/tmp}"
+THROTTLE_FILE="$BASE_TMP/claude-atelier-diagnostic-last"
 THROTTLE_SECONDS=1800  # 30 minutes
-CACHE_DIR="/tmp/claude-atelier-model-cache"
-LEGACY_MODEL_FILE="/tmp/claude-atelier-current-model"
+CACHE_DIR="$BASE_TMP/claude-atelier-model-cache"
+LEGACY_MODEL_FILE="$BASE_TMP/claude-atelier-current-model"
 
 mkdir -p "$CACHE_DIR"
 
@@ -45,7 +46,7 @@ except: pass
 
 # Persister session_id courant (P1 — pré-requis V2 socket actionneur)
 if [ -n "$SESSION_ID" ]; then
-  printf '%s\n' "$SESSION_ID" > /tmp/claude-atelier-current-session-id
+  printf '%s\n' "$SESSION_ID" > "$BASE_TMP/claude-atelier-current-session-id"
 fi
 
 PROMPT=$(echo "$_RAW_INPUT" | python3 -c "
@@ -221,7 +222,7 @@ fi
 # ===== MODE SWITCH A/M (Auto ou Manuel) =====
 # A = proxy réellement actif (health check), M = Anthropic direct (proxy off ou absent)
 # ANTHROPIC_BASE_URL est une config, pas un état — un proxy éteint = mode M de fait.
-SWITCH_MODE_FILE="/tmp/claude-atelier-switch-mode"
+SWITCH_MODE_FILE="$BASE_TMP/claude-atelier-switch-mode"
 
 if is_ollama_proxy_healthy; then
   SWITCH_MODE="A"

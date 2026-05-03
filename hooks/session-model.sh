@@ -29,8 +29,9 @@ cache_scope_key() {
   printf 'global'
 }
 
-CACHE_DIR=/tmp/claude-atelier-model-cache
-LEGACY_CACHE_FILE=/tmp/claude-atelier-current-model
+BASE_TMP="${CLAUDE_ATELIER_TMPDIR:-/tmp}"
+CACHE_DIR="$BASE_TMP/claude-atelier-model-cache"
+LEGACY_CACHE_FILE="$BASE_TMP/claude-atelier-current-model"
 CACHE_SCOPE=$(cache_scope_key)
 CACHE_FILE="$CACHE_DIR/${CACHE_SCOPE}.model"
 

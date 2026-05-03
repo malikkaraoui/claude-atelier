@@ -1,12 +1,12 @@
 # PETER_REPORT
 
-> Généré par Peter — 2026-05-03 06:41:16 — Ne pas éditer manuellement.
+> Généré par Peter — 2026-05-03 09:17:00 — Ne pas éditer manuellement.
 
 ## Bureau préparé
 
 - Projet : claude-atelier (framework Claude Code)
 - Phase : Phase 2 — v0.23.5 livrée (Phase B vault : index incrémental Peter) · next: Phase C graphe minimal
-- Dernière mise à jour : 2026-05-03 06:41:16
+- Dernière mise à jour : 2026-05-03 09:17:00
 - Fraîcheur : OK
 
 ## À savoir avant d'agir
@@ -40,3 +40,28 @@
 ## Prochaine action recommandée
 
 - Démarrer Phase C (graph.json — nœuds fichiers/docs/décisions, relations extraites Markdown)
+
+## Nœuds centraux
+
+- concept:handoff — 48 relation(s)
+- concept:stack — 36 relation(s)
+- concept:claude — 29 relation(s)
+- concept:procedure — 28 relation(s)
+- concept:peter — 10 relation(s)
+- concept:quand — 24 relation(s)
+- concept:principes — 23 relation(s)
+- concept:phase — 11 relation(s)
+
+## Documents pivots
+
+- vault/00-brief.md — Brief projet
+- vault/10-mailbox.md — Mailbox projet
+- vault/20-decisions.md — Décisions projet
+- vault/30-discoveries.md — Découvertes projet
+- vault/40-roadmap.md — Roadmap vivante
+
+## Questions utiles
+
+- Quels documents expliquent la phase actuelle ?
+- Quelles décisions structurent le projet ?
+- Quels risques bloquent la prochaine étape ?
