@@ -46,6 +46,25 @@ function cli(args, cwd) {
   });
 }
 
+function git(args, cwd) {
+  return spawnSync('git', args, {
+    cwd,
+    encoding: 'utf8',
+  });
+}
+
+function initGitRepo(dir) {
+  ok(git(['init'], dir).status === 0, 'git init doit réussir');
+  ok(git(['config', 'user.email', 'peter@example.com'], dir).status === 0, 'git config email doit réussir');
+  ok(git(['config', 'user.name', 'Peter'], dir).status === 0, 'git config name doit réussir');
+}
+
+function commitAll(dir, message) {
+  ok(git(['add', '.'], dir).status === 0, 'git add doit réussir');
+  const commit = git(['commit', '-m', message], dir);
+  ok(commit.status === 0, `git commit doit réussir: ${commit.stderr}`);
+}
+
 /** Initialise un vault de test et retourne le chemin racine. */
 function initTestVault() {
   const dir = mkdtempSync(join(tmpdir(), 'atelier-vault-'));
@@ -505,6 +524,113 @@ test('vault report sans graphe contient instruction vault graph', () => {
     const content = readFileSync(join(dir, 'vault', 'PETER_REPORT.md'), 'utf8');
     ok(content.includes('vault graph'), 'instruction vault graph attendue si graphe absent');
     ok(content.includes('Graphe absent'), 'message Graphe absent attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ─── Phase D — vault maintain / cron ─────────────────────────────────────────
+
+console.log('\n── claude-atelier vault maintain / cron ──');
+
+test('vault maintain met à jour state.json et events.jsonl', () => {
+  const dir = initTestVault();
+  try {
+    initGitRepo(dir);
+    commitAll(dir, 'chore: baseline peter');
+
+    const r = cli(['vault', 'maintain', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+
+    const state = JSON.parse(readFileSync(join(dir, 'vault', '.peter', 'state.json'), 'utf8'));
+    ok(state.lastCommand === 'maintain', 'lastCommand maintain attendu');
+    ok(state.maintenance?.lastRun, 'maintenance.lastRun attendu');
+    ok(state.pulse?.lastBeatAt, 'pulse.lastBeatAt attendu');
+
+    const events = readFileSync(join(dir, 'vault', '.peter', 'events.jsonl'), 'utf8').trim().split('\n').filter(Boolean);
+    ok(events.length >= 1, 'au moins un event attendu');
+    const lastEvent = JSON.parse(events.at(-1));
+    ok(lastEvent.type === 'maintain', 'event maintain attendu');
+    ok(typeof lastEvent.update?.fileCount === 'number', 'event.update.fileCount attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault maintain écrit une alerte mailbox si code change sans website/docs', () => {
+  const dir = initTestVault();
+  try {
+    initGitRepo(dir);
+    commitAll(dir, 'chore: baseline peter');
+    cli(['vault', 'maintain', '--cwd', dir], dir);
+
+    mkdirSync(join(dir, 'bin'), { recursive: true });
+    writeFileSync(join(dir, 'bin', 'feature.js'), 'export const feature = true;\n', 'utf8');
+    commitAll(dir, 'feat: change produit sans doc');
+
+    const r = cli(['vault', 'maintain', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+
+    const mailbox = readFileSync(join(dir, 'vault', '10-mailbox.md'), 'utf8');
+    ok(mailbox.includes('website/docs'), 'alerte stale docs attendue dans mailbox');
+    ok(mailbox.includes('Peter auto-maintenance'), 'signature Peter auto-maintenance attendue');
+
+    const state = JSON.parse(readFileSync(join(dir, 'vault', '.peter', 'state.json'), 'utf8'));
+    ok(state.health === 'warn', 'health warn attendu si alerte');
+    ok(state.maintenance?.alertsCount === 1, 'une alerte attendue');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault cron start écrit cron.json puis status le relit', () => {
+  const dir = initTestVault();
+  try {
+    const start = cli(['vault', 'cron', 'start', '--cwd', dir, '--interval', '6h'], dir);
+    ok(start.status === 0, `exit 0 attendu: ${start.stderr}`);
+    ok(existsSync(join(dir, 'vault', '.peter', 'cron.json')), 'cron.json doit exister');
+
+    const status = cli(['vault', 'cron', 'status', '--cwd', dir, '--json'], dir);
+    ok(status.status === 0, `exit 0 attendu: ${status.stderr}`);
+    const result = JSON.parse(status.stdout);
+    ok(result.enabled === true, 'cron enabled attendu');
+    ok(result.config.intervalLabel === '6h', 'intervalLabel 6h attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault cron stop désactive le réveil autonome', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'cron', 'start', '--cwd', dir, '--interval', '6h'], dir);
+    const stop = cli(['vault', 'cron', 'stop', '--cwd', dir, '--json'], dir);
+    ok(stop.status === 0, `exit 0 attendu: ${stop.stderr}`);
+    const result = JSON.parse(stop.stdout);
+    ok(result.config.enabled === false, 'cron disabled attendu');
+    ok(result.config.stoppedAt, 'stoppedAt attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault maintain met à jour le heartbeat cron quand le pouls est armé', () => {
+  const dir = initTestVault();
+  try {
+    initGitRepo(dir);
+    commitAll(dir, 'chore: baseline peter');
+    cli(['vault', 'cron', 'start', '--cwd', dir, '--interval', '6h'], dir);
+
+    const r = cli(['vault', 'maintain', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+
+    const cron = JSON.parse(readFileSync(join(dir, 'vault', '.peter', 'cron.json'), 'utf8'));
+    ok(cron.lastHeartbeat, 'lastHeartbeat attendu');
+    ok(cron.nextRunAt, 'nextRunAt attendu');
+
+    const state = JSON.parse(readFileSync(join(dir, 'vault', '.peter', 'state.json'), 'utf8'));
+    ok(state.pulse?.mode === 'cron', 'pulse.mode=cron attendu');
+    ok(state.pulse?.nextBeatAt === cron.nextRunAt, 'nextBeatAt doit suivre cron.nextRunAt');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
