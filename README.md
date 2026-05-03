@@ -40,7 +40,7 @@ npx claude-atelier init
 | **Contexte dynamique du Context7** | Le contexte doc se calibre selon `§0` (phase + stack) → tu charges les bonnes libs au bon moment, pas toute la bibliothèque du monde |
 | **Mémoire persistante intelligente** | Mémoire locale par projet + feedback user + règles de lecture/écriture → Claude reprend entre sessions sans repartir de zéro |
 | **Vault dynamique projet — Peter** | `claude-atelier vault init` crée un vault vivant par projet. Peter injecte un seul `PETER_REPORT.md` au démarrage (décisions actives, prochaine action, nœuds centraux), maintient un index incrémental SHA256 (`vault update`), un graphe navigable (`vault graph`) et une recherche par concept (`vault query "<texte>"`). Aucun cloud, aucun LLM externe. |
-| **Agents spécialisés** | 30 agents nommés + 18 slash commands → le bon spécialiste au bon moment |
+| **Agents spécialisés** | 31 agents nommés + 18 slash commands → le bon spécialiste au bon moment |
 | **Loop Copilot autonome** | MCP GitHub intégré → polling auto des reviews Copilot, merge auto après validation, handoff structuré, zéro intervention |
 | **La Bise 🌬️** | Échanges inter-LLM : prépare le brief pour GPT/Mistral et intègre leurs réponses — vent léger, pas d'embrassade |
 | **Verrou review avant push/release** | `git push` et `npm version` bloqués tant qu'un handoff §25 externe n'a pas été intégré |
@@ -262,7 +262,7 @@ Quand un domaine spécifique est détecté dans le message, l'atelier charge aut
 | **Jeffrey** 🦙 | Ollama | `Modelfile`, `**/ollama*`... | Local first, quantization Q4/Q5/Q8, embeddings, API OpenAI-compat |
 | **Nael** 🔷 | JavaScript / TypeScript | `*.js`, `*.ts`, `*.tsx`, `*.mjs`... | Zéro `any`, zéro `var`, erreurs typées, Vitest/Playwright |
 | **Séréna** 🎨 | Design / UI/UX / Charte | `design`, `ui`, `ux`, `landing page`, `charte`... | Design-first : design system, palette, typo, composants 21st.dev (MCP magic) |
-| **Peter** 🗂️ | Vault projet / mémoire dynamique | `claude-atelier vault init`, `vault/` présent au SessionStart | Maintient brief, mailbox, décisions, discoveries et roadmap sans cramer les tokens |
+| **Peter** 🗂️ | Vault projet / mémoire dynamique | `vault/` présent au SessionStart | Maintient brief, mailbox, décisions, discoveries et roadmap sans cramer les tokens (init via `claude-atelier vault init`) |
 
 *« Stay hungry, stay foolish — mais build depuis le Makefile. »* — Steve
 *« npm install — deux mots qui doivent toujours marcher. »* — Isaac
@@ -727,7 +727,7 @@ vault/
 └── 90-sources.md     # project-related sources
 ```
 
-On every session start, `vault-context.sh` detects `vault/` and — if `PETER_REPORT.md` exists and is fresh — injects this **single synthetic file** (active decisions, next action, risks, mailbox, central nodes). Otherwise it falls back to the short files (`00-brief.md`, `10-mailbox.md`, `40-roadmap.md`). Injection marker: `[VAULT-PETER]`.
+On every session start, `vault-context.sh` detects `vault/` and — if `PETER_REPORT.md` exists and is fresh — injects this **single synthetic file** (active decisions, next action, risks, mailbox, central nodes — generated content stays in French). Otherwise it falls back to the short files (`00-brief.md`, `10-mailbox.md`, `40-roadmap.md`). Injection marker: `[VAULT-PETER]`.
 
 #### Phase B — incremental SHA256 index
 
@@ -748,7 +748,7 @@ npx claude-atelier vault query "local LLM decision"
 
 - **Nodes**: `project`, `vault_file`, `decision`, `roadmap_item`, `source`, `markdown_document`, `concept`, `protected_artifact` (BMAD)
 - **Edges**: `contains`, `documents`, `mentions`, `blocks`, `suggests`, `derived_from_source`, `protected_by_method`
-- **Weighted centrality**: top 8 central nodes surfaced in `PETER_REPORT.md` ("Central nodes")
+- **Weighted centrality**: top 8 central nodes surfaced in `PETER_REPORT.md` (section `## Nœuds centraux` — generated text stays in French)
 
 `vault query "<text>"` scores nodes (id + label + tags + excerpt) and exposes 1-hop neighbors. Useful to recover a forgotten decision or spot what depends on a concept (`stack`, `handoff`, `phase`…) without re-reading the whole repo.
 
@@ -800,7 +800,7 @@ When a specific domain is detected in your message, the atelier automatically lo
 | **Jeffrey** 🦙 | Ollama | `Modelfile`, `**/ollama*`... | Local first, Q4/Q5/Q8 quantization, embeddings, OpenAI-compat API |
 | **Nael** 🔷 | JavaScript / TypeScript | `*.js`, `*.ts`, `*.tsx`, `*.mjs`... | Zero `any`, zero `var`, typed errors, Vitest/Playwright |
 | **Séréna** 🎨 | Design / UI/UX / Brand | `design`, `ui`, `ux`, `landing page`, `brand`... | Design-first: design system, palette, typo, 21st.dev components (MCP magic) |
-| **Peter** 🗂️ | Project vault / dynamic memory | `claude-atelier vault init`, `vault/` present at SessionStart | Maintains brief, mailbox, decisions, discoveries and roadmap without burning tokens — incremental SHA256 index, navigable graph, `vault query` |
+| **Peter** 🗂️ | Project vault / dynamic memory | `vault/` present at SessionStart | Maintains brief, mailbox, decisions, discoveries and roadmap without burning tokens — incremental SHA256 index, navigable graph, `vault query` (init via `claude-atelier vault init`) |
 
 *"Stay hungry, stay foolish — but build from the Makefile."* — Steve
 *"npm install — two words that must always work."* — Isaac
