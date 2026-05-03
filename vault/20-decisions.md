@@ -31,3 +31,10 @@
 - Décision : Node.js pour tout sauf l'ollama-proxy (performance réseau critique)
 - Conséquence : stack cohérente, tests npm, pas de dualité Go/Node dans le repo principal
 - À revalider si : besoin de perf critique hors proxy
+
+### 2026-05-03 — website/docs/ est sous responsabilité Peter, pas une tâche ad hoc
+
+- Contexte : la doc Vercel (`website/docs/`) était mise à jour manuellement, de façon discontinue, et non indexée par Peter
+- Décision : `website/docs/*.md` fait partie du périmètre Peter (scan + manifest + stale detection). La routine commit/push/bump/publish inclut systématiquement une passe de mise à jour de `website/docs/`
+- Conséquence : Peter doit scanner `website/docs/` et signaler quand des features sont commitées sans MAJ doc correspondante. La doc Vercel = source de vérité publique du npm ; elle doit refléter l'état réel du package
+- À revalider si : le site Docusaurus migre vers un repo séparé

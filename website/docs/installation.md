@@ -45,28 +45,35 @@ scripts/
 
 ---
 
-## Wizard §0
+## Auto-découverte §0
 
-Après l'installation, un wizard interactif s'ouvre pour configurer `§0` de `CLAUDE.md` :
+Après l'installation, `/atelier-setup` auto-détecte le contexte du projet et propose une validation :
 
 ```
-Nom du projet ?  > mon-app
-Stack principale ?  > javascript
-Repo GitHub ?  > https://github.com/moi/mon-app
+[AUTO] Projet : mon-app
+[AUTO] Stack  : Node.js
+[AUTO] Repo   : https://github.com/moi/mon-app
+
+Valide ou corrige avant écriture dans §0. Tape [OK] pour valider.
 ```
 
-Ces valeurs permettent à Claude de charger le bon satellite de stack et de connaître le contexte du projet dès la première session.
+Sources utilisées : `package.json`, `go.mod`, `Cargo.toml`, `git remote get-url origin`, QMD si disponible.
+Seuls les champs non détectables sont demandés manuellement.
 
 ---
 
 ## Mise à jour
 
 ```bash
-npx claude-atelier@latest init
+npx claude-atelier update
+# ou pour la version globale
+npx claude-atelier update --global
 ```
 
-:::info CLAUDE.md préservé
-`CLAUDE.md` n'est **jamais écrasé** lors d'une mise à jour — vos personnalisations `§0` sont préservées. Tous les autres fichiers sont mis à jour.
+:::info Préservation lors des mises à jour
+- `CLAUDE.md` : seul le §0 (contexte projet) est préservé, le reste est mis à jour
+- `settings.json` : vos valeurs custom gagnent, les nouvelles clés sont ajoutées
+- **Hooks** : toujours régénérés avec les chemins corrects de la machine courante
 :::
 
 ---
