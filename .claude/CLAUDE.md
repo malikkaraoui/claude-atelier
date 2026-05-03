@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — v0.23.8 livrée (fix npm hooks paths + CLI portabilité + atelier-setup auto-découverte + review Copilot #42) · next: vault Phase D |
+| Phase | Phase 2 — v0.23.9 livrée (PR #41 docs Peter vault Phases A/B/C + gate FORCE_PUSH + website 15 hooks/20 skills/agents Peter+Séréna) · next: vault Phase D |
 | Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
