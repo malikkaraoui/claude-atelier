@@ -97,38 +97,23 @@ Attendre réponse, puis éditer §0 avec les valeurs validées.
 demander ce seul champ :
 "Le champ `{nom}` reste vide. Donne-moi la valeur :"
 
-### 3. Night Watchdog 🐶
+### 3. Pouls Peter — agent mainteneur vault
 
 ```text
-[?] Tâche planifiée "Night Watchdog" configurée dans l'app Claude desktop
+[?] vault/.peter/state.json présent (Peter actif)
 ```
 
-Impossible à vérifier programmatiquement (c'est dans l'app desktop).
-Demander à l'utilisateur :
-
-"As-tu configuré la tâche planifiée **Night Watchdog 🐶** dans l'app
-Claude desktop (Programmé → + Nouvelle tâche) ?
-
-Si non, voici le prompt à coller :
-
-```
-Tu es un watchdog pour une session Claude Code de nuit.
-[... prompt v4 complet ici, voir src/fr/autonomy/night-mode.md ...]
+Vérifier :
+```bash
+[ -f vault/.peter/state.json ] && echo "ACTIF" || echo "ABSENT"
 ```
 
-Nom: `night-watchdog` | Modèle: Haiku 4.5 | Fréquence: Horaire
+Si absent → proposer :
+"Lance `claude-atelier vault update` pour initialiser Peter. Il tiendra le vault à jour en autonomie via son pouls (`CronCreate`)."
 
-Tape [OK] quand c'est fait, ou [SKIP] pour plus tard."
+> Le Night Watchdog manuel (Claude desktop → tâche planifiée) est **remplacé par le Pouls Peter** — cycle autonome géré par `CronCreate`, session-independent.
 
-### 4. Review Reminder
-
-```text
-[?] Tâche planifiée "Review Reminder" configurée
-```
-
-Même approche — demander, fournir le prompt, attendre confirmation.
-
-### 5. Séréna — Design Senior + MCP magic (optionnel)
+### 4. Séréna — Design Senior + MCP magic (optionnel)
 
 ```text
 [ ] Skill design-senior installé
@@ -163,7 +148,7 @@ claude mcp add magic --scope user --env API_KEY=\"ta-clé\" -- npx -y @21st-dev/
 
 [OUI] Installer magic | [SKIP] Continuer sans"
 
-### 6. BMAD-METHOD (optionnel)
+### 5. BMAD-METHOD (optionnel)
 
 ```text
 [ ] BMAD-METHOD pour les gros projets
@@ -182,7 +167,7 @@ script, ce n'est pas nécessaire.
 
 Si oui → `npx bmad-method install` dans le projet.
 
-### 7. QMD (optionnel, conditionnel)
+### 6. QMD (optionnel, conditionnel)
 
 Compter les fichiers `.md` dans le projet :
 `find . -name '*.md' -not -path './.git/*' -not -path './node_modules/*' | wc -l`
@@ -197,7 +182,7 @@ pour retrouver du contexte rapidement (plans, bugs, reviews).
 
 Si oui → guider l'installation de QMD (voir `src/fr/ecosystem/qmd-integration.md`).
 
-### 8. Résumé
+### 7. Résumé
 
 Afficher le résumé final :
 
@@ -207,8 +192,7 @@ Afficher le résumé final :
 ╠══════════════════════════════════════════════════╣
 ║  [✅] Config de base (5/5)                       ║
 ║  [✅] Contexte projet §0 rempli                  ║
-║  [✅] Night Watchdog 🐶 actif                    ║
-║  [✅] Review Reminder actif                      ║
+║  [✅] Pouls Peter actif (vault autonome)         ║
 ║  [✅] Séréna + MCP magic configurés             ║
 ║  [—]  BMAD : non installé (petit projet)        ║
 ║  [—]  QMD : non installé (< 5 fichiers .md)     ║
