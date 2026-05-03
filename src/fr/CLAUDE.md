@@ -123,4 +123,13 @@ Plan Pro → `acceptEdits` + allow/deny, `maxBudgetUsd` défini. Push autonome a
 
 ## §25 Inter-agents — Review Copilot auto
 
-Proposer un handoff Copilot (`docs/handoffs/`) **sans attendre** si : feature terminée, bug fix critique, 100+ lignes modifiées, ou 3+ tentatives échouées. « Malik, je prépare un handoff review ? » = réflexe, pas un choix.
+**Réflexe non négociable, pas un choix.** Dès que : feature terminée, bug fix critique, 100+ lignes modifiées, PR créée (même docs only), 3+ tentatives échouées, ou avant tout commit/push/bump → exécuter la **séquence intégrale** sans demander confirmation entre les étapes :
+
+1. `/review-copilot` → handoff JSON dans `docs/handoffs/`
+2. commit handoff + push
+3. PR créée en **draft**
+4. **PR draft → ready_for_review** (sinon Copilot ne review pas)
+5. `/copilot-loop` lancé immédiatement
+6. `subscribe_pr_activity` actif → webhook GitHub = réveil persistant (pas de polling manuel, pas de question utilisateur)
+
+Le webhook PR sert de réveil ; rien à relancer. Réintégration des fixes Copilot suit automatiquement.

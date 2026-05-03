@@ -41,9 +41,13 @@ if git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
         : # Local ahead (fast-forward possible), rien à faire
     else
         # Divergence réelle : local ET remote ont chacun des commits
-        echo -e "${RED}[FAIL]${NC} Branches divergentes (local et remote ont chacun des commits)."
-        echo -e "         Fais 'git pull --rebase' manuellement avant de relancer."
-        exit 1
+        if [[ "${FORCE_PUSH:-}" == "1" ]]; then
+            echo -e "${YELLOW}[SYNC]${NC} FORCE_PUSH=1 — divergence acceptée (rebase intentionnel)."
+        else
+            echo -e "${RED}[FAIL]${NC} Branches divergentes (local et remote ont chacun des commits)."
+            echo -e "         Fais 'git pull --rebase' manuellement, ou FORCE_PUSH=1 si rebase intentionnel."
+            exit 1
+        fi
     fi
 fi
 
