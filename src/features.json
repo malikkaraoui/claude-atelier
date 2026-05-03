@@ -44,7 +44,7 @@
     {
       "name": "vault",
       "description": "Initialise et inspecte le vault dynamique projet maintenu par Peter",
-      "flags": ["init", "status", "report", "stale", "update", "--cwd <path>", "--dry-run", "--json"]
+      "flags": ["init", "status", "report", "stale", "update", "graph", "query \"<texte>\"", "--cwd <path>", "--dry-run", "--json"]
     },
     {
       "name": "apply",

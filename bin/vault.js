@@ -7,6 +7,9 @@
  *   claude-atelier vault status  [--cwd <path>]
  *   claude-atelier vault report  [--cwd <path>] [--json]
  *   claude-atelier vault stale   [--cwd <path>] [--json]
+ *   claude-atelier vault update  [--cwd <path>] [--json]
+ *   claude-atelier vault graph   [--cwd <path>] [--json]
+ *   claude-atelier vault query   "<texte>" [--cwd <path>] [--json]
  */
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
@@ -163,9 +166,18 @@ function getFlag(args, flag) {
 }
 
 function parseArgs(argv) {
-  const args = argv.slice(2).filter(a => a !== 'vault');
+  let args = argv.slice(2);
+  if (args[0] === 'vault') args = args.slice(1);
+  const sub = args[0] ?? 'status';
+  const flagsWithValues = new Set(['--cwd']);
+  const positional = [];
+  for (let i = 1; i < args.length; i++) {
+    if (args[i].startsWith('-')) { if (flagsWithValues.has(args[i])) i++; continue; }
+    positional.push(args[i]);
+  }
   return {
-    sub: args[0] ?? 'status',
+    sub,
+    queryText: positional.join(' '),
     cwd: resolve(getFlag(args, '--cwd') ?? process.cwd()),
     dryRun: args.includes('--dry-run'),
     json: args.includes('--json'),
@@ -475,6 +487,58 @@ function generateReport(vaultDir) {
   s(`- ${nextAction !== '—' ? nextAction : 'À définir dans vault/00-brief.md'}`);
   s('');
 
+  // Sections graphe Phase C
+  const graphPath = join(vaultDir, 'index', 'graph.json');
+  if (existsSync(graphPath)) {
+    let graph = null;
+    try { graph = JSON.parse(readFileSync(graphPath, 'utf8')); } catch { /* skip */ }
+    if (graph) {
+      s('## Nœuds centraux');
+      s('');
+      const centralNodes = graph.stats?.centralNodes ?? [];
+      if (centralNodes.length) {
+        const deg = {};
+        for (const e of graph.edges ?? []) {
+          deg[e.from] = (deg[e.from] || 0) + 1;
+          deg[e.to] = (deg[e.to] || 0) + 1;
+        }
+        for (const nodeId of centralNodes.slice(0, 8)) {
+          const node = (graph.nodes ?? []).find(n => n.id === nodeId);
+          const rel = deg[nodeId] || 0;
+          const pathStr = node?.path ? ` — ${node.path}` : '';
+          s(`- ${nodeId} — ${rel} relation(s)${pathStr}`);
+        }
+      } else {
+        s('- Aucun nœud central calculé — relancez vault graph');
+      }
+      s('');
+      s('## Documents pivots');
+      s('');
+      const pivots = (graph.nodes ?? [])
+        .filter(n => (n.type === 'markdown_document' || n.type === 'vault_file') && n.path)
+        .slice(0, 5);
+      if (pivots.length) {
+        for (const n of pivots) {
+          s(`- ${n.path}${n.label && n.label !== n.path ? ` — ${n.label}` : ''}`);
+        }
+      } else {
+        s('- Aucun document pivot trouvé');
+      }
+      s('');
+      s('## Questions utiles');
+      s('');
+      s('- Quels documents expliquent la phase actuelle ?');
+      s('- Quelles décisions structurent le projet ?');
+      s('- Quels risques bloquent la prochaine étape ?');
+      s('');
+    }
+  } else {
+    s('## Nœuds centraux');
+    s('');
+    s('- Graphe absent — lancer `claude-atelier vault graph`.');
+    s('');
+  }
+
   return L.join('\n');
 }
 
@@ -558,6 +622,19 @@ function staleVault(cwd) {
       needsUpdate
         ? 'Marqué comme dépassé — lancez : claude-atelier vault update'
         : `${state?.fileCount ?? '?'} fichiers indexés, mis à jour il y a ${Math.floor(d * 24)}h`);
+  }
+
+  const graphFilePath = join(vaultDir, 'index', 'graph.json');
+  if (!existsSync(graphFilePath)) {
+    // Phase C optionnelle : INFO ne bloque pas "Vault à jour"
+    add('vault/index/graph.json', 'INFO', 'Graphe absent — lancez : claude-atelier vault graph (Phase C)');
+  } else {
+    const dg = daysSince(graphFilePath);
+    add('vault/index/graph.json',
+      dg > 1 ? 'WARN' : 'OK',
+      dg > 1
+        ? `Graphe généré il y a ${Math.floor(dg)} jour(s) — relancer vault graph`
+        : `Graphe à jour (${Math.floor(dg * 24)}h)`);
   }
 
   return { ok: true, checks };
@@ -860,8 +937,387 @@ function printUpdate(result, cwd) {
   console.log(`\n${GREEN}✓${NC} Index incrémental Peter à jour.`);
 }
 
+// ─── Phase C — Graphe minimal ─────────────────────────────────────────────────
+
+const GRAPH_VERSION = 1;
+
+const BMAD_MARKERS = ['.bmad-method', '.bmad', 'bmad-core'];
+
+const GENERIC_CONCEPTS_EXTRACT = new Set([
+  'avec', 'pour', 'dans', 'vers', 'plus', 'cette', 'comme', 'sans',
+  'aussi', 'meme', 'sont', 'sera', 'etre', 'avoir', 'faire', 'tout',
+  'quoi', 'dont', 'mais', 'donc', 'bien', 'tres', 'entre', 'tous',
+  'lors', 'apres', 'avant', 'depuis', 'selon', 'ainsi', 'alors',
+  'enfin', 'cela', 'ceci', 'celui', 'celle', 'type', 'null', 'vrai',
+]);
+
+const EXCLUDED_FROM_CENTRAL = new Set([
+  'concept:projet', 'concept:todo', 'concept:update', 'concept:readme',
+  'concept:document', 'project:root',
+]);
+
+const ROADMAP_SECTION_TAGS = {
+  'Sur le feu': 'sur_le_feu',
+  'Ensuite': 'ensuite',
+  'Parking': 'parking',
+  'Idées à challenger': 'idee_a_challenger',
+};
+
+function slugify(str) {
+  return str
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 60);
+}
+
+function extractConcepts(text) {
+  const normalized = text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const words = normalized
+    .replace(/[#*`[\](){}|:]/g, ' ')
+    .split(/\s+/)
+    .map(w => w.replace(/[^a-z0-9]/g, ''))
+    .filter(w => w.length >= 4 && !GENERIC_CONCEPTS_EXTRACT.has(w));
+  return [...new Set(words)].slice(0, 8);
+}
+
+function isBmadPath(relPath) {
+  return BMAD_MARKERS.some(m => relPath.includes(m));
+}
+
+function readExcerpt(filePath, maxLen = 120) {
+  try {
+    const content = readFileSync(filePath, 'utf8');
+    const lines = content.split('\n').filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('>'));
+    const text = lines.slice(0, 3).join(' ').trim();
+    return text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
+  } catch {
+    return '';
+  }
+}
+
+function getFileMtime(filePath) {
+  try { return statSync(filePath).mtime.toISOString(); } catch { return ''; }
+}
+
+function buildGraph(cwd) {
+  const vaultDir = join(cwd, 'vault');
+  const manifestPath = join(vaultDir, 'index', 'manifest.json');
+  const manifest = loadManifest(manifestPath);
+  const now = new Date().toISOString();
+
+  const nodes = new Map();
+  const edges = [];
+  const byType = {};
+
+  function addNode(n) {
+    if (!nodes.has(n.id)) {
+      nodes.set(n.id, n);
+      byType[n.type] = (byType[n.type] || 0) + 1;
+    }
+  }
+
+  function addEdge(e) { edges.push(e); }
+
+  // Nœud projet racine
+  const briefPath = join(vaultDir, '00-brief.md');
+  const briefContent = existsSync(briefPath) ? readFileSync(briefPath, 'utf8') : '';
+  const projectName = getStateLine(briefContent, 'Projet') || 'projet';
+  addNode({
+    id: 'project:root', type: 'project', label: projectName, path: '',
+    tags: ['project'], excerpt: getStateLine(briefContent, 'Phase') || '',
+    mtime: now, sha256: '', confidence: 'INFERRED',
+  });
+
+  // Fichiers vault connus
+  const KNOWN_VAULT_FILES = [
+    '00-brief.md', '10-mailbox.md', '20-decisions.md',
+    '30-discoveries.md', '40-roadmap.md', '90-sources.md', 'PETER_REPORT.md',
+  ];
+  for (const name of KNOWN_VAULT_FILES) {
+    const fp = join(vaultDir, name);
+    if (!existsSync(fp)) continue;
+    const relPath = `vault/${name}`;
+    addNode({
+      id: `vault_file:${relPath}`, type: 'vault_file',
+      label: readFirstHeading(fp) || name, path: relPath,
+      tags: ['vault'], excerpt: readExcerpt(fp),
+      mtime: getFileMtime(fp), sha256: '', confidence: 'EXTRACTED',
+    });
+    addEdge({ from: 'project:root', to: `vault_file:${relPath}`, type: 'contains', confidence: 'EXTRACTED', source: 'vault/', weight: 1 });
+  }
+
+  // Décisions (20-decisions.md)
+  const decisionsPath = join(vaultDir, '20-decisions.md');
+  if (existsSync(decisionsPath)) {
+    const content = readFileSync(decisionsPath, 'utf8');
+    let cur = null;
+    const flushDecision = () => {
+      if (!cur) return;
+      const nodeId = `decision:${cur.date}_${slugify(cur.title)}`;
+      addNode({ id: nodeId, type: 'decision', label: cur.title, path: 'vault/20-decisions.md', tags: ['decision', cur.date], excerpt: cur.decision, mtime: getFileMtime(decisionsPath), sha256: '', confidence: 'EXTRACTED' });
+      addEdge({ from: 'vault_file:vault/20-decisions.md', to: nodeId, type: 'documents', confidence: 'EXTRACTED', source: 'vault/20-decisions.md', weight: 2 });
+      for (const c of extractConcepts(cur.title)) {
+        addNode({ id: `concept:${c}`, type: 'concept', label: c, path: '', tags: [], excerpt: '', mtime: '', sha256: '', confidence: 'EXTRACTED' });
+        addEdge({ from: nodeId, to: `concept:${c}`, type: 'mentions', confidence: 'EXTRACTED', source: 'vault/20-decisions.md', weight: 1 });
+      }
+    };
+    for (const line of content.split('\n')) {
+      const m = line.match(/^### (\d{4}-\d{2}-\d{2}) — (.+)/);
+      if (m) { flushDecision(); cur = { date: m[1], title: m[2].trim(), decision: '' }; }
+      else if (cur && line.trim().startsWith('- Décision : ')) {
+        cur.decision = line.trim().slice('- Décision : '.length).trim();
+      }
+    }
+    flushDecision();
+  }
+
+  // Roadmap (40-roadmap.md)
+  const roadmapPath = join(vaultDir, '40-roadmap.md');
+  if (existsSync(roadmapPath)) {
+    let currentSection = '';
+    for (const line of readFileSync(roadmapPath, 'utf8').split('\n')) {
+      if (line.startsWith('### ')) { currentSection = line.slice(4).trim(); continue; }
+      if (line.trim().startsWith('- ') && currentSection) {
+        const item = line.trim().slice(2).trim();
+        if (!item) continue;
+        const tag = ROADMAP_SECTION_TAGS[currentSection] || slugify(currentSection);
+        const nodeId = `roadmap_item:${tag}_${slugify(item)}`;
+        const isBlocking = /bloquant|bloque|bloquer/.test(item.toLowerCase());
+        addNode({ id: nodeId, type: 'roadmap_item', label: item, path: 'vault/40-roadmap.md', tags: [tag], excerpt: item, mtime: getFileMtime(roadmapPath), sha256: '', confidence: 'EXTRACTED' });
+        addEdge({ from: 'vault_file:vault/40-roadmap.md', to: nodeId, type: isBlocking ? 'blocks' : 'suggests', confidence: 'EXTRACTED', source: 'vault/40-roadmap.md', weight: 2 });
+        for (const c of extractConcepts(item)) {
+          addNode({ id: `concept:${c}`, type: 'concept', label: c, path: '', tags: [], excerpt: '', mtime: '', sha256: '', confidence: 'EXTRACTED' });
+          addEdge({ from: nodeId, to: `concept:${c}`, type: 'mentions', confidence: 'EXTRACTED', source: 'vault/40-roadmap.md', weight: 1 });
+        }
+      }
+    }
+  }
+
+  // Sources (90-sources.md)
+  const sourcesPath = join(vaultDir, '90-sources.md');
+  if (existsSync(sourcesPath)) {
+    let cur = null;
+    const flushSource = () => {
+      if (!cur?.title) return;
+      const nodeId = `source:${cur.date}_${slugify(cur.title)}`;
+      addNode({ id: nodeId, type: 'source', label: cur.title, path: 'vault/90-sources.md', tags: ['source'], excerpt: cur.resume, mtime: getFileMtime(sourcesPath), sha256: '', confidence: 'EXTRACTED' });
+      addEdge({ from: 'vault_file:vault/90-sources.md', to: nodeId, type: 'documents', confidence: 'EXTRACTED', source: 'vault/90-sources.md', weight: 1 });
+      if (cur.lieTo) {
+        const ls = slugify(cur.lieTo);
+        addNode({ id: `concept:${ls}`, type: 'concept', label: cur.lieTo, path: '', tags: [], excerpt: '', mtime: '', sha256: '', confidence: 'INFERRED' });
+        addEdge({ from: nodeId, to: `concept:${ls}`, type: 'derived_from_source', confidence: 'EXTRACTED', source: 'vault/90-sources.md', weight: 1 });
+      }
+    };
+    for (const line of readFileSync(sourcesPath, 'utf8').split('\n')) {
+      const m = line.match(/^### (\d{4}-\d{2}-\d{2}) — (.+)/);
+      if (m) { flushSource(); cur = { date: m[1], title: m[2].trim(), resume: '', lieTo: '' }; }
+      else if (cur) {
+        if (line.trim().startsWith('- Résumé : ')) cur.resume = line.trim().slice('- Résumé : '.length).trim();
+        if (line.trim().startsWith('- Lié à : ')) cur.lieTo = line.trim().slice('- Lié à : '.length).trim();
+      }
+    }
+    flushSource();
+  }
+
+  // Markdown projet hors vault (depuis manifest)
+  const mdFiles = manifest
+    ? manifest.files.filter(f =>
+        f.path.endsWith('.md') &&
+        !f.path.startsWith('vault/') &&
+        !f.path.startsWith('node_modules/'))
+    : [];
+
+  for (const fileEntry of mdFiles) {
+    const absPath = join(cwd, fileEntry.path);
+    if (!existsSync(absPath)) continue;
+
+    if (isBmadPath(fileEntry.path)) {
+      const nodeId = `protected_artifact:${fileEntry.path}`;
+      addNode({ id: nodeId, type: 'protected_artifact', label: readFirstHeading(absPath) || fileEntry.path, path: fileEntry.path, tags: ['bmad', 'protected'], excerpt: '', mtime: fileEntry.mtime, sha256: fileEntry.sha256, confidence: 'EXTRACTED' });
+      addNode({ id: 'method:bmad', type: 'concept', label: 'BMAD Method', path: '', tags: ['method', 'bmad'], excerpt: '', mtime: '', sha256: '', confidence: 'INFERRED' });
+      addEdge({ from: nodeId, to: 'method:bmad', type: 'protected_by_method', confidence: 'EXTRACTED', source: fileEntry.path, weight: 1 });
+      continue;
+    }
+
+    const heading = readFirstHeading(absPath);
+    const tags = [];
+    if (fileEntry.path.includes('handoff')) tags.push('handoff');
+    if (fileEntry.path.includes('review')) tags.push('review');
+    if (fileEntry.path.includes('proposal')) tags.push('proposal');
+    if (fileEntry.path.includes('plan')) tags.push('plan');
+
+    const nodeId = `doc:${fileEntry.path}`;
+    addNode({ id: nodeId, type: 'markdown_document', label: heading || fileEntry.path, path: fileEntry.path, tags, excerpt: readExcerpt(absPath), mtime: fileEntry.mtime, sha256: fileEntry.sha256, confidence: 'EXTRACTED' });
+    addEdge({ from: 'project:root', to: nodeId, type: 'contains', confidence: 'EXTRACTED', source: fileEntry.path, weight: 1 });
+
+    try {
+      const fileContent = readFileSync(absPath, 'utf8');
+      const concepts = [...new Set(
+        fileContent.split('\n')
+          .filter(l => l.startsWith('#'))
+          .flatMap(h => extractConcepts(h.replace(/^#+\s+/, '')))
+      )].slice(0, 5);
+      for (const c of concepts) {
+        addNode({ id: `concept:${c}`, type: 'concept', label: c, path: '', tags: [], excerpt: '', mtime: '', sha256: '', confidence: 'EXTRACTED' });
+        addEdge({ from: nodeId, to: `concept:${c}`, type: 'mentions', confidence: 'EXTRACTED', source: fileEntry.path, weight: 1 });
+      }
+    } catch { /* skip */ }
+  }
+
+  // Centralité — degré pondéré
+  const degree = {};
+  for (const edge of edges) {
+    degree[edge.from] = (degree[edge.from] || 0) + 1;
+    degree[edge.to] = (degree[edge.to] || 0) + 1;
+  }
+  const decisionEdgesCount = {};
+  const roadmapEdgesCount = {};
+  for (const edge of edges) {
+    const fromNode = nodes.get(edge.from);
+    if (fromNode?.type === 'decision') decisionEdgesCount[edge.to] = (decisionEdgesCount[edge.to] || 0) + 1;
+    if (fromNode?.type === 'roadmap_item') roadmapEdgesCount[edge.to] = (roadmapEdgesCount[edge.to] || 0) + 1;
+  }
+
+  const centralNodes = [...nodes.values()]
+    .filter(n => !EXCLUDED_FROM_CENTRAL.has(n.id))
+    .map(n => ({
+      id: n.id,
+      score: (degree[n.id] || 0) + 2 * (decisionEdgesCount[n.id] || 0) + 2 * (roadmapEdgesCount[n.id] || 0),
+    }))
+    .filter(n => n.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
+    .map(n => n.id);
+
+  const nodeList = [...nodes.values()];
+  return {
+    version: GRAPH_VERSION,
+    generatedAt: now,
+    root: cwd,
+    sourceManifest: existsSync(manifestPath) ? relative(cwd, manifestPath) : null,
+    nodes: nodeList,
+    edges,
+    stats: { nodeCount: nodeList.length, edgeCount: edges.length, byType, centralNodes },
+  };
+}
+
+function graphVault(cwd) {
+  const vaultDir = join(cwd, 'vault');
+  if (!existsSync(vaultDir)) {
+    return { ok: false, error: 'Aucun vault projet. Lancez : claude-atelier vault init' };
+  }
+  const graph = buildGraph(cwd);
+  const graphPath = join(vaultDir, 'index', 'graph.json');
+  mkdirSync(dirname(graphPath), { recursive: true });
+  writeFileSync(graphPath, JSON.stringify(graph, null, 2) + '\n', 'utf8');
+  return {
+    ok: true,
+    graphPath,
+    nodeCount: graph.stats.nodeCount,
+    edgeCount: graph.stats.edgeCount,
+    centralNodes: graph.stats.centralNodes.slice(0, 5).map(id => id.split(':').pop()),
+  };
+}
+
+function printGraph(result, cwd) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+    return;
+  }
+  console.log(`\n${CYAN}[PETER] vault graph${NC}`);
+  console.log(`  Nœuds     : ${result.nodeCount}`);
+  console.log(`  Relations : ${result.edgeCount}`);
+  console.log(`  → ${relative(cwd, result.graphPath)} mis à jour`);
+  if (result.centralNodes.length) {
+    console.log(`\n${CYAN}[PETER]${NC} Nœuds centraux : ${result.centralNodes.join(', ')}`);
+  }
+  console.log(`\n${GREEN}✓${NC} Graphe minimal Peter prêt.`);
+}
+
+function scoreNode(node, tokens) {
+  const haystack = [node.id, node.label || '', ...(node.tags || []), node.excerpt || '']
+    .join(' ')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+  let score = 0;
+  for (const token of tokens) {
+    const count = haystack.split(token).length - 1;
+    if (count > 0) score += count;
+  }
+  return score;
+}
+
+function queryGraph(graph, queryText, limit = 10) {
+  const tokens = (queryText || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .split(/\s+/)
+    .filter(t => t.length >= 2);
+
+  if (!tokens.length) return { ok: true, results: [], neighbors: [] };
+
+  const scored = (graph.nodes || [])
+    .map(n => ({ node: n, score: scoreNode(n, tokens) }))
+    .filter(r => r.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+
+  const resultIds = new Set(scored.map(r => r.node.id));
+  const neighborIds = new Set();
+  for (const edge of (graph.edges || [])) {
+    if (resultIds.has(edge.from) && !resultIds.has(edge.to)) neighborIds.add(edge.to);
+    if (resultIds.has(edge.to) && !resultIds.has(edge.from)) neighborIds.add(edge.from);
+  }
+
+  return {
+    ok: true,
+    results: scored.map(r => ({
+      id: r.node.id, type: r.node.type, label: r.node.label,
+      score: r.score, path: r.node.path || '',
+    })),
+    neighbors: [...neighborIds].slice(0, 10).map(id => id.split(':').pop()),
+  };
+}
+
+function queryVaultGraph(cwd, queryText) {
+  const graphPath = join(cwd, 'vault', 'index', 'graph.json');
+  if (!existsSync(graphPath)) {
+    return { ok: false, error: 'graph.json absent — lancez : claude-atelier vault graph' };
+  }
+  let graph;
+  try { graph = JSON.parse(readFileSync(graphPath, 'utf8')); }
+  catch { return { ok: false, error: 'graph.json illisible — relancez vault graph' }; }
+  return queryGraph(graph, queryText);
+}
+
+function printQuery(result, queryText) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+    return;
+  }
+  console.log(`\n${CYAN}[PETER] vault query${NC}`);
+  console.log(`  Question : ${queryText}`);
+  console.log('');
+  if (!result.results.length) {
+    console.log(`  Aucun résultat pour "${queryText}".`);
+    return;
+  }
+  console.log('Résultats :');
+  for (const r of result.results) {
+    const pathStr = r.path ? ` — ${r.path}` : '';
+    console.log(`- ${r.id} — score ${r.score}${pathStr}`);
+  }
+  if (result.neighbors.length) {
+    console.log('');
+    console.log('Voisins utiles :');
+    for (const n of result.neighbors) console.log(`- ${n}`);
+  }
+}
+
 export async function runVault(argv) {
-  const { sub, cwd, dryRun, json } = parseArgs(argv);
+  const { sub, queryText, cwd, dryRun, json } = parseArgs(argv);
 
   if (sub === 'init') {
     const result = initVault(cwd, dryRun);
@@ -899,7 +1355,25 @@ export async function runVault(argv) {
     return result.ok ? 0 : 1;
   }
 
+  if (sub === 'graph') {
+    const result = graphVault(cwd);
+    if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    else printGraph(result, cwd);
+    return result.ok ? 0 : 1;
+  }
+
+  if (sub === 'query') {
+    const result = queryVaultGraph(cwd, queryText);
+    if (json) {
+      process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    } else {
+      if (!result.ok) process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+      else printQuery(result, queryText);
+    }
+    return result.ok ? 0 : 1;
+  }
+
   process.stderr.write(`${RED}error${NC}: sous-commande vault inconnue "${sub}"\n`);
-  process.stderr.write('Usage: claude-atelier vault [init|status|report|stale|update] [--cwd <path>] [--dry-run] [--json]\n');
+  process.stderr.write('Usage: claude-atelier vault [init|status|report|stale|update|graph|query] [--cwd <path>] [--dry-run] [--json]\n');
   return 1;
 }
