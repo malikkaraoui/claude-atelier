@@ -38,9 +38,64 @@ Lire `.claude/CLAUDE.md` et vérifier que §0 est rempli :
 [?] Repo défini
 ```
 
-Si §0 est vide → demander à l'utilisateur :
-"Quel est le nom du projet ? La stack ? Le repo GitHub ?"
-Puis éditer §0 avec les réponses.
+Si §0 est partiellement ou totalement vide → **auto-découvrir** :
+
+**Nom du projet :**
+```bash
+cat package.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('name',''))" 2>/dev/null || basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)
+```
+
+**Stack (en parallèle)** — détecte la présence de :
+- `go.mod` → Go
+- `package.json` → Node.js / JavaScript
+- `Cargo.toml` → Rust
+- `pyproject.toml` ou `requirements.txt` → Python
+- `*.swift` → iOS
+- `pom.xml` ou `build.gradle` → Java
+
+```bash
+checks=(
+  "go.mod:Go"
+  "package.json:Node.js"
+  "Cargo.toml:Rust"
+  "pyproject.toml:Python" "requirements.txt:Python"
+  "*.swift:iOS"
+  "pom.xml:Java" "build.gradle:Java"
+)
+for check in "${checks[@]}"; do
+  file="${check%:*}"; stack="${check#*:}"
+  [ -f "$file" ] && echo "$stack" && break
+done
+```
+
+**Repo GitHub :**
+```bash
+git remote get-url origin 2>/dev/null
+```
+
+**QMD enrichment** (optionnel) — si `.qmd/` existe ou `qmd status` fonctionne :
+```bash
+qmd query --searches '[{"type":"lex","query":"project stack technology"}]' 2>/dev/null || true
+```
+
+**Affichage et validation :**
+
+Afficher les résultats avec `[AUTO]` :
+```text
+[AUTO] Projet : {nom}
+[AUTO] Stack : {stack}
+[AUTO] Repo : {url}
+```
+
+Demander :
+"Valide ou corrige les découvertes avant que je les écrive dans §0.
+Tape [OK] pour valider, ou corrige et tape [OK]."
+
+Attendre réponse, puis éditer §0 avec les valeurs validées.
+
+**Champs manquants :** Seulement si un champ reste vide après tout ça →
+demander ce seul champ :
+"Le champ `{nom}` reste vide. Donne-moi la valeur :"
 
 ### 3. Night Watchdog 🐶
 
