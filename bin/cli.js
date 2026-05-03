@@ -24,7 +24,7 @@ const pkg = JSON.parse(
 // ⚠️  BLOC GÉNÉRÉ — ne pas éditer manuellement.
 // Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
-claude-atelier v0.23.3
+claude-atelier v0.23.5
 Framework complet Claude Code: 30 agents, 18 skills, MCP GitHub intégré, loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.
 
 Usage:
