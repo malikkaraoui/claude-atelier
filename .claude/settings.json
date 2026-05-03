@@ -85,6 +85,10 @@
           {
             "type": "command",
             "command": "node \"/Users/malik/Documents/claude-atelier/Claude instructions/scripts/memory-read.js\" --episodes-only --timeout 2000"
+          },
+          {
+            "type": "command",
+            "command": "bash \"hooks/vault-context.sh\""
           }
         ]
       }
