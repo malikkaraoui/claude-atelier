@@ -14,7 +14,7 @@
 
 ## ⚡ From vibes to rails — Claude Code, disciplined
 
-31 agents · 18 skills · MCP GitHub intégré · mémoire persistante · vault dynamique · Context7 dynamique · mode éco · verrou review
+31 agents · 18 skills · MCP GitHub intégré · mémoire persistante · vault Peter (graphe + query) · Context7 dynamique · mode éco · verrou review
 
 [![npm version](https://img.shields.io/npm/v/claude-atelier.svg?style=flat-square&color=CB3837)](https://www.npmjs.com/package/claude-atelier)
 [![npm downloads](https://img.shields.io/npm/dm/claude-atelier.svg?style=flat-square&color=blue)](https://www.npmjs.com/package/claude-atelier)
@@ -39,7 +39,7 @@ npx claude-atelier init
 | **Token killer** | Routing Haiku/Sonnet/Opus, `/compact`, QMD-first, `maxBudgetUsd` → beaucoup moins de tokens brûlés pour rien |
 | **Contexte dynamique du Context7** | Le contexte doc se calibre selon `§0` (phase + stack) → tu charges les bonnes libs au bon moment, pas toute la bibliothèque du monde |
 | **Mémoire persistante intelligente** | Mémoire locale par projet + feedback user + règles de lecture/écriture → Claude reprend entre sessions sans repartir de zéro |
-| **Vault dynamique projet — Peter** | `claude-atelier vault init` crée un vault vivant par projet. Peter injecte le brief, la mailbox et la roadmap au démarrage sans relire tout le repo. |
+| **Vault dynamique projet — Peter** | `claude-atelier vault init` crée un vault vivant par projet. Peter injecte un seul `PETER_REPORT.md` au démarrage (décisions actives, prochaine action, nœuds centraux), maintient un index incrémental SHA256 (`vault update`), un graphe navigable (`vault graph`) et une recherche par concept (`vault query "<texte>"`). Aucun cloud, aucun LLM externe. |
 | **Agents spécialisés** | 30 agents nommés + 18 slash commands → le bon spécialiste au bon moment |
 | **Loop Copilot autonome** | MCP GitHub intégré → polling auto des reviews Copilot, merge auto après validation, handoff structuré, zéro intervention |
 | **La Bise 🌬️** | Échanges inter-LLM : prépare le brief pour GPT/Mistral et intègre leurs réponses — vent léger, pas d'embrassade |
@@ -133,6 +133,11 @@ npx claude-atelier update
 # Créer un vault dynamique projet maintenu par Peter
 npx claude-atelier vault init
 npx claude-atelier vault status
+npx claude-atelier vault report                 # génère vault/PETER_REPORT.md
+npx claude-atelier vault stale                  # check fraîcheur (rapport / mailbox)
+npx claude-atelier vault update                 # index incrémental SHA256 → vault/index/manifest.json
+npx claude-atelier vault graph                  # graphe minimal → vault/index/graph.json
+npx claude-atelier vault query "<texte>"        # recherche dans le graphe + voisins
 ```
 
 ---
@@ -158,9 +163,32 @@ vault/
 └── 90-sources.md     # sources liées au projet
 ```
 
-À chaque démarrage de session, `vault-context.sh` détecte `vault/` et injecte seulement les fichiers courts (`00-brief.md`, `10-mailbox.md`, `40-roadmap.md`) avec un marqueur `[VAULT-PETER]`.
+À chaque démarrage de session, `vault-context.sh` détecte `vault/` et — si `PETER_REPORT.md` existe et est récent — injecte ce **seul fichier** synthétique (décisions actives, prochaine action, risques, mailbox, nœuds centraux). Sinon il retombe sur les fichiers courts (`00-brief.md`, `10-mailbox.md`, `40-roadmap.md`). Marqueur d'injection : `[VAULT-PETER]`.
 
-Inspiration Graphify : une carte utile avant la fouille brute. Adaptation atelier : Markdown vivant, hook léger, pas de graphe obligatoire au MVP.
+#### Phase B — index incrémental SHA256
+
+```bash
+npx claude-atelier vault update
+```
+
+Calcule SHA256 + cache mtime de tous les fichiers projet (`.gitignore` respecté) et écrit `vault/index/manifest.json`. Source de vérité unique pour le graphe et les futurs scans Peter — local, gitignored, rejouable.
+
+#### Phase C — graphe minimal + recherche
+
+```bash
+npx claude-atelier vault graph
+npx claude-atelier vault query "décision LLM local"
+```
+
+`vault graph` extrait depuis le manifest et les fichiers vault un graphe `vault/index/graph.json` :
+
+- **Nœuds** : `project`, `vault_file`, `decision`, `roadmap_item`, `source`, `markdown_document`, `concept`, `protected_artifact` (BMAD)
+- **Relations** : `contains`, `documents`, `mentions`, `blocks`, `suggests`, `derived_from_source`, `protected_by_method`
+- **Centralité pondérée** : 8 nœuds centraux remontés dans `PETER_REPORT.md` (« Nœuds centraux »)
+
+`vault query "<texte>"` score les nœuds (id + label + tags + excerpt) et expose les voisins 1-hop. Utile pour retrouver une décision oubliée ou repérer ce qui dépend d'un concept (`stack`, `handoff`, `phase`…) sans relire tout le repo.
+
+Inspiration Graphify : *carte avant fouille*. Adaptation atelier : **local-first**, Markdown vivant + graphe navigable, aucun service externe.
 
 ---
 
@@ -665,7 +693,66 @@ npx claude-atelier doctor
 
 # Update (preserves project §0)
 npx claude-atelier update
+
+# Create a dynamic project vault maintained by Peter
+npx claude-atelier vault init
+npx claude-atelier vault status
+npx claude-atelier vault report                 # generate vault/PETER_REPORT.md
+npx claude-atelier vault stale                  # freshness check (report / mailbox)
+npx claude-atelier vault update                 # incremental SHA256 index → vault/index/manifest.json
+npx claude-atelier vault graph                  # minimal graph → vault/index/graph.json
+npx claude-atelier vault query "<text>"         # search the graph + neighbors
 ```
+
+---
+
+### 🗂️ Dynamic project vault — Peter
+
+The project vault is Claude's **local operational memory**. It avoids re-reading the entire repo, burning tokens, or re-explaining the context every session.
+
+```bash
+npx claude-atelier vault init
+```
+
+Creates:
+
+```text
+vault/
+├── PETER.md          # Peter's charter, vault maintainer
+├── 00-brief.md       # short context injected at SessionStart
+├── 10-mailbox.md     # incoming mail: notes, voice memos, captures, links
+├── 20-decisions.md   # durable decisions
+├── 30-discoveries.md # project learnings
+├── 40-roadmap.md     # living roadmap
+└── 90-sources.md     # project-related sources
+```
+
+On every session start, `vault-context.sh` detects `vault/` and — if `PETER_REPORT.md` exists and is fresh — injects this **single synthetic file** (active decisions, next action, risks, mailbox, central nodes). Otherwise it falls back to the short files (`00-brief.md`, `10-mailbox.md`, `40-roadmap.md`). Injection marker: `[VAULT-PETER]`.
+
+#### Phase B — incremental SHA256 index
+
+```bash
+npx claude-atelier vault update
+```
+
+Computes SHA256 + mtime cache of every project file (`.gitignore` honored) and writes `vault/index/manifest.json`. Single source of truth for the graph and future Peter scans — local, gitignored, replayable.
+
+#### Phase C — minimal graph + query
+
+```bash
+npx claude-atelier vault graph
+npx claude-atelier vault query "local LLM decision"
+```
+
+`vault graph` extracts from the manifest and the vault files a `vault/index/graph.json`:
+
+- **Nodes**: `project`, `vault_file`, `decision`, `roadmap_item`, `source`, `markdown_document`, `concept`, `protected_artifact` (BMAD)
+- **Edges**: `contains`, `documents`, `mentions`, `blocks`, `suggests`, `derived_from_source`, `protected_by_method`
+- **Weighted centrality**: top 8 central nodes surfaced in `PETER_REPORT.md` ("Central nodes")
+
+`vault query "<text>"` scores nodes (id + label + tags + excerpt) and exposes 1-hop neighbors. Useful to recover a forgotten decision or spot what depends on a concept (`stack`, `handoff`, `phase`…) without re-reading the whole repo.
+
+Graphify-inspired: *map before excavation*. Atelier flavor: **local-first**, living Markdown + navigable graph, no external service.
 
 ---
 
@@ -690,6 +777,7 @@ Critical rules aren't in a README. They're in hooks that fire on every action.
 | Session length (300KB/600KB) | `routing-check.sh` UserPromptSubmit | Every message |
 | Haiku suggestion (short prompt + exploration) | `routing-check.sh` UserPromptSubmit | Every message |
 | Design need detection → propose Séréna | `detect-design-need.sh` UserPromptSubmit | Every message |
+| Dynamic project vault — Peter | `vault-context.sh` SessionStart | Session start if `vault/` exists |
 
 ---
 
@@ -712,6 +800,7 @@ When a specific domain is detected in your message, the atelier automatically lo
 | **Jeffrey** 🦙 | Ollama | `Modelfile`, `**/ollama*`... | Local first, Q4/Q5/Q8 quantization, embeddings, OpenAI-compat API |
 | **Nael** 🔷 | JavaScript / TypeScript | `*.js`, `*.ts`, `*.tsx`, `*.mjs`... | Zero `any`, zero `var`, typed errors, Vitest/Playwright |
 | **Séréna** 🎨 | Design / UI/UX / Brand | `design`, `ui`, `ux`, `landing page`, `brand`... | Design-first: design system, palette, typo, 21st.dev components (MCP magic) |
+| **Peter** 🗂️ | Project vault / dynamic memory | `claude-atelier vault init`, `vault/` present at SessionStart | Maintains brief, mailbox, decisions, discoveries and roadmap without burning tokens — incremental SHA256 index, navigable graph, `vault query` |
 
 *"Stay hungry, stay foolish — but build from the Makefile."* — Steve
 *"npm install — two words that must always work."* — Isaac
@@ -726,8 +815,9 @@ When a specific domain is detected in your message, the atelier automatically lo
 *"Local first. Always."* — Jeffrey
 *"The compiler doesn't forgive. Neither do I."* — Nael
 *"Code comes after. First, we design."* — Séréna
+*"Useful memory prepares an action. The rest is just storage."* — Peter
 
-Steve and Isaac are injected via `routing-check.sh` on stack detection. Mohamed arrives via the Challenger hooks (`guard-review-auto.sh`) and the cross-session check. Amine verifies that every feat commit includes tests — automatically, no manual trigger. Séréna activates via `detect-design-need.sh` whenever a UI/UX/design need is detected in the prompt.
+Steve and Isaac are injected via `routing-check.sh` on stack detection. Mohamed arrives via the Challenger hooks (`guard-review-auto.sh`) and the cross-session check. Amine verifies that every feat commit includes tests — automatically, no manual trigger. Séréna activates via `detect-design-need.sh` whenever a UI/UX/design need is detected in the prompt. Peter activates at `SessionStart` whenever a project `vault/` exists.
 
 ---
 
