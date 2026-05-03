@@ -42,7 +42,7 @@ Si §0 est partiellement ou totalement vide → **auto-découvrir** :
 
 **Nom du projet :**
 ```bash
-cat package.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('name',''))" 2>/dev/null || basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)
+cat package.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('name',''))" 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 ```
 
 **Stack (en parallèle)** — détecte la présence de :
@@ -54,18 +54,20 @@ cat package.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.
 - `pom.xml` ou `build.gradle` → Java
 
 ```bash
-checks=(
-  "go.mod:Go"
-  "package.json:Node.js"
-  "Cargo.toml:Rust"
-  "pyproject.toml:Python" "requirements.txt:Python"
-  "*.swift:iOS"
-  "pom.xml:Java" "build.gradle:Java"
-)
-for check in "${checks[@]}"; do
-  file="${check%:*}"; stack="${check#*:}"
-  [ -f "$file" ] && echo "$stack" && break
-done
+detect_stack() {
+  for f in go.mod package.json Cargo.toml pyproject.toml requirements.txt pom.xml build.gradle; do
+    [ -f "$f" ] && case "$f" in
+      go.mod) echo "Go"; return;;
+      package.json) echo "Node.js"; return;;
+      Cargo.toml) echo "Rust"; return;;
+      pyproject.toml|requirements.txt) echo "Python"; return;;
+      pom.xml|build.gradle) echo "Java"; return;;
+    esac
+  done
+  compgen -G "*.swift" > /dev/null 2>&1 && echo "iOS" && return
+  echo ""
+}
+detect_stack
 ```
 
 **Repo GitHub :**

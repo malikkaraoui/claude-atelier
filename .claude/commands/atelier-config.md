@@ -29,16 +29,16 @@ Puis affiche ce bloc en tête de réponse (avant le tableau features) :
 Si l'utilisateur demande à modifier une feature ou un paramètre, exécute la commande correspondante :
 
 **Features (on/off) :**
-- Activer   : `claude-atelier features --on <feature>`
-- Désactiver : `claude-atelier features --off <feature>`
-- Basculer  : `claude-atelier features --toggle <feature>`
+- Activer   : `npx claude-atelier features --on <feature>`
+- Désactiver : `npx claude-atelier features --off <feature>`
+- Basculer  : `npx claude-atelier features --toggle <feature>`
 
 **Paramètres configurables (valeurs numériques) :**
-- Modifier : `claude-atelier features --set <param> <valeur>`
+- Modifier : `npx claude-atelier features --set <param> <valeur>`
 - Exemples de params : `handoff_threshold_lines`, `context_warning_kb`, `context_critical_kb`, `anti_loop_count`, `diagnostic_interval_min`
 
 **Réinitialiser tout :**
-- `claude-atelier features --reset`
+- `npx claude-atelier features --reset`
 
 Après chaque modification, rappelle que Claude Code doit être relancé pour appliquer le changement.
 

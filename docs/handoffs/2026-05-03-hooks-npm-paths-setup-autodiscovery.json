@@ -27,9 +27,17 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
-    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+    "model": "github-copilot-pr-reviewer",
+    "content": "Review Copilot PR #42 — 8 commentaires identifiés, 4 catégories de bugs.\n\n**Bug 1 — basename non quoté (SKILL.md x2)** : `basename $(git rev-parse --show-toplevel || pwd)` casse si le chemin contient des espaces. Fix : `basename \"$(...)\"`. Impact : auto-découverte nom projet incorrecte sur chemins avec espaces.\n\n**Bug 2 — glob *.swift non expandé (SKILL.md x2)** : `[ -f \"$file\" ]` avec `$file='*.swift'` teste littéralement le fichier '*.swift' — glob non expandé. iOS ne sera jamais détecté. Fix : `compgen -G '*.swift' > /dev/null 2>&1` ou branche case spéciale sans quotes.\n\n**Bug 3 — commandes CLI sans npx (atelier-config.md)** : `claude-atelier features --on/--off/--toggle/--reset` suppose install globale. Utilisateurs avec install locale (non-global) cassés. Fix : `npx claude-atelier features ...`.\n\n**Bug 4 — handoff JSON validator (intégration)** : `response.content` et `integration` null → `validate-handoff.js` échoue (min 100 chars requis). Fix : renseigner les deux champs avant merge.\n\n**Sur la question hooks-gen.js robustesse** : la stratégie de régénération forcée est correcte dans l'ensemble. Un cas limite non couvert : si `hooksDir` n'existe pas au moment de la génération (install fraîche sans `init` préalable), les chemins absolus générés sont invalides jusqu'au prochain `init`. Le guard devrait vérifier l'existence de `hooksDir` avant d'écrire."
   },
-  "integration": null
+  "integration": {
+    "retained_implement": [
+      "fix: basename quoté dans les deux SKILL.md (src/ et .claude/)",
+      "fix: détection iOS via compgen -G '*.swift' au lieu de [ -f '$file' ] avec glob",
+      "fix: commandes atelier-config.md → npx claude-atelier features ... pour portabilité install locale",
+      "fix: handoff JSON response.content et integration renseignés"
+    ],
+    "rejected": [],
+    "verdict": "4 bugs réels confirmés par Copilot et corrigés. La remarque sur hooksDir est valide mais différée Phase D (cas rare : install sans init préalable est documentée comme prérequis). La stratégie de régénération forcée hooks-gen.js est correcte pour les cas d'usage nominaux (init + update). Aucune réécriture de ce qui fonctionne — fixes chirurgicaux uniquement."
+  }
 }
