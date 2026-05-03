@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — v0.23.0 livrée (Pulse & Maestro multi-agents) · next: proxy tool_use mapping |
+| Phase | Phase 2 — v0.23.5 livrée (vault Phase B : index incrémental Peter) · next: vault Phase C graphe minimal |
 | Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |

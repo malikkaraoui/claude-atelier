@@ -1,0 +1,2794 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-03T06:41:35.131Z",
+  "root": "/Users/malik/Documents/ATELIER PROJETS/Claude instructions",
+  "fileCount": 398,
+  "files": [
+    {
+      "path": ".claude/CLAUDE.md",
+      "sha256": "0d774b1260022360a8f5ba0fac3500988b8570ded46a33b5043f3ef4da6f0f29",
+      "mtime": "2026-04-28T13:50:11.081Z",
+      "size": 8954,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/autonomy/loop-watchers.md",
+      "sha256": "e1b2dfb04dc1f5a295cebb7c8645a4fcfe69502f4b028a4249fa2d9498f88262",
+      "mtime": "2026-04-13T15:24:00.255Z",
+      "size": 2793,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/autonomy/night-mode.md",
+      "sha256": "0d1c3fa76c60560599c722312f411a03dc8b0c0da9f58aee9c97948a584bdba0",
+      "mtime": "2026-04-13T15:24:00.256Z",
+      "size": 10355,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/autonomy/permission-modes.md",
+      "sha256": "fbfb8a12e8a1a408777abcdf357772ba414ae96e72429d5434ab299eea5a2244",
+      "mtime": "2026-04-13T15:24:00.257Z",
+      "size": 2843,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/commands/atelier-config.md",
+      "sha256": "19b15f1f49ad5a479c4c8edaf0f1bb9008b57475132e1934ac59e6d42313534c",
+      "mtime": "2026-04-21T20:43:23.483Z",
+      "size": 4122,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/ecosystem/challenger.md",
+      "sha256": "52d971df9077873e9e60f5ae8384c8a6148e7b60ebd25b7c113ad5bd3711b73d",
+      "mtime": "2026-04-13T15:24:00.257Z",
+      "size": 4771,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/ecosystem/context7-mapping.md",
+      "sha256": "5139f5e574f977bb63d5676fa021423d24bdfc2d926202e2489f20fe53e267a8",
+      "mtime": "2026-04-17T13:11:35.080Z",
+      "size": 5043,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/ecosystem/hookify.md",
+      "sha256": "b276a15b0f9454d90a7f5a07f0ea0096e67e3ed95d45f967252a09e8de750a12",
+      "mtime": "2026-04-13T15:24:00.258Z",
+      "size": 3397,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/ecosystem/hooks.md",
+      "sha256": "6b415236d0b3ddeef99d1a9757313acdeb755a12054034d93df90e9bd7e0a7d9",
+      "mtime": "2026-04-13T15:24:00.261Z",
+      "size": 3744,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/ecosystem/memory-system.md",
+      "sha256": "67ee4ba8317368837184209c24e8c1279d9b5c63d7061cd258bea3ca38131f80",
+      "mtime": "2026-04-13T15:24:00.262Z",
+      "size": 3156,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/ecosystem/npm-publish.md",
+      "sha256": "81f505b09248e015c5e92b051180b33e8760641dc3028deab6be67fa2bc9ed43",
+      "mtime": "2026-04-13T15:24:00.263Z",
+      "size": 3053,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/ecosystem/permissions-proactives.md",
+      "sha256": "8b60769b2f39a6aeba74752b3042bfb018ae4cabe591fce5ed91db82aaf4a3c9",
+      "mtime": "2026-04-13T15:24:00.264Z",
+      "size": 3234,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/ecosystem/plugins.md",
+      "sha256": "15a325bc2ea019a3543355e5157a143e0103d62fa078b6f851837b0c41f62a97",
+      "mtime": "2026-04-13T15:24:00.273Z",
+      "size": 2626,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/ecosystem/qmd-integration.md",
+      "sha256": "f44281706565f4be2041bf961d18e0885659f643edae72744658b193fd5e3e5a",
+      "mtime": "2026-04-13T15:24:00.279Z",
+      "size": 3150,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/ecosystem/skills.md",
+      "sha256": "08f3186bded8e6c5382c1ed3f86675f8ff6583f6fc2e5d0cfd0e9fcdf0983161",
+      "mtime": "2026-04-13T15:24:00.280Z",
+      "size": 2786,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/features.json",
+      "sha256": "10c8519e860ebfa1ed743c5cfb733749c59cea57cc794cc7504714b8395fdd06",
+      "mtime": "2026-05-02T08:27:19.268Z",
+      "size": 118,
+      "ext": ".json"
+    },
+    {
+      "path": ".claude/hooks-manifest.json",
+      "sha256": "1599a724fc8d27bd7702fde41496d8d3c701ff1700fcb3890a5f9b237a40c4ad",
+      "mtime": "2026-05-02T20:22:46.545Z",
+      "size": 12074,
+      "ext": ".json"
+    },
+    {
+      "path": ".claude/orchestration/mcp-lifecycle.md",
+      "sha256": "30e7f449097ccb1d06f2fdbb6a94b854ede660909c4f361b57afd6f8c3e5b646",
+      "mtime": "2026-04-13T15:24:00.280Z",
+      "size": 2402,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/orchestration/models-routing.md",
+      "sha256": "72d4044ef940c36e8d58723c37310940b5372fdb88e3c08170930bc6a162008f",
+      "mtime": "2026-04-13T15:24:00.282Z",
+      "size": 2120,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/orchestration/modes.md",
+      "sha256": "1d9b5ca772bfeabedd8748b107beec42be31d612dd11c635c57f5d0eaf49314e",
+      "mtime": "2026-04-13T15:24:00.286Z",
+      "size": 2738,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/orchestration/parallelization.md",
+      "sha256": "8f293f7bdf745606bab5b2047188ee508f0959504583a5f12c5841e97d0f2629",
+      "mtime": "2026-04-13T15:24:00.287Z",
+      "size": 13426,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/orchestration/spawn-rules.md",
+      "sha256": "fba8a9bb99d49bf135f0e7cd6fa79244f4d8f6123cc335fda621fb4cc998fda7",
+      "mtime": "2026-04-13T15:24:00.290Z",
+      "size": 2188,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/orchestration/subagents.md",
+      "sha256": "e0c992ab35fa5fe6f1d841bcfb9d235afd75270bcf12700993030b39edbe6021",
+      "mtime": "2026-04-13T15:24:00.292Z",
+      "size": 4677,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/runtime/code-review.md",
+      "sha256": "4508b3048f33241a41940c4982f024439d7097ec7288a8db5fe5a8e3be299185",
+      "mtime": "2026-04-13T15:24:00.293Z",
+      "size": 2034,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/runtime/extended-thinking.md",
+      "sha256": "110da104db4d2cc80731dd141bc4637bce8cb65514211a6fb5b23af9c3ddbec1",
+      "mtime": "2026-04-13T15:24:00.293Z",
+      "size": 1504,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/runtime/theatre.md",
+      "sha256": "b98effecaa5cea5250f42bce68f8ed5e78a013b8af89f7c5dbaeb8a24c115d0a",
+      "mtime": "2026-04-13T15:24:00.293Z",
+      "size": 3717,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/runtime/todo-session.md",
+      "sha256": "6e2cbc1f202402600dd12f7e83868616902283af292c6ec4d08c7be4c7da65c6",
+      "mtime": "2026-04-13T15:24:00.294Z",
+      "size": 1833,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/security/emergency.md",
+      "sha256": "0f407fd0afd470a4e5ac66f10aecab35fc5e515a1e280bb0263a7bff8a181b81",
+      "mtime": "2026-04-13T15:24:00.294Z",
+      "size": 3461,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/security/pre-push-gate.md",
+      "sha256": "624b0e9d3b0826bb16288e465d279a810d0eec94ee85fddb0a9c16ac967b0669",
+      "mtime": "2026-04-13T15:24:00.295Z",
+      "size": 2688,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/security/secrets-rules.md",
+      "sha256": "a6152b77907f093249bc53576a99565ef7e90131f4980ce1d9ba907c9f9cb5ee",
+      "mtime": "2026-04-13T15:24:00.296Z",
+      "size": 2626,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/settings.json",
+      "sha256": "8e40b019294d2b572ec695cefb0e3290f16f84485c4a2d17d03ea45eba42c11f",
+      "mtime": "2026-05-03T06:34:42.925Z",
+      "size": 6452,
+      "ext": ".json"
+    },
+    {
+      "path": ".claude/settings.local.json",
+      "sha256": "ec75706c6f13101f76fac14547ac94219b6a22571d46085b790aaee31bb62f6b",
+      "mtime": "2026-04-15T11:10:18.984Z",
+      "size": 85,
+      "ext": ".json"
+    },
+    {
+      "path": ".claude/skills/angle-mort/SKILL.md",
+      "sha256": "8a3120fb3542f7d644e99b2735ae483814e82d403dda6d4a3ab0feab038c5b38",
+      "mtime": "2026-04-13T15:24:00.303Z",
+      "size": 1309,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/atelier-config/SKILL.md",
+      "sha256": "577c5bf7da504950a8ea7a06cd6d48f1eaa543fea845fb57d09f45313c96c228",
+      "mtime": "2026-05-02T08:30:15.814Z",
+      "size": 4110,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/atelier-doctor/SKILL.md",
+      "sha256": "dcf8d0beb0a90e0069a50d0e34e78cd9e8986c966163d76ad2f3cc7db0b83cde",
+      "mtime": "2026-04-13T15:24:00.303Z",
+      "size": 1014,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/atelier-help/SKILL.md",
+      "sha256": "16ab87d7f8403bfa363afd03f452d65d090997ce924ec64395c397ccdcf6b876",
+      "mtime": "2026-04-13T15:24:00.304Z",
+      "size": 2806,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/atelier-help/atelier-help.csv",
+      "sha256": "6d1d8275b6e1a38e56b03c700b680a389543250ab1de6930a22102113f08cc3b",
+      "mtime": "2026-04-13T15:24:00.304Z",
+      "size": 1254,
+      "ext": ".csv"
+    },
+    {
+      "path": ".claude/skills/atelier-setup/SKILL.md",
+      "sha256": "035e113d30b9b6ce71ea9d8ad021613f8ef06cc83c016648d0c2d23fe8120548",
+      "mtime": "2026-04-17T11:13:42.894Z",
+      "size": 5719,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/audit-safe/SKILL.md",
+      "sha256": "3c17a0e4b593519ecef99e69ed7f9486d4cd483dadfa193b914542fc598fdcb9",
+      "mtime": "2026-04-13T15:24:00.305Z",
+      "size": 2777,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/bmad-init/SKILL.md",
+      "sha256": "659e21356f82d7019832cb9afeb25b04993ac6a6698d810ce0cb30a6a6656c5a",
+      "mtime": "2026-04-13T15:24:00.306Z",
+      "size": 2595,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/compress/SKILL.md",
+      "sha256": "3f854b416cdb5de0adf3287d61d57506f8242ced5b7c29cb25a6540aa219b598",
+      "mtime": "2026-04-13T15:24:00.306Z",
+      "size": 2684,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/copilot-loop/SKILL.md",
+      "sha256": "2cbba62fb3fa2ae250efb6d72e198798aff86c7e336a561b803c0f170fb03d88",
+      "mtime": "2026-04-22T07:23:24.763Z",
+      "size": 5970,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/design-senior/SKILL.md",
+      "sha256": "efd8c1edbd20a7bc5b64644043257b352ee0f3b150a68b397c28584052ce80a5",
+      "mtime": "2026-04-17T11:13:39.357Z",
+      "size": 5520,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/freebox-init/SKILL.md",
+      "sha256": "aa9b2866403f580746138f6a3d55de9702b0ca91ba93a18d78659901a7593971",
+      "mtime": "2026-04-14T08:35:05.057Z",
+      "size": 5096,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/handoff-debt/SKILL.md",
+      "sha256": "9c7e9476d11409661d0d98a803fe594f202267c7aa088aaeb874c14aefbfbd7a",
+      "mtime": "2026-04-14T13:28:41.226Z",
+      "size": 2461,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/integrate-review/SKILL.md",
+      "sha256": "b2d7de9d108532a91cb980df4e0d340417d33ed44498ee21c83c6a0bf798252e",
+      "mtime": "2026-04-29T09:07:41.588Z",
+      "size": 5536,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/ios-setup/SKILL.md",
+      "sha256": "c0bc57c39c8c4358d1168e3137e51db190a30c78fe85cf235298a96f7ef0c665",
+      "mtime": "2026-04-13T15:24:00.307Z",
+      "size": 4431,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/la-bise/SKILL.md",
+      "sha256": "8b58653e8b29b5e038db75e115062b93b40d6352a86ed0d3a4bf453ebabca7c0",
+      "mtime": "2026-04-21T05:25:48.063Z",
+      "size": 2355,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/night-launch/SKILL.md",
+      "sha256": "d9b1dd67d60b35ac9be5cf4f6685f682dcc0f1f1ac87c4a0f326468a2289483c",
+      "mtime": "2026-04-13T15:24:00.308Z",
+      "size": 3169,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/ollama-router/SKILL.md",
+      "sha256": "3e98a2f3b2456bce53360d6fe785cb6686096eeffcf6686c2676637c1cb1feee",
+      "mtime": "2026-04-18T13:56:34.561Z",
+      "size": 5658,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/qmd-init/SKILL.md",
+      "sha256": "46c7fe54d0deb667590a3ca0cd283b879074d5ce2baf87bfa6412cd035c2db1c",
+      "mtime": "2026-04-13T15:24:00.309Z",
+      "size": 2749,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/review-copilot/SKILL.md",
+      "sha256": "c4a078bb0b4f5c6245f4f070e30efe1f104095fafba3a8ebd11860855ad16798",
+      "mtime": "2026-04-22T07:23:24.765Z",
+      "size": 5662,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/skills/token-routing/SKILL.md",
+      "sha256": "74b54c4d8ad7911d8206be8098379eb803cb4494613fcdb8d8477971e3225ae4",
+      "mtime": "2026-04-13T15:24:00.309Z",
+      "size": 2993,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/stacks/docker.md",
+      "sha256": "6f36851283491c4a9e7ff925d7eeaabce9ccf1e755978424cb6543b9d0abf43a",
+      "mtime": "2026-04-14T09:21:26.015Z",
+      "size": 936,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/stacks/firebase.md",
+      "sha256": "3f3b8d7281a53740f8e8b196a5942fb37d5658e75e11c83e7a91e70326357f44",
+      "mtime": "2026-04-14T09:22:00.180Z",
+      "size": 1082,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/stacks/freebox.md",
+      "sha256": "f89fe9ee07eb4759a49d8169defffae5b5316cafc2650be696a87cf08a715b97",
+      "mtime": "2026-04-14T08:22:36.034Z",
+      "size": 5904,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/stacks/ios-xcode.md",
+      "sha256": "ab0d0369ee5d219472b2b1d8df5add77c871c9eae5ee820e7fa26689e3687840",
+      "mtime": "2026-04-13T15:24:00.298Z",
+      "size": 8113,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/stacks/java.md",
+      "sha256": "311f908d9ecd9da73479e4de7c36bba8bc51339be16c320e0d5887fa60bb4a00",
+      "mtime": "2026-04-14T09:21:42.534Z",
+      "size": 1575,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/stacks/javascript.md",
+      "sha256": "3fcf21eae2c68cc455ee9e53a66376385fbae6a0281d88c69ca4560763cc37f7",
+      "mtime": "2026-04-14T09:22:44.446Z",
+      "size": 1615,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/stacks/npm-publish.md",
+      "sha256": "d93c9b803ffc26a0853665360d05115065b1cd27830e2ff2e0109f76d1e66490",
+      "mtime": "2026-04-13T15:24:00.300Z",
+      "size": 4277,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/stacks/ollama.md",
+      "sha256": "16585c3932bf110080d2ca0096498bd73b2030f45406223eacdf75a3d98b6718",
+      "mtime": "2026-04-14T09:22:07.186Z",
+      "size": 1017,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/stacks/python.md",
+      "sha256": "b01773205d4b6c609cfd61cdc73952c3f9c6218f08a1b3056c44dcd36db9da45",
+      "mtime": "2026-04-14T09:21:33.671Z",
+      "size": 1463,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/stacks/react-vite.md",
+      "sha256": "66d800c555f8d934461277aa12314e780f328017835affa68ca8f1093de50a12",
+      "mtime": "2026-04-14T09:21:51.942Z",
+      "size": 847,
+      "ext": ".md"
+    },
+    {
+      "path": ".claude/watchdog-log.md",
+      "sha256": "eedd112484778d05bb4f60e184a666a41eff08275be6d19c75f2a7a33766048a",
+      "mtime": "2026-04-18T08:26:42.344Z",
+      "size": 492,
+      "ext": ".md"
+    },
+    {
+      "path": ".claudeignore",
+      "sha256": "0619bbc234dc3b65d00a3458c9336142dc4b3ca09404eacf6489ea146f81e26a",
+      "mtime": "2026-04-13T15:04:52.627Z",
+      "size": 518,
+      "ext": ".claudeignore"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
+      "sha256": "22838e2833af5bcd72a80958bf1959771e58434f84d48c4a39de50e3385a2f82",
+      "mtime": "2026-04-13T09:59:58.275Z",
+      "size": 1613,
+      "ext": ".yml"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature_request.yml",
+      "sha256": "437813ef931c3708456859943009a5d3e298f1551dde10c1bc35ee5e1e83ca8f",
+      "mtime": "2026-04-13T10:00:09.334Z",
+      "size": 1362,
+      "ext": ".yml"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/new_hook.yml",
+      "sha256": "562351a4d76d3f0d3e1d5d257915d5edf17dd6d35a68127d0332a402483247cb",
+      "mtime": "2026-04-13T10:00:21.543Z",
+      "size": 1596,
+      "ext": ".yml"
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md",
+      "sha256": "32c6bbb406467bebf7051e3ce44f3816cf4118d35aa8382aa0cfe8e0c7426f92",
+      "mtime": "2026-04-13T10:00:30.984Z",
+      "size": 639,
+      "ext": ".md"
+    },
+    {
+      "path": ".github/copilot-instructions.md",
+      "sha256": "395d53fb1b1907f8e892bd36aa07143559158b3aa7a69d228d95c2f8ff7ad6e3",
+      "mtime": "2026-04-21T07:02:32.586Z",
+      "size": 1777,
+      "ext": ".md"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "0f33a4aa7cba996af417aaa6b24830cc3327f8d4f3c2a3e3f25bda5a7493fa55",
+      "mtime": "2026-04-14T10:17:36.152Z",
+      "size": 1503,
+      "ext": ".yml"
+    },
+    {
+      "path": ".github/workflows/npm-publish.yml",
+      "sha256": "2b739bea0b8f3423f684cd46b95d4d46e376c8f60f1b5fb3b4cea410c056b9a5",
+      "mtime": "2026-04-17T17:05:18.324Z",
+      "size": 1197,
+      "ext": ".yml"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "82444ddc983243095f60f91dd728b423c895350afb156885082a30452a9c1a4c",
+      "mtime": "2026-05-02T07:29:53.887Z",
+      "size": 1138,
+      "ext": ".gitignore"
+    },
+    {
+      "path": ".mcp.json",
+      "sha256": "14c6fca6f00432b2fdf14510c724cdfd511477c79ae68d472b336388a447c8cf",
+      "mtime": "2026-04-12T21:59:47.546Z",
+      "size": 91,
+      "ext": ".json"
+    },
+    {
+      "path": ".npmignore",
+      "sha256": "160cab91b313d1181cbe19514ae73868b828c0260cc6c0d0a3f928c3b09e00d6",
+      "mtime": "2026-04-16T15:05:06.707Z",
+      "size": 46,
+      "ext": ".npmignore"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "2af428374b4c49ad90c2b52afbe0fb7d587efcaa6c35af404601269d3a5354e9",
+      "mtime": "2026-04-24T15:34:20.536Z",
+      "size": 37140,
+      "ext": ".md"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "sha256": "d0a9b241426382cd0df8750cfea5441ee3f41badb911cbcc105402645e0e5d00",
+      "mtime": "2026-04-13T10:00:58.260Z",
+      "size": 3063,
+      "ext": ".md"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "00a4766f662e48b8a5e67c23186cd054e8dd7ee6b991ea16d9ba29def8a86649",
+      "mtime": "2026-04-11T21:44:42.040Z",
+      "size": 1070,
+      "ext": ""
+    },
+    {
+      "path": "PARITY.md",
+      "sha256": "73f52bc68cc5766a6d0461c41dd30d8a65034c8989247468a6b60d7e38ab349e",
+      "mtime": "2026-04-20T13:15:09.473Z",
+      "size": 9320,
+      "ext": ".md"
+    },
+    {
+      "path": "PHILOSOPHY.md",
+      "sha256": "7f712cf94c4b623dab075993975b658d63c11662171f3765012e39af71d1495a",
+      "mtime": "2026-04-14T09:41:13.581Z",
+      "size": 4640,
+      "ext": ".md"
+    },
+    {
+      "path": "README.md",
+      "sha256": "25f5f4192655a461fc4d8a777fcf4aaa3f0a2afe13e4b8a9d573191135c36e34",
+      "mtime": "2026-05-02T17:10:34.811Z",
+      "size": 50791,
+      "ext": ".md"
+    },
+    {
+      "path": "SECURITY.md",
+      "sha256": "50df2fa0cb8364314067a9b417a9e53996dd29128951b65c6afe67d8ce0ee636",
+      "mtime": "2026-05-02T06:24:46.501Z",
+      "size": 1028,
+      "ext": ".md"
+    },
+    {
+      "path": "bin/apply.js",
+      "sha256": "e4e4ad78d9e27b388608945f2c265a35379e3caf36ca054d3c86f136c12d83c3",
+      "mtime": "2026-04-24T15:34:20.537Z",
+      "size": 3234,
+      "ext": ".js"
+    },
+    {
+      "path": "bin/cli.js",
+      "sha256": "4b947cda3aedec2a07b53a7194117564ed7e66fa8a8350bfaf2affea994beb6d",
+      "mtime": "2026-05-03T06:37:03.387Z",
+      "size": 5397,
+      "ext": ".js"
+    },
+    {
+      "path": "bin/features.js",
+      "sha256": "403ee501f3e142668d61bdb3d44916f4687a25ec7baade66b4e94f0378fa25ce",
+      "mtime": "2026-04-21T20:53:32.900Z",
+      "size": 10430,
+      "ext": ".js"
+    },
+    {
+      "path": "bin/init.js",
+      "sha256": "028bedab5f1b435fe09762a506d093afd86487518f23e146bb325e2fa738e8f8",
+      "mtime": "2026-05-02T17:10:13.734Z",
+      "size": 22048,
+      "ext": ".js"
+    },
+    {
+      "path": "bin/post-install-checks.js",
+      "sha256": "fa2c8f4b493158ad5c9fbf2440b7c12fb214b00a471341aa2f6fccb26cfe80fc",
+      "mtime": "2026-04-28T13:50:11.082Z",
+      "size": 1814,
+      "ext": ".js"
+    },
+    {
+      "path": "bin/pulse.js",
+      "sha256": "fbc3e6c411250e8839552271bc5d121acd3d77b267d81f73f846f4432959b2c9",
+      "mtime": "2026-04-29T09:06:32.931Z",
+      "size": 6718,
+      "ext": ".js"
+    },
+    {
+      "path": "bin/review-local.js",
+      "sha256": "7a205231d01155d3bf6169d125747a8bf48aa38a3ad8e66644895412c750057d",
+      "mtime": "2026-04-19T14:28:13.360Z",
+      "size": 14827,
+      "ext": ".js"
+    },
+    {
+      "path": "bin/setup-s0.js",
+      "sha256": "98c4d530ec102048ba6d779bb7706cc62d3dc180e68f00f81dc81ff9eb1efa44",
+      "mtime": "2026-04-13T15:23:41.261Z",
+      "size": 13041,
+      "ext": ".js"
+    },
+    {
+      "path": "bin/update.js",
+      "sha256": "0a17efdb4eb696cd62ed84c55a90ba296f0f4abcdf793bc582bd6a4654e27234",
+      "mtime": "2026-04-17T19:28:31.174Z",
+      "size": 11311,
+      "ext": ".js"
+    },
+    {
+      "path": "bin/vault.js",
+      "sha256": "f41be0d9067d85e5d523aa38dd6d91000486c318614bd566d25b19dc666bf1dd",
+      "mtime": "2026-05-03T06:34:42.926Z",
+      "size": 27693,
+      "ext": ".js"
+    },
+    {
+      "path": "bin/welcome.js",
+      "sha256": "68d52b5e3304498c4d89024e302fea6b386cf0c20f945282dc430b374ae913d9",
+      "mtime": "2026-04-16T13:58:51.787Z",
+      "size": 4600,
+      "ext": ".js"
+    },
+    {
+      "path": "claude-code-dynamic-model-switching.md",
+      "sha256": "f416eba99d94904bc6244d68534a28ca526d2978c7efc00904e4ab40b6cef67c",
+      "mtime": "2026-04-18T08:26:42.345Z",
+      "size": 8131,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/COPILOT-LOOP-RETROSPECTIVE.md",
+      "sha256": "0b10d33bdbe02b4ed98042bf53383ea1f9e21cb14283d53ba6b1f82591565f2f",
+      "mtime": "2026-04-21T07:02:32.587Z",
+      "size": 10909,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/HANDOFF-ENFORCEMENT.md",
+      "sha256": "f710317d60cd2b6e4242b1d35e96780332ff88447245fab30e4ca5df07a7ac62",
+      "mtime": "2026-04-14T10:55:57.415Z",
+      "size": 25123,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-12-proposition-storytelling-patterns.md",
+      "sha256": "650c02fd800d49abc098ee4bd43cf101159a5f4169a863314799d7fa1e85fdc2",
+      "mtime": "2026-04-12T21:34:02.656Z",
+      "size": 13865,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-12-review-p1-p4.md",
+      "sha256": "38db4e4540a232dcf8a67bd695ce4f6f7a43811aca8b33af4f6fc9a04570dfb2",
+      "mtime": "2026-04-12T12:32:42.661Z",
+      "size": 6739,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-12-review-p5-skills.md",
+      "sha256": "3a88c8bed5ca9db5a34032d46fe7ecf6055b0d298f7e5ef9f937d064c8c878ce",
+      "mtime": "2026-04-12T20:13:06.352Z",
+      "size": 16735,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-12-review-prepublish-npm.md",
+      "sha256": "4e94957a370affc4fd1880c4b4062a04a678a35f6a99ac4b4310810cbfc1cc2f",
+      "mtime": "2026-04-12T21:26:16.070Z",
+      "size": 10155,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-13-token-economy-hooks.md",
+      "sha256": "d417e3b9929ac080800706e828c265e949aa314c8e3e4f82971d775867635dee",
+      "mtime": "2026-04-13T11:27:01.785Z",
+      "size": 11418,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-14-hook-fix-post-review-smoke-test.md",
+      "sha256": "85b2020d255ba4131e255675ab7e1dc8caef08199367f496ace834aa8e8e9332",
+      "mtime": "2026-04-14T16:38:45.483Z",
+      "size": 7115,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-14-lot1-a-3-enforcement-25.md",
+      "sha256": "42297770e59cd52597cd89c2934e9ffff98eff5a682bccca1840c18de996a8cd",
+      "mtime": "2026-04-14T13:42:52.343Z",
+      "size": 8393,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-14-lot4-enforcement-ergonomie.md",
+      "sha256": "e3c1b4a5792a1378e485205afe884be15bba24633b354167a3094233b3c28d63",
+      "mtime": "2026-04-14T13:42:54.157Z",
+      "size": 11195,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-14-release-0-20-0.md",
+      "sha256": "1e0e96e06a08bfcc9979264fd5783ee4157074a9b3367ee7a3e065a62f58228e",
+      "mtime": "2026-04-14T15:49:57.304Z",
+      "size": 13863,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-14-review-enforcement-25.md",
+      "sha256": "202697c048cf0e150bf4c4f801442e23a551d1f3c998a65e641e66e818cfa970",
+      "mtime": "2026-04-14T10:37:53.533Z",
+      "size": 3217,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-14-review-inspiration-claw-code-v0.7-to-0.15.md",
+      "sha256": "0731989991ca64c9b9eb48b24a5427b16bcc3c2591f02ce143792f2b5615bdc1",
+      "mtime": "2026-04-14T10:56:12.963Z",
+      "size": 15260,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-15-cli-update-files-fix.md",
+      "sha256": "088d51a2fe35558058194b2e4e673d4bf802038176f3cc9e5fdf2a1d66f2590d",
+      "mtime": "2026-04-15T07:11:52.850Z",
+      "size": 10591,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-15-dynamic-model-switching-impl.md",
+      "sha256": "c58767df457e288996468814ad47b9a870b917612637309edead50ff9290a2c9",
+      "mtime": "2026-04-15T11:08:56.026Z",
+      "size": 10734,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-15-dynamic-model-switching-plan.md",
+      "sha256": "ca90c4f9164c55cf20d314fd0b2cf550d1ad8630ecab2da3f2224d346b375413",
+      "mtime": "2026-04-15T09:54:11.729Z",
+      "size": 16753,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-15-manifest-validator-logo-cleanup.md",
+      "sha256": "ce6fbe796be7a9039bc90b881632531475d18fd464a0a4e2b9fbf476f87fe95e",
+      "mtime": "2026-04-15T05:23:17.748Z",
+      "size": 10655,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-15-metrics-gardeFous-modeAM.md",
+      "sha256": "bc07ece817853e77eeacc511d169662155128be8ff43f853aa868ec7089a63ae",
+      "mtime": "2026-04-15T18:36:40.216Z",
+      "size": 10414,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-15-review-metrics-switch-v2.md",
+      "sha256": "d99cc8a2906c2573294feadcfbfffee334d37a5d97cce2a6f269064381433ee6",
+      "mtime": "2026-04-16T14:03:44.569Z",
+      "size": 16286,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-15-update-cpsync-fix.md",
+      "sha256": "dce42e1e812d028b155313a6fbf1eedeee92a1c8d948f87c78df14d2e214d942",
+      "mtime": "2026-04-15T07:27:29.555Z",
+      "size": 7345,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-15-v2-plugin-socket-actionneur-plan.md",
+      "sha256": "c16bcb0b0b41cc98ac2f7b05de4f2c722cb89a59d2363b7f3abb2befa106a791",
+      "mtime": "2026-04-15T13:11:06.924Z",
+      "size": 11060,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-15-v2-switch-vscode-invalidation.md",
+      "sha256": "174e05cc54589751e2f2a362f74865a8fc60b24c163ee8bd207158f1ba97fd94",
+      "mtime": "2026-04-16T14:03:44.569Z",
+      "size": 12755,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-16-post-install-welcome-gen-help.md",
+      "sha256": "2c587c2975d8d4de573b49cc324b6637bf49f383f74cf7ce83902981a91b5538",
+      "mtime": "2026-04-16T14:59:35.160Z",
+      "size": 12304,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-17-agents-md-bridge-skills-npm-pipeline.md",
+      "sha256": "755676f96f7a479fdd29def88f6e4704fcc857c35dcde82adf78e8106efe2187",
+      "mtime": "2026-04-17T19:30:02.441Z",
+      "size": 10910,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-17-context7-mapping-s0-lifecycle.md",
+      "sha256": "405b55443a8c592fe05b5172dd51f857bc3044e2ea62991c39008f744fd28900",
+      "mtime": "2026-04-17T12:01:55.994Z",
+      "size": 7783,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-17-context7-readme-push.md",
+      "sha256": "f1ca9e8865734f76c0683ef505f19742fa4f2c0641f9c7995f90e4d960729fa8",
+      "mtime": "2026-04-17T12:13:44.901Z",
+      "size": 5634,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-17-extension-20-stacks-langages.md",
+      "sha256": "2abee88d9c103a435dc72998bced8a5270fb041a654a5b577d4d36afc02c022a",
+      "mtime": "2026-04-17T16:33:33.478Z",
+      "size": 12695,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-17-handoff-boundary-bugfix.md",
+      "sha256": "e77061babca90fdf03934176daadcb2a4f0f820c41ce3ee8b9221261afa02ecc",
+      "mtime": "2026-04-17T12:28:13.917Z",
+      "size": 6277,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-17-ollama-proxy-go-skill.md",
+      "sha256": "8e89c3ef69acb67d54b26f8e69bb56ba621df42066c7e94853c9705810b37cac",
+      "mtime": "2026-04-17T19:53:04.311Z",
+      "size": 9320,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-17-plan-ollama-proxy-agents-md.md",
+      "sha256": "b230626c9b23ad6fd0f47f0c9ff659b52df0c0a30a5099887af8ee6291bc8e37",
+      "mtime": "2026-04-17T19:15:10.837Z",
+      "size": 13298,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-17-readme-killer-functions-push-gate.md",
+      "sha256": "c575eba0dbc3c2c980ecaa1d75c83aadd909f8d0b167effcb287632616cacd8f",
+      "mtime": "2026-04-17T11:55:20.148Z",
+      "size": 5576,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-17-remote-sync-gate.md",
+      "sha256": "a5915a013153577295c123b5bb7bc56667abd3d5fd947b88c9ff7a7f6fdda744",
+      "mtime": "2026-04-17T12:36:04.723Z",
+      "size": 6191,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-17-serena-design-senior.md",
+      "sha256": "0b4eeff75c3a9472ec1f7f62f3b298b0d7c08aff8132d9bafec17b019340a93f",
+      "mtime": "2026-04-17T11:35:31.491Z",
+      "size": 12488,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-18-memory-3-levels.md",
+      "sha256": "5fe403c7fee60b3f3afa9c3b57b46b433cbdee3e3c02b1b56d70a6fdd30c7cc3",
+      "mtime": "2026-04-18T08:38:15.946Z",
+      "size": 10355,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-18-memory-post-fix-review.md",
+      "sha256": "a873cbcd650c3aac220d62883918cdac2f9eabd75837fd4b9af7911d01994e06",
+      "mtime": "2026-04-18T08:38:15.947Z",
+      "size": 6340,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-18-phase3-streaming-proxy.md",
+      "sha256": "2880aaa4e22aaaa6a4ed5629fb4c7cfd0c95621114f0d1f87d7a8b27bbf7b45e",
+      "mtime": "2026-04-18T18:24:44.831Z",
+      "size": 9689,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-18-phase4-triage-routing.md",
+      "sha256": "19ddde8be5508fd79a3e9372cbdfa5498a80f2dde4f34324338daee27a82a6cf",
+      "mtime": "2026-04-19T11:47:39.454Z",
+      "size": 10839,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-18-proxy-post-fix-review.md",
+      "sha256": "77e728ee4aa4800bd6aad27390a52a2b9dbb9e4b3c0d2448af872d6c8bfea464",
+      "mtime": "2026-04-18T14:26:06.010Z",
+      "size": 7682,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-18-proxy-tool-use-v2.md",
+      "sha256": "06e20262bee3bc69ba1d51311c6be59cc9d6e97375d5084f92226774e1f1bb19",
+      "mtime": "2026-04-18T14:26:31.820Z",
+      "size": 12062,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-18-retour-claude-sortie-boucle-iteration.md",
+      "sha256": "8861e361b378c1e0e37488e16fc4f76ed3afa6298a03c012ce0874e47ca4e32b",
+      "mtime": "2026-04-18T15:51:29.975Z",
+      "size": 11620,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-18-routing-cache-scope-review.md",
+      "sha256": "8cb17d5087fe6cafbe538fa9bfe008cbf59a8485bb546370f82cd45640894abc",
+      "mtime": "2026-04-18T16:34:21.819Z",
+      "size": 10364,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-19-features-control-panel.md",
+      "sha256": "6e58a15f50340aa43c418c2881c94dfbcb93b8afd70b5b0b1e7372ebbf024f71",
+      "mtime": "2026-04-19T14:25:48.840Z",
+      "size": 7126,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-19-review-generale-0.21.15.md",
+      "sha256": "a54b16c103d506b838bf26edc487744ae18056dbbf3609ad62d3561b28d390e4",
+      "mtime": "2026-04-20T14:02:17.801Z",
+      "size": 9638,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-19-review-local-anti-bypass.md",
+      "sha256": "f76af74e54a3d44cecefbee9a4cfa697c74e8330e9130af236ee39a9e9e78013",
+      "mtime": "2026-04-19T14:29:04.796Z",
+      "size": 4459,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-20-header-mode-logic-fix.md",
+      "sha256": "e373a95f748b3009121076de265876fd818f13a8a6a8e5983d84304cc38e74be",
+      "mtime": "2026-04-20T10:45:45.742Z",
+      "size": 7202,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-20-session-2026-04-20-cockpit-features.md",
+      "sha256": "4bffe404e353e23bd1a56362cd0b9d77496120afc630de9a296e95e14a3fb392",
+      "mtime": "2026-04-21T18:55:00.718Z",
+      "size": 8255,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-21-atelier-config-features-agents.json",
+      "sha256": "e88e0792e79389e74dfaf38622895fcf51807782cfdf167c2b146c0a9ff13a5f",
+      "mtime": "2026-04-21T20:43:23.487Z",
+      "size": 4027,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-21-auto-merge-copilot-loop-fixes.json",
+      "sha256": "6cb8f112dded3f782322783f67a1acdd7adfe03b3e7ba3ae0cee0d8dc2b541e1",
+      "mtime": "2026-04-21T20:53:22.790Z",
+      "size": 3520,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-21-copilot-loop-skill.json",
+      "sha256": "e1c176de4efe02c0b71831967a73f91eab9c6bd7d589dfd07acaa512725ca412",
+      "mtime": "2026-04-21T06:36:19.037Z",
+      "size": 3844,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-21-docs-copilot-retrospective.json",
+      "sha256": "4364096fe3c425d2007f5bb685492843473380ef7aeb95b330523cf53b5b29aa",
+      "mtime": "2026-04-21T07:02:32.587Z",
+      "size": 3639,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-21-handoff-json-gate-feature-branch.json",
+      "sha256": "9f81240295e71a54c1de66593552ad90a2798b7d037ed6ae2b810dae62d54c42",
+      "mtime": "2026-04-21T06:14:18.762Z",
+      "size": 4041,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-24-apply-profile-api-copilot-fixes-v022.json",
+      "sha256": "d4452c91344209f48530d28652430864d3f3d52dec4c50a80a52083a7ec7a61f",
+      "mtime": "2026-04-24T16:13:10.454Z",
+      "size": 5185,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-24-apply-profile-api-paperclip.json",
+      "sha256": "f9aaf11c5360d16e1d6789b29a49218f8227ed7179d881adb67b6dec843bfe24",
+      "mtime": "2026-04-24T15:38:36.698Z",
+      "size": 4495,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-25-applyprofile-tests-paperclip-compat.json",
+      "sha256": "c12a3fc448921fee8af4d3caa8a22585f84a8acf1670a8ce1e0d7cbe41d236d7",
+      "mtime": "2026-04-25T17:31:41.617Z",
+      "size": 4169,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-28-pulse-maestro-hardening.json",
+      "sha256": "11f3c6d0e6c4dfabcf83baa8d069c726d425ec096e9dce9997c59501b4b55eae",
+      "mtime": "2026-04-28T20:47:33.612Z",
+      "size": 4882,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-28-pulse-maestro-v0-23-0.json",
+      "sha256": "bff60c57fa15ea318fa4fb2186631d721b449c56575d56b0e32be91e70efa5ad",
+      "mtime": "2026-04-28T14:53:02.053Z",
+      "size": 3480,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-29-integrate-review-automation.json",
+      "sha256": "b880da99fbc119b0a16215139d3a1dad790c04c515d5789348acaf2f62109978",
+      "mtime": "2026-05-02T06:24:46.502Z",
+      "size": 4384,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-29-marketplace-alignment.json",
+      "sha256": "3cff058af0104493c8f5ca340ce6030c02b88281060212c5519cc7ff32a7332c",
+      "mtime": "2026-04-29T09:06:32.931Z",
+      "size": 6864,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-04-29-marketplace-poc-v0-claude.md",
+      "sha256": "78d092dafc487ce61bee75ef6757e0c4546c583f3a39bd5b687d10338ec8fe8a",
+      "mtime": "2026-05-02T06:24:46.502Z",
+      "size": 2197,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/2026-04-29-pulse-maestro-real-presence.json",
+      "sha256": "d348ac198acd12e51a40422919e46cab9a988f614e8460ac1f0cb76134bca0aa",
+      "mtime": "2026-04-29T09:06:32.931Z",
+      "size": 5317,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-05-02-hooks-proxy-marketplace-pulse.json",
+      "sha256": "945b3b4356eebba7fbdf6656c9e19d5be9eacd710510271a278e89c7aef95045",
+      "mtime": "2026-05-02T07:29:02.447Z",
+      "size": 4355,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-05-02-vault-dynamique-peter.json",
+      "sha256": "1cd171380ed7adb0adcd5f1926aa29ad15163dffe94009ad9dbd4498f76e2e87",
+      "mtime": "2026-05-02T20:22:09.404Z",
+      "size": 3743,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-05-02-vault-incremental-index.json",
+      "sha256": "5ae5a8bb0821182adeb24f22eb3e9b9f4f2ae131a11005ccd27e6359074414f6",
+      "mtime": "2026-05-03T06:34:42.926Z",
+      "size": 6190,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/2026-05-02-vault-report-stale-hook.json",
+      "sha256": "ceca3f2110da62e7b96aa402d5d5c3af86ba9b87b2a933f1d7adec822dd04880",
+      "mtime": "2026-05-02T20:22:09.404Z",
+      "size": 4849,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/README.md",
+      "sha256": "966a498579ca77a5af37d6c5a86fa7e06f60e0fc0bf119cbb59a3de683bde7dd",
+      "mtime": "2026-04-12T10:37:41.439Z",
+      "size": 1456,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/handoffs/_template.json",
+      "sha256": "89fde2086c0c384ee0570a9825ccbccb964ad25c346fb32b18e7827c58c15af6",
+      "mtime": "2026-04-21T06:14:18.762Z",
+      "size": 812,
+      "ext": ".json"
+    },
+    {
+      "path": "docs/handoffs/_template.md",
+      "sha256": "a667fe42e62ad091c358cb569e314835d54aba34c45e82e0340ade5d7ceb5e8a",
+      "mtime": "2026-04-15T06:08:42.095Z",
+      "size": 1734,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/methodology.md",
+      "sha256": "c7faeb29b37c667d994a07e676040477b6a599bd45b62165deffaefc3c0e66f4",
+      "mtime": "2026-04-17T12:09:03.428Z",
+      "size": 12286,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/proposals/marketplace-inter-agents.md",
+      "sha256": "b676d98eca574d46169f2028417f0ee3f4d420423d628cfdc81aa037d932a777",
+      "mtime": "2026-05-02T06:24:46.502Z",
+      "size": 25767,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/proposals/marketplace-poc-handoff-v0.md",
+      "sha256": "8f84df9b2171c2dbd53e123799594b519b5b748288e56a09ba1dea24c63a4c2d",
+      "mtime": "2026-05-02T06:24:46.503Z",
+      "size": 10407,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/proposals/marketplace-premier-marche.md",
+      "sha256": "ccf07cc6ef08adc20e76e157c18e1411c3ac6a1b2cb3be2b976d8a95a87ca09d",
+      "mtime": "2026-05-02T06:24:46.504Z",
+      "size": 15164,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/proposals/mirror-architecture-challenge.md",
+      "sha256": "a159d57cc89847650b044a91f0e0fd47b8fab8156cd46a53285b121274c6d836",
+      "mtime": "2026-05-02T16:39:38.346Z",
+      "size": 7151,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/proposals/mirror-architecture.md",
+      "sha256": "415f70378fe04d076807a2a85bd872979fd82ecbef256dadc0a14265fc4dabc3",
+      "mtime": "2026-05-02T11:04:16.748Z",
+      "size": 12065,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/proposals/mirror-besoin-reel.md",
+      "sha256": "297e2403b61f4e84fdd1e62cc8170630fa2fcfef7b7117438225b7a482e982e5",
+      "mtime": "2026-05-02T16:56:16.100Z",
+      "size": 6991,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/proposals/peter-vault-graphify-plus-plan.md",
+      "sha256": "1338fbf7459801796b2f4093ef9a2266c3b3c4e3a728a546268e15bc8ba44f27",
+      "mtime": "2026-05-03T06:36:01.449Z",
+      "size": 25670,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/proposals/vault-dynamique-peter-mvp.md",
+      "sha256": "d8aeb1aa4c67c1ea3aa06a9e427c8b5c397f4877c717ff023a32fe7500900404",
+      "mtime": "2026-05-02T17:10:13.751Z",
+      "size": 2562,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/qmd-user-guide.md",
+      "sha256": "0dd4155e56460ddefebdf02b1a112a78ad544362aef303e4e76db2c6671af115",
+      "mtime": "2026-04-11T06:22:07.000Z",
+      "size": 9838,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/roadmap.md",
+      "sha256": "9e180cbdb221c1d9d05aab3d2bade0bbb274c4512e2574cd88a859615b6e64f6",
+      "mtime": "2026-04-12T19:55:49.337Z",
+      "size": 15028,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-04-18-memory-3-levels.md",
+      "sha256": "dae13213f4da356c3eba4b918692be6167d326e7cb0c7e354cd4fb96452d9c86",
+      "mtime": "2026-04-18T08:26:42.346Z",
+      "size": 65599,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-04-28-pulse-maestro.md",
+      "sha256": "aa02019d3e3802971810ec8d3d74860942dc5663b7dda0a298a7652f186777a1",
+      "mtime": "2026-04-28T12:45:42.757Z",
+      "size": 49444,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-05-02-vault-incremental-index.md",
+      "sha256": "e336e69f4c6a8d07b63a85088c0633eadc0a7194ebf2403773c507429ea660b8",
+      "mtime": "2026-05-03T06:34:42.926Z",
+      "size": 21053,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-04-17-memory-3-levels-design.md",
+      "sha256": "1bf8ddbd7fe932d64f86e1d2f9e4125feb3a2d8769919135218e27bc6dd5ebaf",
+      "mtime": "2026-04-17T22:35:56.779Z",
+      "size": 23569,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-04-28-pulse-maestro-design.md",
+      "sha256": "ece737ebf508833f83bf3152ccfcbd1af991a27a506eeaa65a74b4668cb8e00c",
+      "mtime": "2026-04-29T09:06:32.932Z",
+      "size": 11632,
+      "ext": ".md"
+    },
+    {
+      "path": "docs/vault-obsidian-etat-art.md",
+      "sha256": "07d0edeb944d575c79d443dd1292a1a12502ba767b563c318a0cfd5d9de1ac7d",
+      "mtime": "2026-05-02T07:29:02.447Z",
+      "size": 22640,
+      "ext": ".md"
+    },
+    {
+      "path": "freebox-sdk-workflow.md",
+      "sha256": "b1ff037c8d056a911040b3e57eb7a9cf244e68c70e92deaecd9a152f068f7168",
+      "mtime": "2026-04-14T07:48:08.968Z",
+      "size": 8014,
+      "ext": ".md"
+    },
+    {
+      "path": "hooks/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": "2026-04-11T21:59:36.114Z",
+      "size": 0,
+      "ext": ".gitkeep"
+    },
+    {
+      "path": "hooks/_parse-input.sh",
+      "sha256": "c732f4dcb16d3c134f0260f902add5611687c42857a86b8c4a946b82118897fe",
+      "mtime": "2026-04-17T11:19:08.708Z",
+      "size": 1986,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/detect-design-need.sh",
+      "sha256": "77e942754b683f1450200834741a835ccd7f4f5b6710348f90322e832975a68b",
+      "mtime": "2026-04-19T14:01:02.725Z",
+      "size": 1732,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/guard-anti-loop.sh",
+      "sha256": "61830ca0a3479e1bb2078a5eb0b8e66acb8b74a88111d9a188f60ed031349dc3",
+      "mtime": "2026-04-19T14:00:34.124Z",
+      "size": 1117,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/guard-commit-french.sh",
+      "sha256": "87f79eae1413baa30a9573e62894f8a1c364876774d9dd9e0df82d1b8129ed58",
+      "mtime": "2026-04-19T14:07:35.109Z",
+      "size": 2370,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/guard-hooks-reload.sh",
+      "sha256": "fdc812990fe124eda25cb01c7bd876f0d3504e81eebf556602de4a25e5ed1bcc",
+      "mtime": "2026-04-13T10:08:33.408Z",
+      "size": 965,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/guard-no-sign.sh",
+      "sha256": "0a85502467661011cc43ef3a673b15a2031a88066a8016dcd7f5bb29c9a61aa7",
+      "mtime": "2026-04-19T14:00:26.560Z",
+      "size": 723,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/guard-qmd-first.sh",
+      "sha256": "49a86d50ed1ad8e30c30aefb4f41b97fbe3ed224fc54be42f53b19f211ccfc58",
+      "mtime": "2026-04-13T11:32:53.662Z",
+      "size": 1116,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/guard-review-auto.sh",
+      "sha256": "ab21957088aa7336135c53fe2c51c03b0c46492af4b3fb399ecf9a5ee9831813",
+      "mtime": "2026-04-19T14:00:49.085Z",
+      "size": 4676,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/guard-tests-before-push.sh",
+      "sha256": "8bf890900e7c8fe97a7db7816ee29f9de044dc46224d5124cd3ace30536223a9",
+      "mtime": "2026-04-19T14:00:41.712Z",
+      "size": 1167,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/model-metrics.sh",
+      "sha256": "ee66e8a79d4587c47180a3e452125cfed9d86ea8d63a95b966deaa58683fff22",
+      "mtime": "2026-05-02T07:29:02.448Z",
+      "size": 7626,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/routing-check.sh",
+      "sha256": "b9d3a1f92d2de2c3c69e0248c09585b6f3f3b4b06e5bd7a9d04fbffc1ab9e2c9",
+      "mtime": "2026-05-02T06:24:46.504Z",
+      "size": 23506,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/session-model.sh",
+      "sha256": "c93a36c3fd711bc99a06785e047955da131c8c0d9d63aacb47698c9361078e57",
+      "mtime": "2026-04-18T15:43:00.650Z",
+      "size": 1561,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/start-maestro.sh",
+      "sha256": "a566c6a3b9cdbed55f1015b7f0e4f41c2b529a30c6035497d925236822612698",
+      "mtime": "2026-04-28T13:50:11.082Z",
+      "size": 188,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/stop-pulse.sh",
+      "sha256": "ddd1ef03ad4792051f57257562950b4c1387a07c0c1f24b79bff82af6f870ccd",
+      "mtime": "2026-04-28T13:50:11.083Z",
+      "size": 208,
+      "ext": ".sh"
+    },
+    {
+      "path": "hooks/vault-context.sh",
+      "sha256": "3f438824f95bbc601abbb68d1d9bbdf59b116ed6e67a58b9545024c03113606e",
+      "mtime": "2026-05-02T20:22:46.545Z",
+      "size": 3250,
+      "ext": ".sh"
+    },
+    {
+      "path": "index.js",
+      "sha256": "055c8fd934f7cb7536787095b74b115f65942f637f1ea1ae5147c362146b0435",
+      "mtime": "2026-04-24T15:34:20.538Z",
+      "size": 380,
+      "ext": ".js"
+    },
+    {
+      "path": "package.json",
+      "sha256": "e246d4b317ea923ef3b16ed16ce473c1c0ef29df41d9b3e37e9020f1d217a649",
+      "mtime": "2026-05-03T06:34:51.387Z",
+      "size": 2600,
+      "ext": ".json"
+    },
+    {
+      "path": "scripts/gen-help.js",
+      "sha256": "33ac416ea32fec7937e918cd8e612f16347a9adc97cbb68a9f92f6ffdf03ebf4",
+      "mtime": "2026-04-16T13:59:17.746Z",
+      "size": 2110,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/handoff-debt.sh",
+      "sha256": "179f10f759cf52194d49c1dea175c3746c17fb22e8fbfb45dfe149ed43fe616e",
+      "mtime": "2026-05-02T06:24:46.505Z",
+      "size": 8533,
+      "ext": ".sh"
+    },
+    {
+      "path": "scripts/handoff-draft.sh",
+      "sha256": "d4a07e1f922120eff3e77a34228207f052477242ef198e59222415c6dea92ade",
+      "mtime": "2026-04-14T15:59:24.416Z",
+      "size": 4015,
+      "ext": ".sh"
+    },
+    {
+      "path": "scripts/install-git-hooks.sh",
+      "sha256": "2becba49b46f04eac1a885e4f5e7dcec965e814ec162a71f42dd646bef71f469",
+      "mtime": "2026-04-21T06:14:18.763Z",
+      "size": 1826,
+      "ext": ".sh"
+    },
+    {
+      "path": "scripts/manifest-sync.js",
+      "sha256": "8ae72f5ffb6518690c2ffe08141851c7bfc25b75f75d4862f42116f90897e004",
+      "mtime": "2026-04-14T18:24:43.724Z",
+      "size": 1508,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/memory-embed.js",
+      "sha256": "a9b788d7b07557bc14188799eac7490191aad26088a39fa8f573d12f4c19147a",
+      "mtime": "2026-04-18T08:26:42.346Z",
+      "size": 3616,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/memory-episode.js",
+      "sha256": "e29e0f1684b83235322253d64b75babc37d6469e0a4c5e5f22ac2f209eb0d37b",
+      "mtime": "2026-04-18T08:26:42.346Z",
+      "size": 4490,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/memory-export.js",
+      "sha256": "cbb5468d9f709dce5e92969f750b45508d9acab42668024fd6a2c4575a63ccbd",
+      "mtime": "2026-04-18T08:26:42.346Z",
+      "size": 3591,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/memory-gc.js",
+      "sha256": "4e0f58e24162b4e42063d507420e10fe1705d7aa45b44d333ffc0470a16072a6",
+      "mtime": "2026-04-18T08:26:42.346Z",
+      "size": 6938,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/memory-init.sh",
+      "sha256": "fc5eaad6713532f26431d383677208600b5d67a05366cf8247d130921f071f7f",
+      "mtime": "2026-04-18T08:26:42.347Z",
+      "size": 3296,
+      "ext": ".sh"
+    },
+    {
+      "path": "scripts/memory-lib.js",
+      "sha256": "dbf81c9124919d77ae34e70ed9387e843a0143c608c4fe2dfb0c155dc3aa70bb",
+      "mtime": "2026-04-18T08:26:42.347Z",
+      "size": 4925,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/memory-migrate.js",
+      "sha256": "821beed356d178f47601e154d0e5443fe67d541461b67fc0fb21cb4a6761c85b",
+      "mtime": "2026-04-18T08:26:42.347Z",
+      "size": 4495,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/memory-read.js",
+      "sha256": "4164b4c1b4c4c61bf10bf156a565357744e065c93238f78c44e22f1a3a1ebedd",
+      "mtime": "2026-04-18T08:26:42.347Z",
+      "size": 12581,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/memory-reembed.js",
+      "sha256": "52ba7e337e0b6e535b6a7bfa71f65aca120dc2fd8df8787b7b463f7934dee59c",
+      "mtime": "2026-04-18T08:26:42.347Z",
+      "size": 5545,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/memory-write.js",
+      "sha256": "2185b6f44ebe5ed13f0dd3c25e216ebcca1404883187e797e2e28b0045fc857d",
+      "mtime": "2026-04-18T08:26:42.347Z",
+      "size": 4681,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/ollama-proxy/README.md",
+      "sha256": "3e4c9f5e997d55903d6ae1c7987fe119f6cba6b385669a16c90fe4556496a9c2",
+      "mtime": "2026-04-17T19:33:24.049Z",
+      "size": 2196,
+      "ext": ".md"
+    },
+    {
+      "path": "scripts/ollama-proxy/config.json",
+      "sha256": "5b409ee4e1c707d9f0fb15a0c65a1ca7ea836638ed541d240690712cd2f0e916",
+      "mtime": "2026-04-19T12:57:51.831Z",
+      "size": 471,
+      "ext": ".json"
+    },
+    {
+      "path": "scripts/ollama-proxy/go.mod",
+      "sha256": "dcabe183efeae4948efc630c6f4c0bec244c6381403c139f759dfb0771388f2c",
+      "mtime": "2026-04-18T17:09:58.816Z",
+      "size": 31,
+      "ext": ".mod"
+    },
+    {
+      "path": "scripts/ollama-proxy/main.go",
+      "sha256": "712653c2c317675d34aa03e552d73cb4804156531e94e52f66deff20e7f1ab1b",
+      "mtime": "2026-04-18T18:51:18.112Z",
+      "size": 28365,
+      "ext": ".go"
+    },
+    {
+      "path": "scripts/ollama-proxy/main_test.go",
+      "sha256": "1b9cc17bc31846a91e606c701fd7b70c956fac20721d8a995c09833cfcae905c",
+      "mtime": "2026-04-18T18:51:54.563Z",
+      "size": 9088,
+      "ext": ".go"
+    },
+    {
+      "path": "scripts/pre-push-gate.sh",
+      "sha256": "dad98e07d7bbd741e2eed382779d57f20a47f8d62dd7e21bb761ac1a2db1a84a",
+      "mtime": "2026-04-21T06:14:18.763Z",
+      "size": 12249,
+      "ext": ".sh"
+    },
+    {
+      "path": "scripts/pulse-maestro.js",
+      "sha256": "5af5a63adaa737ab33cf328edb4b0d81f127eb9989f2408398633bbe2bf16b79",
+      "mtime": "2026-05-02T06:24:46.505Z",
+      "size": 5246,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/pulse-marketplace-watch.js",
+      "sha256": "ccc4f782c55585531c36e232adf3b5304edcfc19447c92d5a3784b53c999f424",
+      "mtime": "2026-05-02T06:24:46.505Z",
+      "size": 1762,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/pulse-update.js",
+      "sha256": "c39d1f8a0ebc51167005f12717bddc1f4a9112745e81db75f3a276fa462890ad",
+      "mtime": "2026-05-02T06:24:46.506Z",
+      "size": 2670,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/switch_model.py",
+      "sha256": "46ce9c951a4bc7525ee0194609792084e1d400a01db672f2511895a67c061236",
+      "mtime": "2026-04-15T18:49:42.400Z",
+      "size": 3133,
+      "ext": ".py"
+    },
+    {
+      "path": "scripts/update-security.js",
+      "sha256": "f1ebb7c525a1e194e716964d36b32cf56be8fee01b788a6fb1bb95b66c9d7193",
+      "mtime": "2026-04-14T09:32:21.645Z",
+      "size": 1317,
+      "ext": ".js"
+    },
+    {
+      "path": "scripts/version-gate.js",
+      "sha256": "7383db6e9153f2fd988173a994875ae2e85ca29a0984a548582e1d1b40029fed",
+      "mtime": "2026-04-14T13:08:42.108Z",
+      "size": 1695,
+      "ext": ".js"
+    },
+    {
+      "path": "src/apply-profile.js",
+      "sha256": "31d2c8e7fea062a007ab961b75946e02508d8b1aaeec19a0f7ea1bd9e4d5a68a",
+      "mtime": "2026-04-24T16:12:42.148Z",
+      "size": 8360,
+      "ext": ".js"
+    },
+    {
+      "path": "src/en/README.md",
+      "sha256": "d458da22515ac04b151ed8b0964e86b1301acdc0e131dfd7a148e53ad3689372",
+      "mtime": "2026-04-12T10:17:56.927Z",
+      "size": 1103,
+      "ext": ".md"
+    },
+    {
+      "path": "src/en/autonomy/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": "2026-04-11T21:59:36.104Z",
+      "size": 0,
+      "ext": ".gitkeep"
+    },
+    {
+      "path": "src/en/ecosystem/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": "2026-04-11T21:59:36.099Z",
+      "size": 0,
+      "ext": ".gitkeep"
+    },
+    {
+      "path": "src/en/orchestration/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": "2026-04-11T21:59:36.106Z",
+      "size": 0,
+      "ext": ".gitkeep"
+    },
+    {
+      "path": "src/en/pulse/strings.json",
+      "sha256": "8929d8cfb5e2cf2d7c4f9f053e1c3d1872dbfd9e4425c6af794c0eea2b1683c7",
+      "mtime": "2026-04-28T13:50:11.083Z",
+      "size": 339,
+      "ext": ".json"
+    },
+    {
+      "path": "src/en/rules/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": "2026-04-11T21:59:36.108Z",
+      "size": 0,
+      "ext": ".gitkeep"
+    },
+    {
+      "path": "src/en/runtime/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": "2026-04-11T21:59:36.102Z",
+      "size": 0,
+      "ext": ".gitkeep"
+    },
+    {
+      "path": "src/en/security/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": "2026-04-11T21:59:36.101Z",
+      "size": 0,
+      "ext": ".gitkeep"
+    },
+    {
+      "path": "src/features-registry.json",
+      "sha256": "c7ab09c2b27c34b51245ff1a8b593d8c1d74b7d2738b5fabc40c96e6e31e0d48",
+      "mtime": "2026-05-02T06:24:46.506Z",
+      "size": 9470,
+      "ext": ".json"
+    },
+    {
+      "path": "src/features.json",
+      "sha256": "aadea5360b3536db05be813e24ba91de5c9a6b4e80c08f25e6169c33c4295a5b",
+      "mtime": "2026-05-03T06:34:42.927Z",
+      "size": 2628,
+      "ext": ".json"
+    },
+    {
+      "path": "src/fr/CLAUDE.md",
+      "sha256": "7189b570e0dad917058ab5fc95e3722fe4b6808758b82171e3570889f1a6c3c5",
+      "mtime": "2026-04-18T15:43:00.663Z",
+      "size": 6045,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/autonomy/loop-watchers.md",
+      "sha256": "e1b2dfb04dc1f5a295cebb7c8645a4fcfe69502f4b028a4249fa2d9498f88262",
+      "mtime": "2026-04-11T23:13:27.382Z",
+      "size": 2793,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/autonomy/night-mode.md",
+      "sha256": "bc1b674d61997faee503aef2db87a821373a233728a9712e7bdf03cf4ab26657",
+      "mtime": "2026-04-13T19:29:58.292Z",
+      "size": 11518,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/autonomy/permission-modes.md",
+      "sha256": "fbfb8a12e8a1a408777abcdf357772ba414ae96e72429d5434ab299eea5a2244",
+      "mtime": "2026-04-11T23:08:31.668Z",
+      "size": 2843,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/ecosystem/challenger.md",
+      "sha256": "52d971df9077873e9e60f5ae8384c8a6148e7b60ebd25b7c113ad5bd3711b73d",
+      "mtime": "2026-04-13T09:50:11.106Z",
+      "size": 4771,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/ecosystem/hookify.md",
+      "sha256": "b276a15b0f9454d90a7f5a07f0ea0096e67e3ed95d45f967252a09e8de750a12",
+      "mtime": "2026-04-13T08:42:04.982Z",
+      "size": 3397,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/ecosystem/hooks.md",
+      "sha256": "6b415236d0b3ddeef99d1a9757313acdeb755a12054034d93df90e9bd7e0a7d9",
+      "mtime": "2026-04-12T12:38:53.376Z",
+      "size": 3744,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/ecosystem/memory-system.md",
+      "sha256": "67ee4ba8317368837184209c24e8c1279d9b5c63d7061cd258bea3ca38131f80",
+      "mtime": "2026-04-12T12:38:33.901Z",
+      "size": 3156,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/ecosystem/npm-publish.md",
+      "sha256": "81f505b09248e015c5e92b051180b33e8760641dc3028deab6be67fa2bc9ed43",
+      "mtime": "2026-04-13T09:21:14.561Z",
+      "size": 3053,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/ecosystem/permissions-proactives.md",
+      "sha256": "8b60769b2f39a6aeba74752b3042bfb018ae4cabe591fce5ed91db82aaf4a3c9",
+      "mtime": "2026-04-13T09:55:58.918Z",
+      "size": 3234,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/ecosystem/plugins.md",
+      "sha256": "15a325bc2ea019a3543355e5157a143e0103d62fa078b6f851837b0c41f62a97",
+      "mtime": "2026-04-12T12:38:58.052Z",
+      "size": 2626,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/ecosystem/qmd-integration.md",
+      "sha256": "f44281706565f4be2041bf961d18e0885659f643edae72744658b193fd5e3e5a",
+      "mtime": "2026-04-12T12:39:03.028Z",
+      "size": 3150,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/ecosystem/skills.md",
+      "sha256": "08f3186bded8e6c5382c1ed3f86675f8ff6583f6fc2e5d0cfd0e9fcdf0983161",
+      "mtime": "2026-04-12T12:38:18.040Z",
+      "size": 2786,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/orchestration/mcp-lifecycle.md",
+      "sha256": "30e7f449097ccb1d06f2fdbb6a94b854ede660909c4f361b57afd6f8c3e5b646",
+      "mtime": "2026-04-12T09:02:10.061Z",
+      "size": 2402,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/orchestration/models-routing.md",
+      "sha256": "72d4044ef940c36e8d58723c37310940b5372fdb88e3c08170930bc6a162008f",
+      "mtime": "2026-04-12T09:01:30.299Z",
+      "size": 2120,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/orchestration/modes.md",
+      "sha256": "1d9b5ca772bfeabedd8748b107beec42be31d612dd11c635c57f5d0eaf49314e",
+      "mtime": "2026-04-12T08:58:11.782Z",
+      "size": 2738,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/orchestration/parallelization.md",
+      "sha256": "8f293f7bdf745606bab5b2047188ee508f0959504583a5f12c5841e97d0f2629",
+      "mtime": "2026-04-12T20:53:58.840Z",
+      "size": 13426,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/orchestration/spawn-rules.md",
+      "sha256": "fba8a9bb99d49bf135f0e7cd6fa79244f4d8f6123cc335fda621fb4cc998fda7",
+      "mtime": "2026-04-12T09:01:48.432Z",
+      "size": 2188,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/orchestration/subagents.md",
+      "sha256": "e0c992ab35fa5fe6f1d841bcfb9d235afd75270bcf12700993030b39edbe6021",
+      "mtime": "2026-04-12T12:38:47.820Z",
+      "size": 4677,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/pulse/strings.json",
+      "sha256": "8ca47c121cf1bb5e8ff9fa3c511354d8a3ba592cc6f9d97180d1f5af119992eb",
+      "mtime": "2026-04-28T13:50:11.084Z",
+      "size": 352,
+      "ext": ".json"
+    },
+    {
+      "path": "src/fr/rules/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": "2026-04-11T21:59:36.097Z",
+      "size": 0,
+      "ext": ".gitkeep"
+    },
+    {
+      "path": "src/fr/runtime/code-review.md",
+      "sha256": "4508b3048f33241a41940c4982f024439d7097ec7288a8db5fe5a8e3be299185",
+      "mtime": "2026-04-11T22:36:49.694Z",
+      "size": 2034,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/runtime/extended-thinking.md",
+      "sha256": "110da104db4d2cc80731dd141bc4637bce8cb65514211a6fb5b23af9c3ddbec1",
+      "mtime": "2026-04-11T22:37:56.262Z",
+      "size": 1504,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/runtime/theatre.md",
+      "sha256": "b98effecaa5cea5250f42bce68f8ed5e78a013b8af89f7c5dbaeb8a24c115d0a",
+      "mtime": "2026-04-12T21:34:43.846Z",
+      "size": 3717,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/runtime/todo-session.md",
+      "sha256": "6e2cbc1f202402600dd12f7e83868616902283af292c6ec4d08c7be4c7da65c6",
+      "mtime": "2026-04-11T22:37:42.597Z",
+      "size": 1833,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/security/emergency.md",
+      "sha256": "0f407fd0afd470a4e5ac66f10aecab35fc5e515a1e280bb0263a7bff8a181b81",
+      "mtime": "2026-04-12T09:18:19.946Z",
+      "size": 3461,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/security/pre-push-gate.md",
+      "sha256": "624b0e9d3b0826bb16288e465d279a810d0eec94ee85fddb0a9c16ac967b0669",
+      "mtime": "2026-04-12T09:25:52.297Z",
+      "size": 2688,
+      "ext": ".md"
+    },
+    {
+      "path": "src/fr/security/secrets-rules.md",
+      "sha256": "a6152b77907f093249bc53576a99565ef7e90131f4980ce1d9ba907c9f9cb5ee",
+      "mtime": "2026-04-12T09:07:39.365Z",
+      "size": 2626,
+      "ext": ".md"
+    },
+    {
+      "path": "src/merge.js",
+      "sha256": "a202a9a36c492be377a81c2ca822cda4f9d4643956f7d7b8b56bbcc76fa9fca8",
+      "mtime": "2026-04-24T16:12:42.583Z",
+      "size": 4092,
+      "ext": ".js"
+    },
+    {
+      "path": "src/profiles/index.js",
+      "sha256": "68b19636f486c7a2eccb95191a891a26104f4cc5212b4e29b4a4f0115a4d2775",
+      "mtime": "2026-04-24T15:34:20.539Z",
+      "size": 1508,
+      "ext": ".js"
+    },
+    {
+      "path": "src/profiles/roles/cyber.yaml",
+      "sha256": "9ba3e823aa799ba0dd01ca3aedfd58a65d2b76697890cfbf224ad521648875b2",
+      "mtime": "2026-04-28T13:50:11.084Z",
+      "size": 108,
+      "ext": ".yaml"
+    },
+    {
+      "path": "src/profiles/roles/dev.yaml",
+      "sha256": "18258447f13f6a2ce782998ddb433dcda00ca633151dce3a09ce284d2a8bb2dd",
+      "mtime": "2026-04-28T13:50:11.084Z",
+      "size": 111,
+      "ext": ".yaml"
+    },
+    {
+      "path": "src/profiles/roles/marketing.yaml",
+      "sha256": "59d1d3d40a7a8b6e949f2e9281bac641bdbf384a5cd5a857bba714d85118f49c",
+      "mtime": "2026-04-28T13:50:11.084Z",
+      "size": 115,
+      "ext": ".yaml"
+    },
+    {
+      "path": "src/profiles/roles/ops.yaml",
+      "sha256": "d0994ce60a2d8fcad4a03fbf4981b3ea908b28e51af71ea49426f901cd5cf0f3",
+      "mtime": "2026-04-28T13:50:11.084Z",
+      "size": 107,
+      "ext": ".yaml"
+    },
+    {
+      "path": "src/profiles/roles/secretary.yaml",
+      "sha256": "b2a4a6779db50c5345f7b4eb8daf992f0d8f1b3e787f419b8a8988c7a4f3a8ea",
+      "mtime": "2026-04-28T13:50:11.084Z",
+      "size": 113,
+      "ext": ".yaml"
+    },
+    {
+      "path": "src/pulse/format.js",
+      "sha256": "48fd967d4f87ff9791bdc2c9f41c28bf795edbbad9a54a3a4bba680d0ae07da8",
+      "mtime": "2026-04-29T09:06:32.933Z",
+      "size": 2460,
+      "ext": ".js"
+    },
+    {
+      "path": "src/pulse/identity.js",
+      "sha256": "9d9b2a542f5fd1b4bfd3b22efc6dc2f29c9145668bc64a2e21fc7a038461c598",
+      "mtime": "2026-04-28T20:47:33.613Z",
+      "size": 1527,
+      "ext": ".js"
+    },
+    {
+      "path": "src/pulse/intensity.js",
+      "sha256": "6d25287d046d722d84fd9275d3c1b137f30d0e86a1dea80d0b125c803944fb39",
+      "mtime": "2026-04-29T09:06:32.933Z",
+      "size": 1638,
+      "ext": ".js"
+    },
+    {
+      "path": "src/pulse/marketplace.js",
+      "sha256": "3f91f72bd64c7d31a37e5d7fb28ee1f3031e6854e9903cac4cb4a1e19454bc09",
+      "mtime": "2026-05-02T20:22:09.406Z",
+      "size": 16566,
+      "ext": ".js"
+    },
+    {
+      "path": "src/pulse/parse.js",
+      "sha256": "2e7f4b8da45ac46ad34ad2d6d5d301a23b54c1f0954a2127cf9dbb6cb3854152",
+      "mtime": "2026-04-28T13:50:11.085Z",
+      "size": 1909,
+      "ext": ".js"
+    },
+    {
+      "path": "src/pulse/summary.js",
+      "sha256": "5511f5e891d626abcb764ca3615699b371c33765580b2e70117d838f16eba4a2",
+      "mtime": "2026-04-28T20:47:33.614Z",
+      "size": 581,
+      "ext": ".js"
+    },
+    {
+      "path": "src/pulse/write.js",
+      "sha256": "7a63cb10ff61fd74c8f9fb29cb316a129d0b3ae4e2e0884389a470a88605f8e6",
+      "mtime": "2026-04-28T20:47:33.614Z",
+      "size": 1481,
+      "ext": ".js"
+    },
+    {
+      "path": "src/skills/angle-mort/SKILL.md",
+      "sha256": "8a3120fb3542f7d644e99b2735ae483814e82d403dda6d4a3ab0feab038c5b38",
+      "mtime": "2026-04-12T21:35:19.534Z",
+      "size": 1309,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/atelier-config/SKILL.md",
+      "sha256": "577c5bf7da504950a8ea7a06cd6d48f1eaa543fea845fb57d09f45313c96c228",
+      "mtime": "2026-05-02T08:40:59.745Z",
+      "size": 4110,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/atelier-doctor/SKILL.md",
+      "sha256": "dcf8d0beb0a90e0069a50d0e34e78cd9e8986c966163d76ad2f3cc7db0b83cde",
+      "mtime": "2026-04-12T21:36:40.854Z",
+      "size": 1014,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/atelier-help/SKILL.md",
+      "sha256": "16ab87d7f8403bfa363afd03f452d65d090997ce924ec64395c397ccdcf6b876",
+      "mtime": "2026-04-12T21:35:45.118Z",
+      "size": 2806,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/atelier-help/atelier-help.csv",
+      "sha256": "6d1d8275b6e1a38e56b03c700b680a389543250ab1de6930a22102113f08cc3b",
+      "mtime": "2026-04-13T07:41:18.092Z",
+      "size": 1254,
+      "ext": ".csv"
+    },
+    {
+      "path": "src/skills/atelier-setup/SKILL.md",
+      "sha256": "035e113d30b9b6ce71ea9d8ad021613f8ef06cc83c016648d0c2d23fe8120548",
+      "mtime": "2026-04-17T10:57:07.139Z",
+      "size": 5719,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/audit-safe/SKILL.md",
+      "sha256": "3c17a0e4b593519ecef99e69ed7f9486d4cd483dadfa193b914542fc598fdcb9",
+      "mtime": "2026-04-12T21:36:12.539Z",
+      "size": 2777,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/bmad-init/SKILL.md",
+      "sha256": "659e21356f82d7019832cb9afeb25b04993ac6a6698d810ce0cb30a6a6656c5a",
+      "mtime": "2026-04-12T20:17:17.005Z",
+      "size": 2595,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/compress/SKILL.md",
+      "sha256": "3f854b416cdb5de0adf3287d61d57506f8242ced5b7c29cb25a6540aa219b598",
+      "mtime": "2026-04-12T21:36:34.019Z",
+      "size": 2684,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/copilot-loop/SKILL.md",
+      "sha256": "2cbba62fb3fa2ae250efb6d72e198798aff86c7e336a561b803c0f170fb03d88",
+      "mtime": "2026-04-22T06:38:44.142Z",
+      "size": 5970,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/design-senior/SKILL.md",
+      "sha256": "efd8c1edbd20a7bc5b64644043257b352ee0f3b150a68b397c28584052ce80a5",
+      "mtime": "2026-04-17T10:57:46.985Z",
+      "size": 5520,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/freebox-init/SKILL.md",
+      "sha256": "aa9b2866403f580746138f6a3d55de9702b0ca91ba93a18d78659901a7593971",
+      "mtime": "2026-04-17T11:21:31.871Z",
+      "size": 5096,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/handoff-debt/SKILL.md",
+      "sha256": "9c7e9476d11409661d0d98a803fe594f202267c7aa088aaeb874c14aefbfbd7a",
+      "mtime": "2026-04-17T11:21:31.871Z",
+      "size": 2461,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/integrate-review/SKILL.md",
+      "sha256": "b2d7de9d108532a91cb980df4e0d340417d33ed44498ee21c83c6a0bf798252e",
+      "mtime": "2026-04-29T09:07:34.486Z",
+      "size": 5536,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/ios-setup/SKILL.md",
+      "sha256": "c0bc57c39c8c4358d1168e3137e51db190a30c78fe85cf235298a96f7ef0c665",
+      "mtime": "2026-04-13T07:40:53.270Z",
+      "size": 4431,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/la-bise/SKILL.md",
+      "sha256": "8b58653e8b29b5e038db75e115062b93b40d6352a86ed0d3a4bf453ebabca7c0",
+      "mtime": "2026-04-21T05:25:48.065Z",
+      "size": 2355,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/night-launch/SKILL.md",
+      "sha256": "d9b1dd67d60b35ac9be5cf4f6685f682dcc0f1f1ac87c4a0f326468a2289483c",
+      "mtime": "2026-04-12T21:35:28.482Z",
+      "size": 3169,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/ollama-router/SKILL.md",
+      "sha256": "3e98a2f3b2456bce53360d6fe785cb6686096eeffcf6686c2676637c1cb1feee",
+      "mtime": "2026-04-18T14:23:58.658Z",
+      "size": 5658,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/qmd-init/SKILL.md",
+      "sha256": "46c7fe54d0deb667590a3ca0cd283b879074d5ce2baf87bfa6412cd035c2db1c",
+      "mtime": "2026-04-13T08:45:34.793Z",
+      "size": 2749,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/review-copilot/SKILL.md",
+      "sha256": "c4a078bb0b4f5c6245f4f070e30efe1f104095fafba3a8ebd11860855ad16798",
+      "mtime": "2026-04-22T06:31:59.163Z",
+      "size": 5662,
+      "ext": ".md"
+    },
+    {
+      "path": "src/skills/token-routing/SKILL.md",
+      "sha256": "74b54c4d8ad7911d8206be8098379eb803cb4494613fcdb8d8477971e3225ae4",
+      "mtime": "2026-04-12T21:35:55.606Z",
+      "size": 2993,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": "2026-04-11T21:59:36.081Z",
+      "size": 0,
+      "ext": ".gitkeep"
+    },
+    {
+      "path": "src/stacks/ada.md",
+      "sha256": "508440411fec53c0e06be9150596257d78cf3fefaeed1a098a0ac01428840111",
+      "mtime": "2026-04-17T12:44:50.857Z",
+      "size": 2853,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/assembly.md",
+      "sha256": "e3b2d31ceb5c932cb71fad0ec10ba36c17783ac00367ee75ee33a80f4174bd7a",
+      "mtime": "2026-04-17T12:44:29.625Z",
+      "size": 2623,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/c.md",
+      "sha256": "244254a748a430504ee002d569f604a04df3407b8aeeb03075c525e55dd6b201",
+      "mtime": "2026-04-17T12:43:27.810Z",
+      "size": 2889,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/cpp.md",
+      "sha256": "1494a0978f8f0b5f912307c8c7cf43310d56e67b89fa71e8d9f55da93b99df9f",
+      "mtime": "2026-04-17T16:29:27.150Z",
+      "size": 2948,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/csharp.md",
+      "sha256": "ba6f1e415018b0b182581e19c373f366302745f35be8ed47763218d37ee3d78a",
+      "mtime": "2026-04-17T12:45:29.490Z",
+      "size": 3020,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/delphi.md",
+      "sha256": "4286b49680811d3331b1791f02e4259694a83e785d0b31f23370d97bb60759fc",
+      "mtime": "2026-04-17T12:49:09.184Z",
+      "size": 2986,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/docker.md",
+      "sha256": "b7b1000c0f2c0ad4f8b2ec7b9999f70e361d97a53a18f44c4fc6463ae54d0946",
+      "mtime": "2026-04-11T22:27:32.435Z",
+      "size": 788,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/firebase.md",
+      "sha256": "4303c7b13cd1fe394aac37576b7e8744eb059444027662f56cbdfa05902a1403",
+      "mtime": "2026-04-11T22:27:23.146Z",
+      "size": 892,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/fortran.md",
+      "sha256": "5aaabfbe8f388103b654be67a4bade42111df03c66e754ea79abf0eaae626fe2",
+      "mtime": "2026-04-17T12:48:27.674Z",
+      "size": 2979,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/go.md",
+      "sha256": "1529e53ce3b68bfb2dc768e634601396c09778911dd43580e14926729415a296",
+      "mtime": "2026-04-17T16:29:15.191Z",
+      "size": 3292,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/ios-xcode.md",
+      "sha256": "3580b38d13dc883c0b865e9ae27154bdf660613fe5c2ef92e989a959429a0f99",
+      "mtime": "2026-04-17T12:42:47.480Z",
+      "size": 8484,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/java.md",
+      "sha256": "1ae43c913e4b9cd7c87ecd5a7c4d0aa7172a20480319422fba0266169afacc6a",
+      "mtime": "2026-04-17T12:41:33.557Z",
+      "size": 3007,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/javascript.md",
+      "sha256": "a175eb363f0f006d65bacc7cc07d131266fc16e89c7598c8d2b7d9eb1d603a34",
+      "mtime": "2026-04-17T12:41:51.562Z",
+      "size": 3095,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/matlab.md",
+      "sha256": "517621a430c19cf98f7f7d3604bc652f15c16245f2bee5e003978ec55c9bffea",
+      "mtime": "2026-04-17T12:48:48.221Z",
+      "size": 2948,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/npm-publish.md",
+      "sha256": "75ad64a4f0dfb573316e13a63e3f1849a1fa88e11dee1fd927ad7b1e1fce86d9",
+      "mtime": "2026-04-17T17:15:31.059Z",
+      "size": 4715,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/ollama.md",
+      "sha256": "e4cbb81fe93ca5cc2857e1ace741a6ef61edb51828716b0224fcd7a01a32447a",
+      "mtime": "2026-04-11T22:27:43.059Z",
+      "size": 897,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/perl.md",
+      "sha256": "b5a3959fe01a55b179dc83b35c51b52197d2b67a4befc52f3ccbac980732f151",
+      "mtime": "2026-04-17T12:46:35.783Z",
+      "size": 2850,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/php.md",
+      "sha256": "588623980d2b97a15482d2f13279bb1f549f3d76afdf033747c885ce9005380d",
+      "mtime": "2026-04-17T12:45:51.211Z",
+      "size": 2968,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/python.md",
+      "sha256": "48a416568ff40518e108d7ead40d270783326a6a5dd188dec41ce2b1c514537b",
+      "mtime": "2026-04-17T12:42:31.512Z",
+      "size": 2867,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/r.md",
+      "sha256": "465301d1fae8f701dfd970571bc89f361c2a89d1cc33c875db0e6e3d266acee1",
+      "mtime": "2026-04-17T12:48:05.391Z",
+      "size": 2904,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/react-vite.md",
+      "sha256": "bba9c17537dc9c60c004fe1af9d3c9cac9d82937a1a4b59bf9714a2e00e7b135",
+      "mtime": "2026-04-11T22:27:12.708Z",
+      "size": 814,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/rust.md",
+      "sha256": "5be9a5172fcd85aa74d627b546797adb24ceba866ab864d30405505853a7a071",
+      "mtime": "2026-04-17T16:29:22.085Z",
+      "size": 3068,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/scratch.md",
+      "sha256": "1b395eb4aeff574605ff66dc28d2767492ed40a680a0e36a7fde62a702cf51d8",
+      "mtime": "2026-04-17T12:49:42.974Z",
+      "size": 2642,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/sql.md",
+      "sha256": "074cd8ad34eabe3605f010b2bfe569d3161335d3f94ff9ee9c9057c05271458f",
+      "mtime": "2026-04-17T12:47:44.638Z",
+      "size": 3330,
+      "ext": ".md"
+    },
+    {
+      "path": "src/stacks/visual-basic.md",
+      "sha256": "86ae45b197630c81c485936a5acf6c8b72ac47ab52d9debae289182e1182ddc0",
+      "mtime": "2026-04-17T12:47:01.140Z",
+      "size": 2898,
+      "ext": ".md"
+    },
+    {
+      "path": "src/templates/.claudeignore",
+      "sha256": "bdaf3d38025e193c2cb7ce7c15833fdb558529504a9cda81530827d171652641",
+      "mtime": "2026-04-17T11:15:51.592Z",
+      "size": 532,
+      "ext": ".claudeignore"
+    },
+    {
+      "path": "src/templates/.gitignore",
+      "sha256": "8f1427df631748caa3dfcc10a9c14d08f4880cef26128f394a5314321da48d78",
+      "mtime": "2026-04-15T07:25:42.666Z",
+      "size": 1058,
+      "ext": ".gitignore"
+    },
+    {
+      "path": "src/templates/.mcp.json",
+      "sha256": "66a4cab01b3d6991aeef53650c8f7c0f2aabd678ab5eca3d13b25124a2137b91",
+      "mtime": "2026-04-17T10:54:02.584Z",
+      "size": 246,
+      "ext": ".json"
+    },
+    {
+      "path": "src/templates/AGENTS.md",
+      "sha256": "5bda49eefa45acac976b82a1a818653e43e41429fb833760c87b783a63c30718",
+      "mtime": "2026-04-17T19:19:52.176Z",
+      "size": 2841,
+      "ext": ".md"
+    },
+    {
+      "path": "src/templates/claude-app-preferences.md",
+      "sha256": "3a56c185415b9e3e8e44041b966f039986faba4b0f73892cf90566db61192d90",
+      "mtime": "2026-04-12T22:35:38.588Z",
+      "size": 3026,
+      "ext": ".md"
+    },
+    {
+      "path": "src/templates/project-structure.md",
+      "sha256": "1894c42bee20482cb0fb9afa4f27e0e40d93609a53a0ddafde69d940f7d100e0",
+      "mtime": "2026-04-11T22:31:45.109Z",
+      "size": 1771,
+      "ext": ".md"
+    },
+    {
+      "path": "src/templates/settings.json",
+      "sha256": "f254f2bdbb6ada99a1ba11ed52b7974b59a01663f0c46d113b3a7e74e9729254",
+      "mtime": "2026-04-13T20:33:34.357Z",
+      "size": 1611,
+      "ext": ".json"
+    },
+    {
+      "path": "systems-programming-2025-2026-research.md",
+      "sha256": "27177df7bac3fe5e8079b82199e94d517e95a89ed77998878b3fa1af18bd9c9f",
+      "mtime": "2026-04-18T08:26:42.348Z",
+      "size": 31968,
+      "ext": ".md"
+    },
+    {
+      "path": "test/apply-profile.js",
+      "sha256": "46e3127916fa893913f00fc0a55e460af1e455ca65a45dd9a8a972dc7a63e8c4",
+      "mtime": "2026-04-25T17:31:41.618Z",
+      "size": 11853,
+      "ext": ".js"
+    },
+    {
+      "path": "test/doctor.js",
+      "sha256": "e829fe55ce25014ba0bf483a063812326d4ce8a10d058fff74ed5765258d7681",
+      "mtime": "2026-04-21T06:14:18.764Z",
+      "size": 15245,
+      "ext": ".js"
+    },
+    {
+      "path": "test/hooks.js",
+      "sha256": "a833e31d1afe6508360d9df6148dd12963e6a506e30d6329eb1659cabfee89cb",
+      "mtime": "2026-05-02T20:22:09.406Z",
+      "size": 30825,
+      "ext": ".js"
+    },
+    {
+      "path": "test/lint-hooks-manifest.js",
+      "sha256": "e0d2e2e1ab107c619829ceab1b5018b4d4948abd83694582218de9f4381725d2",
+      "mtime": "2026-04-14T09:46:08.404Z",
+      "size": 1862,
+      "ext": ".js"
+    },
+    {
+      "path": "test/lint-length.js",
+      "sha256": "1d7f304720edb1267583752a641821c988606856a5637391e7eb4652843493e8",
+      "mtime": "2026-04-12T09:25:52.297Z",
+      "size": 621,
+      "ext": ".js"
+    },
+    {
+      "path": "test/lint-npm-files.js",
+      "sha256": "eddd255b7a0e1f103430c0f14d3108e966f62dcad8360528e9d8d5c3e7782460",
+      "mtime": "2026-04-15T07:00:17.929Z",
+      "size": 3132,
+      "ext": ".js"
+    },
+    {
+      "path": "test/lint-refs.js",
+      "sha256": "3ecee34bbf4114156818b6a6bbfbf524f1d71e043833aef1c4d8a1155eb2abdd",
+      "mtime": "2026-04-12T09:25:52.297Z",
+      "size": 2593,
+      "ext": ".js"
+    },
+    {
+      "path": "test/lint-runtime-skills-sync.js",
+      "sha256": "faf7b63d1a5146e24e1291bf35aba5fa85de5d27e7d1a8cba8c3e84c753436f4",
+      "mtime": "2026-04-17T11:19:08.708Z",
+      "size": 2209,
+      "ext": ".js"
+    },
+    {
+      "path": "test/manifest-validator.js",
+      "sha256": "7d2fe716982bed25ed2154b3eacb2ce31af0e7e123ada1f2b52d11161cd7e34d",
+      "mtime": "2026-04-28T13:50:11.085Z",
+      "size": 4579,
+      "ext": ".js"
+    },
+    {
+      "path": "test/memory.js",
+      "sha256": "217a7be4345c989e4d512a9baa2043246b3d4b74892d2ed853dbf3e6b2fea4fc",
+      "mtime": "2026-04-18T08:26:42.348Z",
+      "size": 31194,
+      "ext": ".js"
+    },
+    {
+      "path": "test/merge.js",
+      "sha256": "33ca28af1267e7369d3e53805fb4fd630298e88d6b1209aa592377a3cc2327fc",
+      "mtime": "2026-04-24T15:34:20.539Z",
+      "size": 7001,
+      "ext": ".js"
+    },
+    {
+      "path": "test/pulse.js",
+      "sha256": "32811caa333488bb1c7a0d6388d22a9c42423bc500d302872a9fd1d43a9e79fb",
+      "mtime": "2026-05-02T06:24:46.507Z",
+      "size": 22692,
+      "ext": ".js"
+    },
+    {
+      "path": "test/validate-handoff.js",
+      "sha256": "f0b627db8ebcfd237445e42acb95645f002fa4126b0eea69973d70aa5607c224",
+      "mtime": "2026-05-02T06:24:46.507Z",
+      "size": 11808,
+      "ext": ".js"
+    },
+    {
+      "path": "test/vault-update.js",
+      "sha256": "82cb7028f858c0e9aa9071f655095132e7f7766a8201972ffbe1a3a4823f889d",
+      "mtime": "2026-05-03T06:34:42.927Z",
+      "size": 11977,
+      "ext": ".js"
+    },
+    {
+      "path": "test/vault.js",
+      "sha256": "82ad66518be97140e8e79938c437ee05bc9c13a5f755b6ca003779cb2941782d",
+      "mtime": "2026-05-02T20:22:46.546Z",
+      "size": 11155,
+      "ext": ".js"
+    },
+    {
+      "path": "vault/00-brief.md",
+      "sha256": "f7c940c41e7f2f6ab074715912e753bd812b55fa6abdc10cdb24615942f821e5",
+      "mtime": "2026-05-03T06:40:50.180Z",
+      "size": 1253,
+      "ext": ".md"
+    },
+    {
+      "path": "vault/10-mailbox.md",
+      "sha256": "1dd571b9dc53eea7eb649819ee796320c510ce14965958ca018dee5febd20704",
+      "mtime": "2026-05-02T21:08:03.849Z",
+      "size": 424,
+      "ext": ".md"
+    },
+    {
+      "path": "vault/20-decisions.md",
+      "sha256": "e60154c157e60b93c1de379d416625938e732fb5fec10bdb7cc787a4cb285011",
+      "mtime": "2026-05-02T21:09:06.355Z",
+      "size": 1707,
+      "ext": ".md"
+    },
+    {
+      "path": "vault/30-discoveries.md",
+      "sha256": "c3fc354c3759ce030feaf63ddac46eab2d93efcf3378ad145af678e908be0067",
+      "mtime": "2026-05-02T21:08:03.849Z",
+      "size": 318,
+      "ext": ".md"
+    },
+    {
+      "path": "vault/40-roadmap.md",
+      "sha256": "e6ca74c0ad5034671c64ef95c8789d961a99f1c2c15aeb85a63eb5c04214dc94",
+      "mtime": "2026-05-03T06:41:11.953Z",
+      "size": 975,
+      "ext": ".md"
+    },
+    {
+      "path": "vault/90-sources.md",
+      "sha256": "2be215d0389626bac4d71107eb16b76f733e5e36386c78fcdaa8293eecc6f0a1",
+      "mtime": "2026-05-02T21:08:03.849Z",
+      "size": 254,
+      "ext": ".md"
+    },
+    {
+      "path": "vault/PETER.md",
+      "sha256": "65848de75c8f43e0a4fc2e160695a58d28bdced80bc81187053e486f12f7e919",
+      "mtime": "2026-05-02T21:08:03.849Z",
+      "size": 848,
+      "ext": ".md"
+    },
+    {
+      "path": "vault/PETER_REPORT.md",
+      "sha256": "c83652ebd897039b3c7c832ebaee2055a22f9af854153098c400ba7b0f75f6bb",
+      "mtime": "2026-05-03T06:41:16.530Z",
+      "size": 1865,
+      "ext": ".md"
+    },
+    {
+      "path": "vercel.json",
+      "sha256": "7ae3a25d73ee74e39cb8f55504027b647ed969457759ee6f0e597d18333443a3",
+      "mtime": "2026-04-13T20:06:26.579Z",
+      "size": 174,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/DONT-EDIT-THIS-FOLDER",
+      "sha256": "d06e93133c9a3abf2e331df2886028788a5639258b38348d6d31c27e19a3cf44",
+      "mtime": "2026-04-13T20:17:07.978Z",
+      "size": 260,
+      "ext": ".docusaurus/DONT-EDIT-THIS-FOLDER"
+    },
+    {
+      "path": "website/.docusaurus/client-manifest.json",
+      "sha256": "39dcd3b93a8ac5f1a172f6e5bb01d96416e6e4c2bef63f8d237777ef50a1bd9b",
+      "mtime": "2026-04-13T20:17:16.972Z",
+      "size": 5048,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/client-modules.js",
+      "sha256": "7a554d721aae2fc9a07a927ee34c6c75681d68aafc2ef98d2b8b61d88aa7306c",
+      "mtime": "2026-04-13T20:17:07.978Z",
+      "size": 528,
+      "ext": ".js"
+    },
+    {
+      "path": "website/.docusaurus/codeTranslations.json",
+      "sha256": "5613a314868905476929a233c0a8e0d714746259b97e6260197e4753c7ab108d",
+      "mtime": "2026-04-13T20:17:07.978Z",
+      "size": 5731,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/__mdx-loader-dependency.json",
+      "sha256": "5ee422d127c1abf10e507fe26f5d94a09506398d61d318b6cf9c89f7f1096bdc",
+      "mtime": "2026-04-13T20:17:07.948Z",
+      "size": 1600,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/__plugin.json",
+      "sha256": "e6d1041296db2ea13370464a727710c96a189e8d69f6a095e93947c1a3fbd1f3",
+      "mtime": "2026-04-13T20:17:07.972Z",
+      "size": 65,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/p/index-466.json",
+      "sha256": "79faf782927846f4eff727d70c560f1903864dce20fe05e84ca191a755bc35ac",
+      "mtime": "2026-04-13T20:17:07.978Z",
+      "size": 2804,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/site-docs-agents-md-320.json",
+      "sha256": "8bc52f410af854197a367ff35341aec4b45a55f719978aa1f2f0c60d2817ba2e",
+      "mtime": "2026-04-13T20:17:07.974Z",
+      "size": 771,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/site-docs-contribuer-md-0fe.json",
+      "sha256": "3d627df970b83530b4d23107461a2cd9efc36f5fded6945bcb46c77363f149ae",
+      "mtime": "2026-04-13T20:17:07.974Z",
+      "size": 561,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/site-docs-hooks-md-5f9.json",
+      "sha256": "d8a62773c54cfc90c2793ce71bb5f63704cfa880897a20c8fb4a0cfa2d99eb0b",
+      "mtime": "2026-04-13T20:17:07.974Z",
+      "size": 661,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/site-docs-installation-md-3b8.json",
+      "sha256": "2a1674d2060a7991b86787a3236c764525c2c6284e80290c79c94fba90571ad7",
+      "mtime": "2026-04-13T20:17:07.974Z",
+      "size": 644,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/site-docs-intro-md-0e3.json",
+      "sha256": "f81eb83fde503340eba6c1c9094128d49719cb4b0e47afa4269987470b5f8f85",
+      "mtime": "2026-04-13T20:17:07.974Z",
+      "size": 599,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/site-docs-mode-nuit-md-51a.json",
+      "sha256": "7201195c033305bcf27ec3c22a4e8770d2e7aabf429c419c4e3e41c34d1e31d8",
+      "mtime": "2026-04-13T20:17:07.974Z",
+      "size": 774,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/site-docs-securite-md-e8a.json",
+      "sha256": "689d4cd94c4c85c8ff224c662881f3f76274b31eb31ce6a3ec050ca3b011c160",
+      "mtime": "2026-04-13T20:17:07.974Z",
+      "size": 735,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/site-docs-skills-md-8dc.json",
+      "sha256": "88d244829d2fb3c10bc6cc51dcda6a781bbcfe642226479a6b6c934c379e7422",
+      "mtime": "2026-04-13T20:17:07.974Z",
+      "size": 743,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-docs/default/site-docs-stacks-md-93e.json",
+      "sha256": "54f16774ad588e2c80b5d9158b3f56ca6e49f5162a29ec40006dd8dab59f9d99",
+      "mtime": "2026-04-13T20:17:07.974Z",
+      "size": 703,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus-plugin-content-pages/default/__plugin.json",
+      "sha256": "03245f8af45eab1cc97fc58af245b493622af2f2691b1ccf6746dd37c4abc836",
+      "mtime": "2026-04-13T20:17:07.958Z",
+      "size": 66,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/docusaurus.config.mjs",
+      "sha256": "0ba4a02fa5dbd1168099b596108e7aa14357c3ee967f0841ae338c03647f104c",
+      "mtime": "2026-04-13T20:17:07.978Z",
+      "size": 8791,
+      "ext": ".mjs"
+    },
+    {
+      "path": "website/.docusaurus/globalData.json",
+      "sha256": "375e7e766fbc047f25fb063b4f70d2e0d50c034b763593fa0786579783a9b809",
+      "mtime": "2026-04-13T20:17:07.978Z",
+      "size": 1675,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/i18n.json",
+      "sha256": "8cbcef21e36b512730469f0a333f85d4d0e5308f45d4c0db693a66d0d859ed3a",
+      "mtime": "2026-04-13T20:17:07.978Z",
+      "size": 367,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/registry.js",
+      "sha256": "570dc5771e1cf2b17273acca01a1dcfd44ec0524af8b82efd0343b072a66fba1",
+      "mtime": "2026-04-13T20:17:07.980Z",
+      "size": 2647,
+      "ext": ".js"
+    },
+    {
+      "path": "website/.docusaurus/routes.js",
+      "sha256": "37f10597ca69143a4d4a9db5d4c91396829450584c22670b0446063195fbf67f",
+      "mtime": "2026-04-13T20:17:07.980Z",
+      "size": 2233,
+      "ext": ".js"
+    },
+    {
+      "path": "website/.docusaurus/routesChunkNames.json",
+      "sha256": "7f47947d75fbd7138caa1a9cff185678528cda3d852b708ff9e76b996f1da0f4",
+      "mtime": "2026-04-13T20:17:07.980Z",
+      "size": 903,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/site-metadata.json",
+      "sha256": "db9dd4ecb1d49d57debdae2f8f0ef40fec0107e259c4c87190c26267cae77ea3",
+      "mtime": "2026-04-13T20:17:07.978Z",
+      "size": 843,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.docusaurus/site-storage.json",
+      "sha256": "77db76c27c52f49198304453b9aebc2d349be06e34ea9948e22a2cc896b10ba8",
+      "mtime": "2026-04-13T20:17:07.978Z",
+      "size": 47,
+      "ext": ".json"
+    },
+    {
+      "path": "website/.gitignore",
+      "sha256": "264431ad3c6e3741855f27c2155a5084a804636675d4ce123a49beaf92b0421d",
+      "mtime": "2026-04-13T20:06:35.244Z",
+      "size": 55,
+      "ext": ".gitignore"
+    },
+    {
+      "path": "website/docs/agents.md",
+      "sha256": "04573c5c6b3385246cc422de4e176316ff3b74dadbb1d0433189ce88191af89f",
+      "mtime": "2026-04-21T05:25:48.065Z",
+      "size": 3011,
+      "ext": ".md"
+    },
+    {
+      "path": "website/docs/contribuer.md",
+      "sha256": "ceb5c2ac1706a27b94063a6df04408160fa05a12604d9b3818e4536d50057fa6",
+      "mtime": "2026-04-13T20:06:20.836Z",
+      "size": 1732,
+      "ext": ".md"
+    },
+    {
+      "path": "website/docs/hooks.md",
+      "sha256": "a427acad60d96a42fe86c42642265949a08c6b2e2fd665b395906632b3d080cb",
+      "mtime": "2026-04-20T13:21:11.164Z",
+      "size": 4999,
+      "ext": ".md"
+    },
+    {
+      "path": "website/docs/installation.md",
+      "sha256": "bccf8ab0ef1bdef099218a2cd2e5fa70b3e494c6c63f8f2f29ee9deb958fbaf8",
+      "mtime": "2026-04-13T20:04:40.185Z",
+      "size": 2197,
+      "ext": ".md"
+    },
+    {
+      "path": "website/docs/intro.md",
+      "sha256": "1d4b00c25a73133cd2360fe38a5d2963197d0d9f44c34f3fa9c2392377fd2c9e",
+      "mtime": "2026-04-20T13:22:06.844Z",
+      "size": 3205,
+      "ext": ".md"
+    },
+    {
+      "path": "website/docs/mode-nuit.md",
+      "sha256": "209669628d5565c03ac35cd4d686762581cfd62c0c85cafb531037cffbcbfa48",
+      "mtime": "2026-04-13T20:05:36.904Z",
+      "size": 2869,
+      "ext": ".md"
+    },
+    {
+      "path": "website/docs/securite.md",
+      "sha256": "25c79a63e2f8d44375c8a6821909a2b4f410a32666d5ad6c83d685ac4dcfce06",
+      "mtime": "2026-04-13T20:06:12.483Z",
+      "size": 2063,
+      "ext": ".md"
+    },
+    {
+      "path": "website/docs/skills.md",
+      "sha256": "b63f89fc9c93459b48267adcf46e3bf49afb42e3b77fd9a6795fd35f1bd6f04c",
+      "mtime": "2026-04-13T20:05:47.261Z",
+      "size": 2151,
+      "ext": ".md"
+    },
+    {
+      "path": "website/docs/stacks.md",
+      "sha256": "b3718145a37cbedc126aa41b93edf9133d95f3e1ac9929d41f092078b69893dc",
+      "mtime": "2026-04-13T20:06:00.065Z",
+      "size": 1574,
+      "ext": ".md"
+    },
+    {
+      "path": "website/docs/token-savings.md",
+      "sha256": "814114bb635760ab74b727b97c8cd93e1fb55dfee9e666b208c7e3d140ca99e6",
+      "mtime": "2026-04-13T20:31:20.090Z",
+      "size": 3362,
+      "ext": ".md"
+    },
+    {
+      "path": "website/docusaurus.config.js",
+      "sha256": "898503cca6d189cc3a1226a9f2e8d0d4dd1a58509146f7aafea01bd8a028c161",
+      "mtime": "2026-04-13T20:31:20.090Z",
+      "size": 3223,
+      "ext": ".js"
+    },
+    {
+      "path": "website/package.json",
+      "sha256": "93b8207151b0a4f44f4fbfc73f89ce4a91eb2500a479311e6dec88cb23c4ae27",
+      "mtime": "2026-04-13T20:15:13.111Z",
+      "size": 1361,
+      "ext": ".json"
+    },
+    {
+      "path": "website/sidebars.js",
+      "sha256": "050c01fcc52236e4268cbd660f9303d3930b704a92a7b45c9b13971ea7bbb769",
+      "mtime": "2026-04-13T20:31:20.090Z",
+      "size": 854,
+      "ext": ".js"
+    },
+    {
+      "path": "website/src/css/custom.css",
+      "sha256": "f8f85951fd24c20a838ca87196c7dc30addfd38d7c6e5f47f379d96cda9a8975",
+      "mtime": "2026-04-13T20:31:20.091Z",
+      "size": 850,
+      "ext": ".css"
+    },
+    {
+      "path": "website/static/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": "2026-04-13T20:16:58.400Z",
+      "size": 0,
+      "ext": ".gitkeep"
+    },
+    {
+      "path": "website/static/img/logo.svg",
+      "sha256": "62647a659cba32df38d5a2ad931eeaefdfea07b4bda543adaf2288548f63bd04",
+      "mtime": "2026-04-13T20:31:20.091Z",
+      "size": 187,
+      "ext": ".svg"
+    }
+  ]
+}

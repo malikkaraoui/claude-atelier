@@ -6,7 +6,7 @@
 
 ### Sur le feu
 
-- Peter Phase B — `vault update` : manifest.json + cache SHA256 + scan repo incremental
+- Peter Phase C — graphe minimal : graph.json + `vault query` + nœuds centraux PETER_REPORT
 - proxy tool_use mapping Go (ollama-proxy bidirectionnel)
 
 ### Ensuite

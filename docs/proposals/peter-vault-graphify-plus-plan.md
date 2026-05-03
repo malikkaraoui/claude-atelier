@@ -22,7 +22,8 @@ Peter doit donner :
 6. une stratégie de reprise ;
 7. des alertes sur ce qui devient obsolète ;
 8. des propositions d’actions ;
-9. un pont entre notes personnelles, roadmap, code et décisions.
+9. un pont entre notes personnelles, roadmap, code et décisions ;
+10. un bibliothécaire capable de ranger les Markdown projet selon leur nature, sans toucher aux artefacts BMAD.
 
 La promesse utilisateur :
 
@@ -41,7 +42,8 @@ Peter est :
 - le greffier qui date les décisions ;
 - le cartographe qui tient la carte à jour ;
 - le veilleur qui signale ce qui sent le renfermé ;
-- le facteur qui vide la mailbox des idées entrantes.
+- le facteur qui vide la mailbox des idées entrantes ;
+- le bibliothécaire qui classe les Markdown éparpillés sans casser les méthodes projet.
 
 ### Ton
 
@@ -82,6 +84,7 @@ Peter doit reprendre les meilleurs mécanismes de Graphify, puis ajouter la couc
 | MCP | serveur graph optionnel | MCP Peter natif à terme |
 | Mémoire projet | indirecte via graphe | centrale : décisions, mailbox, discoveries, roadmap |
 | Agent dédié | skill `/graphify` | Peter comme agent mainteneur et protocole de session |
+| Classement Markdown | non prioritaire | classification bugfix/update/fail/review/brainstorming/etc. + protection BMAD |
 
 ## 4. Architecture cible
 
@@ -103,6 +106,10 @@ vault/
 │   ├── raw/                         # captures brutes entrantes
 │   ├── parsed/                      # versions extraites/transcrites
 │   └── quarantine/                  # contenu ambigu/multi-projets
+├── library/
+│   ├── catalog.json                  # catalogue des Markdown projet classés
+│   ├── migrations.json               # propositions d'import/rangement vers vault
+│   └── protected.json                # fichiers protégés, notamment BMAD
 ├── index/
 │   ├── graph.json                   # graphe projet
 │   ├── graph.html                   # visualisation locale
@@ -129,6 +136,10 @@ claude-atelier vault update
 claude-atelier vault watch
 claude-atelier vault add <file|url|text>
 claude-atelier vault route <source>
+claude-atelier vault docs scan
+claude-atelier vault docs classify
+claude-atelier vault docs organize --plan
+claude-atelier vault docs organize --apply
 claude-atelier vault query "question"
 claude-atelier vault path <nodeA> <nodeB>
 claude-atelier vault explain <node>
@@ -194,6 +205,119 @@ Classe une note vers :
 
 Ne jamais supprimer la source.
 
+#### `vault docs scan`
+
+Scanne tous les Markdown du projet et produit un catalogue sans rien déplacer.
+
+Sortie cible : `vault/library/catalog.json`.
+
+Pour chaque Markdown :
+
+- chemin original ;
+- titre principal ;
+- taille ;
+- date de modification ;
+- sha256 ;
+- nature détectée ;
+- confiance ;
+- statut : `active | archive | duplicate_candidate | protected | candidate_for_vault | ignore` ;
+- raison de classement ;
+- destination vault suggérée si pertinente ;
+- relation au graphe.
+
+#### `vault docs classify`
+
+Classe les Markdown par nature.
+
+Taxonomie minimale :
+
+- `bug_fix` ;
+- `update` ;
+- `fail` ;
+- `incident` ;
+- `review` ;
+- `handoff` ;
+- `brainstorming` ;
+- `architecture` ;
+- `decision` ;
+- `roadmap` ;
+- `research` ;
+- `runbook` ;
+- `release` ;
+- `test_report` ;
+- `audit_security` ;
+- `prompt` ;
+- `meeting_notes` ;
+- `source_note` ;
+- `unknown`.
+
+Le classement doit être explicable : Peter doit dire pourquoi il range un document dans une catégorie.
+
+#### `vault docs organize --plan`
+
+Génère un plan de rangement, sans modifier le repo.
+
+Sortie cible : `vault/library/migrations.json` + résumé dans `PETER_REPORT.md`.
+
+Le plan peut proposer :
+
+- garder le fichier à sa place ;
+- référencer le fichier depuis `vault/90-sources.md` ;
+- créer une synthèse dans `vault/30-discoveries.md` ;
+- créer/mettre à jour une décision dans `vault/20-decisions.md` ;
+- créer une entrée roadmap dans `vault/40-roadmap.md` ;
+- déplacer vers une archive projet si et seulement si explicitement demandé ;
+- mettre en quarantaine si ambigu.
+
+Par défaut, Peter **ne déplace pas** les Markdown existants. Il propose, référence, synthétise et attend `--apply`.
+
+#### `vault docs organize --apply`
+
+Applique uniquement les migrations sûres.
+
+Règles strictes :
+
+- ne jamais supprimer un Markdown source ;
+- ne jamais déplacer sans copie/trace ;
+- ne jamais modifier les fichiers protégés ;
+- écrire un journal dans `vault/.peter/events.jsonl` ;
+- écrire les sources dans `vault/90-sources.md` ;
+- préférer la synthèse dans le vault plutôt que le déplacement physique.
+
+### Protection BMAD — règle absolue
+
+Peter ne doit pas toucher ce qui émane de la méthode BMAD.
+
+Définition pratique : un fichier est `protected` si :
+
+- son chemin contient `.bmad`, `bmad`, `BMAD`, `bmad-core`, `bmad-method` ;
+- il est dans un dossier BMAD ;
+- son frontmatter, titre ou contenu déclare BMAD ;
+- il correspond à un artefact connu BMAD : PRD, architecture, story, epic, checklist, agent config BMAD ;
+- son origine est incertaine mais ressemble à BMAD.
+
+Pour un fichier BMAD/protégé, Peter peut :
+
+- le détecter ;
+- le lister dans `vault/library/protected.json` ;
+- créer une référence read-only dans le graphe ;
+- signaler qu’il existe.
+
+Peter ne peut pas :
+
+- le déplacer ;
+- le renommer ;
+- le réécrire ;
+- le résumer dans un fichier vault comme s’il était source Peter ;
+- l’importer dans `vault/` ;
+- l’utiliser pour générer une décision sans validation explicite.
+
+Message attendu :
+
+```text
+[PETER] BMAD détecté : fichier protégé, indexé en lecture seule, aucune migration proposée.
+```
+
 #### `vault query`
 
 Interroge `vault/index/graph.json` et retourne un contexte court avec :
@@ -237,6 +361,9 @@ Peter doit construire un graphe local, pas une simple liste Markdown.
 - `person`
 - `external_project`
 - `concept`
+- `markdown_document`
+- `doc_category`
+- `protected_artifact`
 
 ### Types d’arêtes
 
@@ -255,6 +382,10 @@ Peter doit construire un graphe local, pas une simple liste Markdown.
 - `derived_from_source`
 - `semantically_similar_to`
 - `needs_review`
+- `classified_as`
+- `candidate_for_vault_import`
+- `protected_by_method`
+- `summarized_into`
 
 ### Niveaux de confiance
 
@@ -291,6 +422,49 @@ Extraire :
 - liens ;
 - concepts ;
 - sections “risques”, “roadmap”, “architecture”.
+
+Peter doit aussi classifier les Markdown existants du projet par nature : bug fix, update, fail, review, brainstorming, handoff, architecture, décision, roadmap, recherche, runbook, release, audit, prompt, notes de réunion.
+
+Le but n’est pas de “mettre tout dans le vault”. Le but est de :
+
+1. savoir ce qui existe ;
+2. éviter les doublons ;
+3. relier chaque document au graphe ;
+4. importer dans le vault seulement ce qui devient mémoire projet utile ;
+5. laisser à leur place les documents qui appartiennent à une méthode, une release, une PR, une doc officielle ou BMAD.
+
+### Rangement Markdown projet
+
+Peter doit agir comme un bibliothécaire conservateur : il classe avant de bouger.
+
+Pipeline :
+
+1. scan des Markdown hors dossiers ignorés ;
+2. détection des zones protégées, notamment BMAD ;
+3. classification par nature ;
+4. score de pertinence vault ;
+5. proposition de destination ;
+6. indexation dans `vault/library/catalog.json` ;
+7. création de relations dans `vault/index/graph.json` ;
+8. import/synthèse uniquement si pertinent et non protégé.
+
+Score de pertinence vault :
+
+- `high` : décision, découverte durable, contexte projet, roadmap active, risque majeur ;
+- `medium` : review utile, bug fix structurant, incident résolu, brainstorming exploitable ;
+- `low` : changelog ponctuel, note temporaire, log de test, brouillon faible ;
+- `protected` : BMAD ou méthode externe — lecture seule, aucun rangement.
+
+Destination suggérée :
+
+- décision durable → `vault/20-decisions.md` ;
+- découverte durable → `vault/30-discoveries.md` ;
+- roadmap/idée → `vault/40-roadmap.md` ou `vault/10-mailbox.md` ;
+- source externe → `vault/90-sources.md` ;
+- architecture humaine → `vault/60-architecture.md` ;
+- rituel/gate/commande → `vault/70-rituals.md` ;
+- doute/contradiction → `vault/50-questions.md` ;
+- ambigu → `vault/inbox/quarantine/`.
 
 ### URLs
 
@@ -434,7 +608,25 @@ Objectif : ne pas relire le repo à chaque fois.
 3. SHA256 par fichier ;
 4. cache `vault/.peter/cache/` ;
 5. `vault update` incremental ;
-6. `vault stale`.
+6. `vault stale` ;
+7. `vault docs scan` ;
+8. `vault docs classify` ;
+9. détection BMAD/protected ;
+10. catalogue `vault/library/catalog.json`.
+
+### Phase B2 — Bibliothèque Markdown Peter
+
+Objectif : ranger les Markdown projet selon leur nature sans toucher BMAD.
+
+À coder :
+
+1. taxonomie Markdown ;
+2. `vault docs organize --plan` ;
+3. `vault/library/migrations.json` ;
+4. `vault/library/protected.json` ;
+5. import sélectif vers `vault/20-decisions.md`, `30-discoveries.md`, `40-roadmap.md`, `50-questions.md`, `60-architecture.md`, `70-rituals.md`, `90-sources.md` ;
+6. mode `--apply` sans suppression ni déplacement destructif ;
+7. tests anti-régression BMAD : aucun fichier BMAD modifié, déplacé, résumé ou importé.
 
 ### Phase C — Graphe minimal utile
 
@@ -509,6 +701,9 @@ Peter n’est acceptable que si :
 - il construit un graphe persistant ;
 - il a un cache incrémental ;
 - il sait ingérer une note entrante ;
+- il sait classer les Markdown projet par nature ;
+- il protège strictement les artefacts BMAD ;
+- il importe dans le vault seulement ce qui est pertinent ;
 - il sait router une idée ;
 - il sait signaler le stale ;
 - il ne crame pas le contexte ;
@@ -522,6 +717,9 @@ Peter n’est acceptable que si :
 
 - génération `PETER_REPORT.md` ;
 - parsing Markdown ;
+- classification Markdown par nature ;
+- détection BMAD/protected ;
+- plan de migration Markdown ;
 - manifest SHA ;
 - cache hit/miss ;
 - graph nodes/edges ;
@@ -539,6 +737,10 @@ Peter n’est acceptable que si :
 ### CLI
 
 - `vault update` idempotent ;
+- `vault docs scan` catalogue les Markdown ;
+- `vault docs classify` classe bug fix/update/fail/review/brainstorming ;
+- `vault docs organize --plan` ne modifie rien ;
+- `vault docs organize --apply` ne touche jamais BMAD ;
 - `vault add` conserve source brute ;
 - `vault report` borné en taille ;
 - `vault export --obsidian` génère les fichiers attendus ;
@@ -554,6 +756,8 @@ Peter n’est acceptable que si :
 - Ne pas rendre l’usage quotidien lourd.
 - Ne pas bloquer sur le multimodal avant d’avoir le graphe et la mailbox.
 - Ne pas oublier que le vrai input vient souvent d’ailleurs que le repo.
+- Ne jamais toucher les artefacts BMAD : pas de move, pas de rewrite, pas d’import implicite dans le vault.
+- Ne pas transformer le rangement Markdown en grand ménage destructif : Peter propose d’abord, applique ensuite, journalise toujours.
 
 ## 14. Première PR recommandée
 
@@ -575,18 +779,32 @@ Pourquoi : Peter doit d’abord devenir visible et utile à chaque session. Ensu
 
 ## 15. Deuxième PR recommandée
 
-Nom : `feat: ajoute index et graphe Peter`
+Nom : `feat: ajoute index et bibliothèque Markdown Peter`
 
 Scope :
 
 1. manifest ;
 2. cache ;
-3. graph.json ;
-4. nodes/edges Markdown + fichiers ;
-5. `vault query` ;
-6. enrichissement `PETER_REPORT.md` avec nœuds centraux.
+3. `vault docs scan` ;
+4. classification Markdown ;
+5. protection BMAD ;
+6. `vault docs organize --plan` ;
+7. catalogue `vault/library/catalog.json` ;
+8. enrichissement `PETER_REPORT.md` avec état bibliothèque.
 
-## 16. Troisième PR recommandée
+## 15bis. Troisième PR recommandée
+
+Nom : `feat: ajoute graphe Peter minimal`
+
+Scope :
+
+1. graph.json ;
+2. nodes/edges Markdown + fichiers ;
+3. relations `classified_as`, `candidate_for_vault_import`, `protected_by_method` ;
+4. `vault query` ;
+5. enrichissement `PETER_REPORT.md` avec nœuds centraux.
+
+## 16. Quatrième PR recommandée
 
 Nom : `feat: ajoute inbox et routage Peter`
 
@@ -613,5 +831,39 @@ Contraintes :
 - hook SessionStart borné en taille ;
 - pas de cloud obligatoire ;
 - pas de suppression de sources ;
+- ne jamais toucher les artefacts BMAD ;
+- handoff Copilot après feature.
+```
+
+## 18. Message à Claude pour la Phase B Markdown
+
+```text
+Lis docs/proposals/peter-vault-graphify-plus-plan.md.
+
+Phase A est livrée. Enchaîne avec la capacité bibliothèque Markdown Peter.
+
+Objectif : Peter doit scanner et classer tous les Markdown d'un projet selon leur nature : bug fix, update, fail, incident, review, handoff, brainstorming, architecture, décision, roadmap, recherche, runbook, release, audit, prompt, notes de réunion.
+
+Règle absolue : Peter ne doit pas toucher ce qui émane de la méthode BMAD. Les artefacts BMAD sont protégés : lecture seule, pas de déplacement, pas de réécriture, pas d'import implicite dans le vault, pas de synthèse transformée en mémoire Peter sans validation explicite.
+
+Implémente une PR `feat: ajoute index et bibliothèque Markdown Peter`.
+
+Scope :
+- `claude-atelier vault docs scan`
+- `claude-atelier vault docs classify`
+- `claude-atelier vault docs organize --plan`
+- génération `vault/library/catalog.json`
+- génération `vault/library/protected.json`
+- génération `vault/library/migrations.json`
+- enrichissement `PETER_REPORT.md` avec état bibliothèque Markdown
+- tests BMAD : aucun artefact BMAD ne doit être modifié, déplacé, importé ou résumé
+- tests de classification : bug fix, update, fail, review, brainstorming
+
+Contraintes :
+- par défaut aucun fichier Markdown existant n'est déplacé ;
+- `--plan` ne modifie rien ;
+- `--apply` ne fait que des imports/synthèses sûrs dans le vault ;
+- toujours conserver la source originale ;
+- journaliser dans `vault/.peter/events.jsonl` ;
 - handoff Copilot après feature.
 ```

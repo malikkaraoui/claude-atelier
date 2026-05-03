@@ -1,12 +1,12 @@
 # PETER_REPORT
 
-> Généré par Peter — 2026-05-02 21:09:10 — Ne pas éditer manuellement.
+> Généré par Peter — 2026-05-03 06:41:16 — Ne pas éditer manuellement.
 
 ## Bureau préparé
 
 - Projet : claude-atelier (framework Claude Code)
-- Phase : Phase 2 — v0.23.0 livrée (Pulse & Maestro multi-agents) · next: proxy tool_use mapping
-- Dernière mise à jour : 2026-05-02 21:09:10
+- Phase : Phase 2 — v0.23.5 livrée (Phase B vault : index incrémental Peter) · next: Phase C graphe minimal
+- Dernière mise à jour : 2026-05-03 06:41:16
 - Fraîcheur : OK
 
 ## À savoir avant d'agir
@@ -24,13 +24,13 @@
 
 ## Roadmap — Sur le feu
 
-- Peter Phase B — `vault update` : manifest.json + cache SHA256 + scan repo incremental
+- Peter Phase C — graphe minimal : graph.json + `vault query` + nœuds centraux PETER_REPORT
 - proxy tool_use mapping Go (ollama-proxy bidirectionnel)
 
 ## Risques / contradictions
 
 - proxy tool_use mapping Go encore incomplet (bloquant pour Ollama bidirectionnel)
-- Peter Phase B (cache/index) non démarrée — PETER_REPORT.md non persistant encore
+- Cache mtime Phase B : faux-négatifs possibles en cas d'écriture programmatique très rapide (< 1ms) — différé Phase C
 - MCPs actifs (qmd + github) consomment fenêtre contexte (~70k)
 
 ## Mailbox à traiter
@@ -39,4 +39,4 @@
 
 ## Prochaine action recommandée
 
-- Implémenter `vault update` avec manifest.json + cache SHA256 (Phase B)
+- Démarrer Phase C (graph.json — nœuds fichiers/docs/décisions, relations extraites Markdown)
