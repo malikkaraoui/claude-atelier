@@ -75,3 +75,7 @@ watchdog-report-*.txt
 .claude/memory.db
 .claude/memory.db-wal
 .claude/memory.db-shm
+
+# Peter vault — sorties générées (rebuil local via vault update)
+vault/index/
+vault/.peter/
