@@ -412,7 +412,7 @@ function staleVault(cwd) {
   if (!cron) {
     add('vault/.peter/cron.json', 'INFO', 'Autonomie désactivée — lancez : claude-atelier vault cron start');
   } else if (!cron.enabled) {
-    add('vault/.peter/cron.json', 'WARN', 'Cron Peter désactivé — relancez : claude-atelier vault cron start');
+    add('vault/.peter/cron.json', 'INFO', 'Cron Peter désactivé — relancez : claude-atelier vault cron start');
   } else {
     const nextRunAt = cron.nextRunAt ? new Date(cron.nextRunAt).getTime() : 0;
     const overdue = nextRunAt > 0 && nextRunAt < Date.now();
