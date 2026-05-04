@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "subject": "Telegram bridge Phase A + vault Lots 1-8",
+    "date": "2026-05-04",
+    "type": "review",
+    "priority": "haute",
+    "reviewedRange": "fe048270b2c65b770b52af75bcfcf6f8ade57d9c..facca3bd586ccbc56d8ef51308edeae2bc6a9234"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "11 commits feat/fix depuis dernier handoff intégré (+4763/-36 lignes, 21 fichiers). Deux chantiers majeurs : (1) Vault Peter Lots 1-8 — scan/classify docs, graphe enrichi, vault path (BFS), vault export --html D3, watch daemon polling incrémental, maintenance autonome Peter (#43), fix isolation repo git. (2) Telegram bridge Phase A — scripts/telegram-bridge.py (543 lignes : TelegramBot polling, SessionManager sqlite3, ClaudeRunner subprocess, NotificationFifo FIFO /tmp, RateLimiter token bucket, InboxWriter vault/.peter/inbox/telegram/), bin/telegram.js CLI start/stop/status/test (PID file), src/templates/telegram.env.example, .claude/autonomy/telegram.md, test/telegram.test.js 13/13.",
+    "question": "Le bridge pilote Claude via subprocess CLI (pas l'SDK Anthropic) — est-ce que la gestion du stream stdout/stderr de ClaudeRunner est suffisamment robuste pour gérer les cas de timeout, de crash mid-stream et de réponses partielles sans laisser la session SQLite dans un état incohérent ?",
+    "filesToRead": [
+      "scripts/telegram-bridge.py",
+      "bin/telegram.js",
+      "test/telegram.test.js",
+      "src/templates/telegram.env.example",
+      ".claude/autonomy/telegram.md"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+  },
+  "integration": null
+}
