@@ -31,7 +31,7 @@ Une commande. Claude Code est configuré avec 15 rails d'enforcement dans `.clau
 ├── CLAUDE.md              ← Runtime core (§0–§25)
 ├── settings.json          ← Permissions, hooks, budget
 ├── hooks/                 ← 15 scripts d'enforcement
-├── autonomy/              ← Mode nuit, watchdog, loop
+├── autonomy/              ← Mode nuit, pouls, loop
 ├── orchestration/         ← Fork, Teammate, Worktree
 ├── runtime/               ← Todo, extended thinking, théâtre
 ├── security/              ← Gate, secrets, emergency

@@ -10,7 +10,7 @@ Le mode nuit permet de laisser Claude travailler en autonomie complète pendant 
 ## Principe
 
 ```
-Soir : specs claires + watchdog configuré
+Soir : specs claires + pouls activé
          ↓
 Claude travaille en acceptEdits
          ↓
@@ -66,30 +66,30 @@ Toujours inclure « Hors scope ». Sans ça, Claude interprète librement.
 
 ---
 
-## Le Watchdog
+## Le Pouls
 
-Tâche planifiée dans l'**app Claude desktop** (Programmé → + Nouvelle tâche).
+Système de présence multi-agents intégré à claude-atelier.
 
-| Paramètre | Valeur |
-|---|---|
-| Fréquence | Horaire |
-| Modèle | Claude Haiku 4.5 |
-| Connecteurs | Read and Send iMessages |
-| Computer use | Activé |
+```bash
+npx claude-atelier pulse init    # initialise pouls.md pour l'agent courant
+npx claude-atelier pulse update  # met à jour le heartbeat
+npx claude-atelier pulse status  # état de tous les agents actifs
+npx claude-atelier pulse list    # liste les agents avec leur dernière activité
+```
 
-### Comportements v4
+Chaque agent maintient un fichier `pouls.md` — registre de présence horodaté. **Maestro** (`scripts/pulse-maestro.js`) supervise l'ensemble et détecte les agents silencieux.
+
+### Comportements
 
 | Situation | Action |
 |---|---|
-| Commit < 15 min | Termine silencieusement |
-| Bouton permission visible | Screenshot → clic auto → iMessage |
-| Spinner actif | Termine silencieusement |
-| Session crashée | iMessage alerte |
-| Quota limit | Silence → attend 1h → clic + Return |
-| Erreur API 500 | iMessage uniquement — ne touche pas VSCode |
+| Agent actif (heartbeat récent) | Pastille verte dans `pulse status` |
+| Agent silencieux > seuil | Maestro signale l'absence |
+| Session crashée | `pouls.md` stale → Maestro alerte |
+| Reprise de session | `pulse update` remet l'agent en ligne |
 
-:::danger Règle absolue
-Le watchdog **n'interagit jamais avec VSCode** lors d'une erreur API 500. iMessage uniquement.
+:::info Pouls vs ancienne approche
+Le pouls remplace le watchdog (tâche Claude desktop horaire). Il est natif au framework, multi-agents, et ne dépend pas de l'app desktop.
 :::
 
 ---

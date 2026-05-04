@@ -24,7 +24,7 @@ sidebar_label: Introduction
 npx claude-atelier init
 ```
 
-C'est tout. Claude Code est configuré avec 12 rails d'enforcement et un cockpit §1.
+C'est tout. Claude Code est configuré avec 15 rails d'enforcement et un cockpit §1.
 
 ---
 
@@ -36,7 +36,7 @@ C'est tout. Claude Code est configuré avec 12 rails d'enforcement et un cockpit
 - **Cockpit §1** — chaque réponse s'ouvre sur `` `[timestamp | model] 🟢 M | 🦙❌ | 🔌❌` `` : horodatage, modèle, pastille fit, mode M/A, état Ollama, état proxy — en un coup d'œil
 - **20 slash commands** — `/review-copilot`, `/night-launch`, `/angle-mort`…
 - **Satellites de stack** — JS, Python, iOS, Docker… chargés selon le projet
-- **Mode nuit** — Claude travaille seul, watchdog surveille, vous dormez
+- **Mode nuit** — Claude travaille seul, le pouls surveille, vous dormez
 - **Gate pré-push** — 5 vérifications avant chaque `git push`
 
 ---
@@ -74,7 +74,7 @@ Pas de texte. Des rails.
 ├── CLAUDE.md              ← Runtime core (§0–§25)
 ├── settings.json          ← Permissions, hooks, budget
 ├── hooks/                 ← 15 scripts d'enforcement
-├── autonomy/              ← Mode nuit, watchdog, loop
+├── autonomy/              ← Mode nuit, pouls, loop
 ├── orchestration/         ← Fork, Teammate, Worktree
 ├── runtime/               ← Todo, extended thinking
 ├── security/              ← Gate, secrets, emergency
@@ -89,9 +89,9 @@ scripts/
 ## Navigation
 
 - [Installation](./installation) — mise en place complète
-- [Hooks d'enforcement](./hooks) — les 12 rails + cockpit §1
+- [Hooks d'enforcement](./hooks) — les 15 rails + cockpit §1
 - [Agents nommés](./agents) — Steve, Isaac, Mohamed, Amine, Peter
-- [Mode Nuit](./mode-nuit) — autonomie supervisée + watchdog
+- [Mode Nuit](./mode-nuit) — autonomie supervisée + pouls
 - [Skills](./skills) — 20 slash commands
 - [Satellites par stack](./stacks) — iOS, JS, Python…
 - [Sécurité](./securite) — gate, secrets, permissions
