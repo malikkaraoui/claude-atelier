@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — Telegram bridge Phase B livré (PR #49 mergée) · voix faster-whisper + Ollama polish + 6 fixes robustesse Copilot · next: bump version + Phase C FIFO hardening |
+| Phase | Phase 2 — v0.23.12 · Telegram Phase C livré (hook FIFO PostToolUse + portabilité macOS O_NONBLOCK, PR #52 mergée) · next: Phase D vault add/route |
 | Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
