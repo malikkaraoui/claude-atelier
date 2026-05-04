@@ -62,6 +62,7 @@ OLLAMA_POLISH_ENABLED = os.getenv("OLLAMA_POLISH_ENABLED", "true").lower() == "t
 OLLAMA_CHAT_MODEL = os.getenv("OLLAMA_CHAT_MODEL", "")  # si défini, remplace claude CLI
 
 VAULT_INBOX = os.getenv("VAULT_INBOX", "vault/.peter/inbox/telegram")
+VAULT_MAILBOX = os.getenv("VAULT_MAILBOX", "vault/10-mailbox.md")
 VAULT_WRITE_ENABLED = os.getenv("VAULT_WRITE_ENABLED", "true").lower() == "true"
 
 DB_PATH = os.path.expanduser("~/.claude/telegram-bridge.db")
@@ -325,6 +326,32 @@ class InboxWriter:
             logger.debug(f"Inbox written: {inbox_file}")
         except Exception as e:
             logger.error(f"InboxWriter error: {e}")
+
+        self._write_mailbox(entry)
+
+    def _write_mailbox(self, entry: Dict[str, Any]):
+        """Append entry to Peter mailbox so SessionStart hook surfaces it to Claude."""
+        mailbox = Path(VAULT_MAILBOX)
+        if not mailbox.exists():
+            return
+        ts = entry.get("ts", "")[:16].replace("T", " ")
+        typ = entry.get("type", "text")
+        transcript = entry.get("transcript", "")[:300]
+        response = entry.get("response_summary", "")[:200]
+        block = (
+            f"\n### {ts} — Telegram [{typ}]\n\n"
+            f"- Source : telegram\n"
+            f"- Statut : nouveau\n"
+            f"- Résumé : {transcript}\n"
+            f"- Réponse Ollama : {response}\n"
+            f"- Action proposée : à challenger / intégrer\n"
+        )
+        try:
+            with open(mailbox, "a") as f:
+                f.write(block)
+            logger.debug(f"Mailbox updated: {mailbox}")
+        except Exception as e:
+            logger.warning(f"Mailbox write failed: {e}")
 
 
 # ============================================================================
