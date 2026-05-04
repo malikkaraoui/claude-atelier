@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — Lot 5+8 implémentés (PR #46 watch+exports, Copilot review DONE) · next: merge PR #46 + bump v0.23.11 |
+| Phase | Phase 2 — v0.23.11 prête (Lots 1/2/3+5+8 mergés, handoff §25 généré) · next: /integrate-review Copilot + bump version |
 | Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
