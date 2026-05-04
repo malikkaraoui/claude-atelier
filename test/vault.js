@@ -4,7 +4,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync, utimesSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync, utimesSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -856,6 +856,24 @@ test('vault docs scan génère catalog.json avec tous les champs requis', () => 
   }
 });
 
+// ──────────────────────────────────────────────────────────────────
+// Lot 5 — vault watch daemon tests
+// ──────────────────────────────────────────────────────────────────
+
+console.log('\nvault Lot 5 — watch daemon\n');
+
+test('vault watch status sans daemon actif retourne { active: false }', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'watch', 'status', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(r.stdout.includes('Aucun daemon watch'), 'message aucun daemon attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+<<<<<<< HEAD
 test('vault docs scan détecte marqueurs BMAD et marque protected', () => {
   const dir = initTestVault();
   try {
@@ -872,6 +890,20 @@ test('vault docs scan détecte marqueurs BMAD et marque protected', () => {
   }
 });
 
+test('vault watch status --json retourne { active: false, pid: null }', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'watch', 'status', '--cwd', dir, '--json'], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.active === false, 'active:false attendu');
+    ok(result.pid === null, 'pid:null attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+<<<<<<< HEAD
 test('vault docs classify affiche rapport avec regroupement par kind', () => {
   const dir = initTestVault();
   try {
@@ -884,6 +916,22 @@ test('vault docs classify affiche rapport avec regroupement par kind', () => {
   }
 });
 
+test('vault watch once exécute un cycle unique synchrone', () => {
+  const dir = initTestVault();
+  try {
+    // Initialiser vault
+    cli(['vault', 'update', '--cwd', dir], dir);
+
+    // Exécuter watch once
+    const r = cli(['vault', 'watch', 'once', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(r.stdout.includes('watch'), 'output doit mentiionner watch');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+<<<<<<< HEAD
 test('vault docs organize --plan affiche plan sans le modifier', () => {
   const dir = initTestVault();
   try {
@@ -900,6 +948,23 @@ test('vault docs organize --plan affiche plan sans le modifier', () => {
   }
 });
 
+test('vault watch once --json retourne { ok, elapsed, changedFiles }', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'update', '--cwd', dir], dir);
+
+    const r = cli(['vault', 'watch', 'once', '--cwd', dir, '--json'], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.ok === true, 'ok:true attendu');
+    ok(typeof result.elapsed === 'number', 'elapsed doit être un nombre');
+    ok(Array.isArray(result.changedFiles), 'changedFiles doit être un tableau');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+<<<<<<< HEAD
 test('vault docs organize --apply requires --confirm flag', () => {
   const dir = initTestVault();
   try {
@@ -914,6 +979,19 @@ test('vault docs organize --apply requires --confirm flag', () => {
   }
 });
 
+test('vault watch stop sans daemon actif retourne erreur', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'watch', 'stop', '--cwd', dir], dir);
+    // Peut sortir avec erreur ou avec message d'info
+    ok(r.stdout.includes('Aucun') || r.stdout.includes('actif') || r.stderr.includes('Aucun'),
+      'message attendant aucun daemon');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+<<<<<<< HEAD
 test('graph v2 crée doc_category nodes depuis catalog', () => {
   const dir = initTestVault();
   try {
@@ -997,6 +1075,178 @@ test('graph v2 ajoute stats.byKind avec comptes par catégorie', () => {
     ok(graph.stats.byKind, 'stats.byKind should exist');
     ok(typeof graph.stats.byKind === 'object', 'byKind should be object');
     ok(Object.keys(graph.stats.byKind).length > 0, 'byKind should have entries');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault watch start crée watch.json avec pid', () => {
+  const dir = initTestVault();
+  try {
+    // Initialiser vault (obligatoire pour watch)
+    cli(['vault', 'update', '--cwd', dir], dir);
+
+    // Start watch daemon
+    const r = cli(['vault', 'watch', 'start', '--cwd', dir, '--interval', '60'], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+
+    // Attendre un peu que le daemon écrive son fichier
+    const watchPath = join(dir, 'vault', '.peter', 'watch.json');
+    let watchExists = false;
+    for (let i = 0; i < 10; i++) {
+      if (existsSync(watchPath)) {
+        watchExists = true;
+        break;
+      }
+      // Micro sleep
+      const start = Date.now();
+      while (Date.now() - start < 50) {}
+    }
+
+    if (watchExists) {
+      const watchJson = JSON.parse(readFileSync(watchPath, 'utf8'));
+      ok(typeof watchJson.pid === 'number', 'watch.json doit contenir un pid numérique');
+      ok(watchJson.interval === 60, 'interval doit être respecté');
+
+      // Arrêter le daemon gracieusement
+      cli(['vault', 'watch', 'stop', '--cwd', dir], dir);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ─── Lot 8 — vault export (HTML/Obsidian/Wiki/SVG/GraphML/Neo4j) ────────────────
+
+console.log('\n── vault export (Lot 8) ──');
+
+function createTestGraph() {
+  return {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    root: '/tmp/test',
+    sourceManifest: 'vault/index/manifest.json',
+    nodes: [
+      { id: 'concept:test', type: 'concept', label: 'Test Concept', path: '', tags: ['test'], excerpt: 'A test node', mtime: new Date().toISOString(), sha256: '', confidence: 'EXTRACTED' },
+      { id: 'concept:second', type: 'concept', label: 'Second Node', path: '', tags: ['test'], excerpt: 'Another node', mtime: new Date().toISOString(), sha256: '', confidence: 'EXTRACTED' },
+      { id: 'markdown_document:readme', type: 'markdown_document', label: 'README', path: 'README.md', tags: [], excerpt: 'Documentation', mtime: new Date().toISOString(), sha256: '', confidence: 'EXTRACTED' },
+    ],
+    edges: [
+      { from: 'concept:test', to: 'concept:second', type: 'related_to', confidence: 'EXTRACTED', source: 'test', weight: 1 },
+      { from: 'concept:test', to: 'markdown_document:readme', type: 'documents', confidence: 'EXTRACTED', source: 'test', weight: 1 },
+    ],
+    stats: {
+      nodeCount: 3,
+      edgeCount: 2,
+      byType: { concept: 2, markdown_document: 1 },
+      centralNodes: ['concept:test', 'concept:second'],
+    },
+  };
+}
+
+test('vault export --html sans graph.json retourne erreur', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-html-'));
+  try {
+    const r = cli(['vault', 'export', '--html', '--cwd', dir], dir);
+    ok(r.status !== 0, 'exit non-zéro attendu');
+    ok(r.stderr.includes('graph.json absent'), 'message erreur attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --html génère un fichier avec "Peter Knowledge Graph"', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-html-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--html', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(existsSync(join(dir, 'vault', 'index', 'graph.html')), 'graph.html doit exister');
+    const html = readFileSync(join(dir, 'vault', 'index', 'graph.html'), 'utf8');
+    ok(html.includes('Peter Knowledge Graph'), 'titre Peter Knowledge Graph attendu');
+    ok(html.includes('d3'), 'D3.js CDN attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --graphml génère un fichier avec balise <graphml', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-graphml-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--graphml', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(existsSync(join(dir, 'vault', 'index', 'graph.graphml')), 'graph.graphml doit exister');
+    const graphml = readFileSync(join(dir, 'vault', 'index', 'graph.graphml'), 'utf8');
+    ok(graphml.includes('<graphml'), 'balise <graphml attendue');
+    ok(graphml.includes('<node'), 'balise <node attendue');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --obsidian génère des fichiers .md dans vault/index/obsidian/', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-obsidian-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--obsidian', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const obsidianDir = join(dir, 'vault', 'index', 'obsidian');
+    ok(existsSync(obsidianDir), 'obsidian/ doit exister');
+    const files = readdirSync(obsidianDir);
+    ok(files.length > 0, 'au moins un fichier .md attendu');
+    ok(files.some(f => f.endsWith('.md')), 'fichier .md attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --neo4j génère nodes.cypher et edges.cypher', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-neo4j-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--neo4j', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const neo4jDir = join(dir, 'vault', 'index', 'neo4j');
+    ok(existsSync(neo4jDir), 'neo4j/ doit exister');
+    ok(existsSync(join(neo4jDir, 'nodes_0.cypher')), 'nodes_0.cypher doit exister');
+    ok(existsSync(join(neo4jDir, 'edges_0.cypher')), 'edges_0.cypher doit exister');
+    ok(existsSync(join(neo4jDir, 'import.sh')), 'import.sh doit exister');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --svg génère un fichier SVG', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-svg-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--svg', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(existsSync(join(dir, 'vault', 'index', 'graph.svg')), 'graph.svg doit exister');
+    const svg = readFileSync(join(dir, 'vault', 'index', 'graph.svg'), 'utf8');
+    ok(svg.includes('<svg'), 'balise <svg attendue');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --wiki génère vault/index/wiki/index.md et répertoires par type', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-wiki-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--wiki', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(existsSync(join(dir, 'vault', 'index', 'wiki', 'index.md')), 'wiki/index.md doit exister');
+    ok(existsSync(join(dir, 'vault', 'index', 'wiki', 'concept')), 'wiki/concept/ doit exister');
+    const index = readFileSync(join(dir, 'vault', 'index', 'wiki', 'index.md'), 'utf8');
+    ok(index.includes('Par type'), 'section "Par type" attendue');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

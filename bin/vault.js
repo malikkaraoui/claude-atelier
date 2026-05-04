@@ -12,15 +12,18 @@
  *   claude-atelier vault query   "<texte>" [--cwd <path>] [--json]
  *   claude-atelier vault path    <nodeA> <nodeB> [--cwd <path>] [--json]
  *   claude-atelier vault explain <node> [--cwd <path>] [--json]
+ *   claude-atelier vault export  --html|--obsidian|--wiki|--svg|--graphml|--neo4j [--cwd <path>] [--json]
+ *   claude-atelier vault watch   once|start|stop|status [--cwd <path>] [--interval <sec>] [--json]
  *   claude-atelier vault maintain [--cwd <path>] [--json]
  *   claude-atelier vault cron    start|stop|status [--cwd <path>] [--interval <15m|6h|1d>] [--json]
  */
 
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, unlinkSync } from 'node:fs';
+import { execSync, spawn } from 'node:child_process';
 import { dirname, resolve, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { watchOnce, watchStatus } from '../src/vault/watch.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
@@ -2458,6 +2461,662 @@ function printCron(result, cwd, action) {
   if (result.lastRun) console.log(`  Dernière maintenance : ${result.lastRun}`);
 }
 
+// ──────────────────────────────────────────────────────────────────
+// Lot 5 — vault watch daemon
+// ──────────────────────────────────────────────────────────────────
+
+function startVaultWatch(cwd, intervalSec = 30) {
+  const vaultPath = join(cwd, 'vault');
+  if (!existsSync(vaultPath)) {
+    return { ok: false, error: 'vault n\'existe pas — `vault init` d\'abord' };
+  }
+
+  const watchJson = join(vaultPath, '.peter', 'watch.json');
+  const status = watchStatus(vaultPath);
+  if (status.active) {
+    return { ok: false, error: `daemon déjà actif (PID ${status.pid})` };
+  }
+
+  // Spawn daemon detached
+  const child = spawn(process.execPath, [join(PKG_ROOT, 'bin', 'vault-watch.js'), '--vault-path', vaultPath, '--interval', String(intervalSec)], {
+    detached: true,
+    stdio: 'ignore',
+  });
+  child.unref();
+
+  // Small delay to let daemon write watch.json
+  let watchExists = false;
+  for (let i = 0; i < 50; i++) {
+    if (existsSync(watchJson)) {
+      watchExists = true;
+      break;
+    }
+    const start = Date.now();
+    while (Date.now() - start < 20) {}
+  }
+
+  if (!watchExists) {
+    return { ok: false, error: 'daemon lancé mais watch.json non écrit' };
+  }
+
+  const config = JSON.parse(readFileSync(watchJson, 'utf8'));
+  return {
+    ok: true,
+    pid: config.pid,
+    vaultPath,
+    interval: config.interval,
+    startedAt: config.startedAt,
+  };
+}
+
+function stopVaultWatch(cwd) {
+  const vaultPath = join(cwd, 'vault');
+  const status = watchStatus(vaultPath);
+  if (!status.active) {
+    return { ok: false, error: 'aucun daemon watch actif' };
+  }
+
+  try {
+    process.kill(status.pid, 'SIGTERM');
+    const watchJson = join(vaultPath, '.peter', 'watch.json');
+    if (existsSync(watchJson)) {
+      unlinkSync(watchJson);
+    }
+    return { ok: true, pid: status.pid };
+  } catch (err) {
+    return { ok: false, error: `erreur lors de l'arrêt du daemon: ${err.message}` };
+  }
+}
+
+function onceVaultWatch(cwd) {
+  const vaultPath = join(cwd, 'vault');
+  if (!existsSync(vaultPath)) {
+    return { ok: false, error: 'vault n\'existe pas' };
+  }
+
+  // Run a single watch cycle with vault update and graph
+  const updateFn = () => updateVault(cwd);
+  const graphFn = () => graphVault(cwd);
+  const result = watchOnce(vaultPath, updateFn, graphFn);
+  return result;
+}
+
+function printWatchStart(result) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[WATCH]${NC} ${result.error}\n`);
+    return;
+  }
+  console.log(`\n${CYAN}[WATCH] vault watch start${NC}`);
+  console.log(`  PID      : ${result.pid}`);
+  console.log(`  Interval : ${result.interval}s`);
+  console.log(`\n${GREEN}✓${NC} Daemon watch lancé.`);
+}
+
+function printWatchStop(result) {
+  if (!result.ok) {
+    console.log(`${YELLOW}[WATCH]${NC} ${result.error}`);
+    return;
+  }
+  console.log(`\n${CYAN}[WATCH] vault watch stop${NC}`);
+  console.log(`  PID stoppé : ${result.pid}`);
+  console.log(`\n${GREEN}✓${NC} Daemon watch arrêté.`);
+}
+
+function printWatchStatus(result) {
+  if (!result.active) {
+    console.log(`\n${CYAN}[WATCH] vault watch status${NC}`);
+    console.log(`  ${YELLOW}[INACTIF]${NC} Aucun daemon watch`);
+    return;
+  }
+  console.log(`\n${CYAN}[WATCH] vault watch status${NC}`);
+  console.log(`  ${GREEN}[ACTIF]${NC} PID ${result.pid}`);
+  console.log(`  Démarré le  : ${result.startedAt}`);
+  console.log(`  Interval    : ${result.interval}s`);
+}
+
+function printWatchOnce(result) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[WATCH]${NC} ${result.error}\n`);
+    return;
+  }
+  console.log(`\n${CYAN}[WATCH] vault watch once${NC}`);
+  console.log(`  Elapsed     : ${result.elapsed}ms`);
+  console.log(`  Fichiers    : ${result.changedFiles?.length ?? 0} changés`);
+  if (result.update) console.log(`  Update      : ${result.update.ok ? `${GREEN}OK${NC}` : `${RED}FAIL${NC}`}`);
+  if (result.graph) console.log(`  Graph       : ${result.graph.ok ? `${GREEN}OK${NC}` : `${RED}FAIL${NC}`}`);
+  console.log();
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Lot 8 — vault export (multi-formats HTML/Obsidian/Wiki/SVG/GraphML/Neo4j)
+// ──────────────────────────────────────────────────────────────────
+
+function sanitizeFilename(label) {
+  return label.replace(/[:\/?*"<>|]/g, '_');
+}
+
+function getNodeColor(type) {
+  const colors = {
+    project: '#4A90E2',
+    vault_file: '#2ECC71',
+    decision: '#F39C12',
+    concept: '#9B59B6',
+    markdown_document: '#95A5A6',
+    roadmap_item: '#E74C3C',
+  };
+  return colors[type] || '#BDC3C7';
+}
+
+function exportHtmlGraph(cwd, graph) {
+  const indexDir = join(cwd, 'vault', 'index');
+  mkdirSync(indexDir, { recursive: true });
+  const htmlPath = join(indexDir, 'graph.html');
+
+  const date = new Date().toISOString().split('T')[0];
+  const nodes = graph.nodes || [];
+  const edges = graph.edges || [];
+
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peter Knowledge Graph — ${date}</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+    h1 { color: #333; margin: 0 0 20px 0; }
+    #graph { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .node { cursor: pointer; stroke: #fff; stroke-width: 2px; }
+    .node:hover { stroke-width: 3px; }
+    .link { stroke: #999; opacity: 0.6; }
+    .link.highlight { stroke: #333; opacity: 1; stroke-width: 3px; }
+    .tooltip { position: absolute; background: #333; color: white; padding: 8px 12px; border-radius: 4px; font-size: 12px; pointer-events: none; display: none; z-index: 1000; max-width: 200px; }
+    .legend { margin-top: 20px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .legend-item { display: inline-block; margin-right: 20px; }
+    .legend-color { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+  <h1>Peter Knowledge Graph — ${date}</h1>
+  <div id="graph"></div>
+  <div class="legend" id="legend"></div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const graphData = {
+      nodes: ${JSON.stringify(nodes.map(n => ({ id: n.id, label: n.label || n.id, type: n.type, excerpt: (n.excerpt || '').substring(0, 50) })))},
+      links: ${JSON.stringify(edges.map(e => ({ source: e.from, target: e.to, type: e.type, weight: e.weight || 1 })))}
+    };
+
+    const width = 1200, height = 900;
+    const svg = d3.select('#graph').append('svg').attr('width', width).attr('height', height);
+    const g = svg.append('g');
+
+    const colorMap = {
+      project: '#4A90E2', vault_file: '#2ECC71', decision: '#F39C12',
+      concept: '#9B59B6', markdown_document: '#95A5A6', roadmap_item: '#E74C3C'
+    };
+
+    // Build degree map
+    const degrees = {};
+    graphData.nodes.forEach(n => degrees[n.id] = 0);
+    graphData.links.forEach(l => {
+      degrees[l.source] = (degrees[l.source] || 0) + 1;
+      degrees[l.target] = (degrees[l.target] || 0) + 1;
+    });
+
+    const simulation = d3.forceSimulation(graphData.nodes)
+      .force('link', d3.forceLink(graphData.links).id(d => d.id).distance(80))
+      .force('charge', d3.forceManyBody().strength(-300))
+      .force('center', d3.forceCenter(width / 2, height / 2));
+
+    const link = g.append('g')
+      .selectAll('line')
+      .data(graphData.links)
+      .join('line')
+      .attr('class', 'link')
+      .attr('stroke-width', d => Math.sqrt(d.weight) * 2);
+
+    const node = g.append('g')
+      .selectAll('circle')
+      .data(graphData.nodes)
+      .join('circle')
+      .attr('class', 'node')
+      .attr('r', d => Math.sqrt((degrees[d.id] || 0) + 1) * 4 + 4)
+      .attr('fill', d => colorMap[d.type] || '#BDC3C7')
+      .call(drag(simulation));
+
+    const tooltip = d3.select('#tooltip');
+    node.on('mouseover', function(event, d) {
+      tooltip.style('display', 'block')
+        .html(\`<strong>\${d.label}</strong><br/><em>\${d.type}</em><br/>\${d.excerpt}\`)
+        .style('left', (event.pageX + 10) + 'px')
+        .style('top', (event.pageY + 10) + 'px');
+    })
+    .on('mouseout', () => tooltip.style('display', 'none'))
+    .on('click', function(event, d) {
+      const neighbors = new Set();
+      graphData.links.forEach(l => {
+        if (l.source === d.id) neighbors.add(l.target);
+        if (l.target === d.id) neighbors.add(l.source);
+      });
+      link.classed('highlight', l => l.source === d.id || l.target === d.id);
+      node.style('opacity', n => neighbors.has(n.id) || n.id === d.id ? 1 : 0.1);
+    });
+
+    simulation.on('tick', () => {
+      link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+      node.attr('cx', d => d.x).attr('cy', d => d.y);
+    });
+
+    function drag(simulation) {
+      return d3.drag()
+        .on('start', event => { if (!event.active) simulation.alphaTarget(0.3).restart(); event.subject.fx = event.subject.x; event.subject.fy = event.subject.y; })
+        .on('drag', event => { event.subject.fx = event.x; event.subject.fy = event.y; })
+        .on('end', event => { if (!event.active) simulation.alphaTarget(0); event.subject.fx = null; event.subject.fy = null; });
+    }
+
+    // Legend
+    const legend = d3.select('#legend');
+    Object.entries(colorMap).forEach(([type, color]) => {
+      legend.append('div').attr('class', 'legend-item')
+        .html(\`<div class="legend-color" style="background: \${color}"></div> \${type}\`);
+    });
+  </script>
+</body>
+</html>`;
+
+  writeFileSync(htmlPath, html, 'utf8');
+  const sizeKb = (html.length / 1024).toFixed(0);
+  return { ok: true, path: htmlPath, size: sizeKb };
+}
+
+function exportObsidianVault(cwd, graph) {
+  const vaultDir = join(cwd, 'vault', 'index', 'obsidian');
+  mkdirSync(vaultDir, { recursive: true });
+
+  const validTypes = ['project', 'vault_file', 'decision', 'roadmap_item', 'markdown_document', 'concept'];
+  const nodes = (graph.nodes || []).filter(n => validTypes.includes(n.type)).slice(0, 500);
+  const edges = graph.edges || [];
+
+  // Build adjacency map
+  const neighbors = new Map();
+  edges.forEach(e => {
+    if (!neighbors.has(e.from)) neighbors.set(e.from, []);
+    if (!neighbors.has(e.to)) neighbors.set(e.to, []);
+    neighbors.get(e.from).push({ id: e.to, type: e.type });
+    neighbors.get(e.to).push({ id: e.from, type: e.type });
+  });
+
+  let count = 0;
+  for (const node of nodes) {
+    const filename = sanitizeFilename(node.id) + '.md';
+    const relatedNodes = neighbors.get(node.id) || [];
+    const relationsMarkdown = relatedNodes
+      .map(rel => {
+        const relNode = nodes.find(n => n.id === rel.id);
+        return relNode ? `- [[${sanitizeFilename(relNode.id)}]] — ${rel.type}` : null;
+      })
+      .filter(Boolean)
+      .join('\n');
+
+    const content = `# ${node.label || node.id}
+
+**Type:** ${node.type}
+**Confidence:** ${node.confidence || 'unknown'}
+**Path:** ${node.path || '(no path)'}
+
+${node.excerpt || '(no excerpt)'}
+
+## Relations
+
+${relationsMarkdown || '(no relations)'}
+`;
+
+    writeFileSync(join(vaultDir, filename), content, 'utf8');
+    count++;
+  }
+
+  return { ok: true, path: vaultDir, count };
+}
+
+function exportWikiVault(cwd, graph) {
+  const wikiDir = join(cwd, 'vault', 'index', 'wiki');
+  mkdirSync(wikiDir, { recursive: true });
+
+  const nodes = graph.nodes || [];
+  const edges = graph.edges || [];
+  const byType = {};
+
+  nodes.forEach(n => {
+    if (!byType[n.type]) byType[n.type] = [];
+    byType[n.type].push(n);
+  });
+
+  // Build adjacency
+  const neighbors = new Map();
+  edges.forEach(e => {
+    if (!neighbors.has(e.from)) neighbors.set(e.from, []);
+    if (!neighbors.has(e.to)) neighbors.set(e.to, []);
+    neighbors.get(e.from).push({ id: e.to, type: e.type });
+    neighbors.get(e.to).push({ id: e.from, type: e.type });
+  });
+
+  // Create index
+  let indexContent = '# Peter Knowledge Wiki\n\n## Par type\n\n';
+  for (const [type, typeNodes] of Object.entries(byType)) {
+    indexContent += `\n### ${type} (${typeNodes.length})\n\n`;
+    typeNodes.forEach(n => {
+      const link = sanitizeFilename(n.id);
+      indexContent += `- [${n.label || n.id}](./${type}/${link}.md)\n`;
+    });
+  }
+
+  writeFileSync(join(wikiDir, 'index.md'), indexContent, 'utf8');
+
+  // Create per-type directories
+  for (const [type, typeNodes] of Object.entries(byType)) {
+    const typeDir = join(wikiDir, type);
+    mkdirSync(typeDir, { recursive: true });
+
+    for (const node of typeNodes) {
+      const filename = sanitizeFilename(node.id) + '.md';
+      const relatedNodes = neighbors.get(node.id) || [];
+      const relationsMarkdown = relatedNodes
+        .map(rel => {
+          const relNode = nodes.find(n => n.id === rel.id);
+          return relNode ? `- [${relNode.label || relNode.id}](../${relNode.type}/${sanitizeFilename(relNode.id)}.md) — ${rel.type}` : null;
+        })
+        .filter(Boolean)
+        .join('\n');
+
+      const content = `# ${node.label || node.id}
+
+**Type:** ${node.type}
+**Confidence:** ${node.confidence || 'unknown'}
+**Path:** ${node.path || '(no path)'}
+
+${node.excerpt || '(no excerpt)'}
+
+## Relations
+
+${relationsMarkdown || '(no relations)'}
+`;
+
+      writeFileSync(join(typeDir, filename), content, 'utf8');
+    }
+  }
+
+  return { ok: true, path: wikiDir, nodeCount: nodes.length, typeCount: Object.keys(byType).length };
+}
+
+function exportSvgGraph(cwd, graph) {
+  const svgPath = join(cwd, 'vault', 'index', 'graph.svg');
+  mkdirSync(dirname(svgPath), { recursive: true });
+
+  const nodes = graph.nodes || [];
+  const edges = graph.edges || [];
+  const stats = graph.stats || {};
+  const centralNodes = (stats.centralNodes || []).slice(0, 8);
+
+  const radius = 400;
+  const innerRadius = 150;
+  const centerX = 600, centerY = 600;
+
+  // Position nodes
+  const nodePos = new Map();
+  const centralSet = new Set(centralNodes);
+
+  let centralIndex = 0;
+  let otherIndex = 0;
+  const centralCount = Math.min(centralNodes.length, nodes.length);
+  const otherCount = Math.max(0, nodes.length - centralCount);
+
+  for (const node of nodes) {
+    if (centralSet.has(node.id)) {
+      const angle = (centralIndex / centralCount) * Math.PI * 2;
+      nodePos.set(node.id, {
+        x: centerX + Math.cos(angle) * innerRadius,
+        y: centerY + Math.sin(angle) * innerRadius,
+        isCenter: true
+      });
+      centralIndex++;
+    } else {
+      const angle = (otherIndex / Math.max(1, otherCount)) * Math.PI * 2;
+      nodePos.set(node.id, {
+        x: centerX + Math.cos(angle) * radius,
+        y: centerY + Math.sin(angle) * radius,
+        isCenter: false
+      });
+      otherIndex++;
+    }
+  }
+
+  // Build SVG
+  let svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <style>
+    .link { stroke: #999; opacity: 0.6; }
+    .node { stroke: white; stroke-width: 2; }
+    .node-text { font-size: 11px; text-anchor: middle; fill: #333; }
+  </style>
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
+    </style>
+  </defs>\n`;
+
+  // Draw edges
+  for (const edge of edges) {
+    const from = nodePos.get(edge.from);
+    const to = nodePos.get(edge.to);
+    if (from && to) {
+      const opacity = Math.max(0.1, Math.min(1, (edge.weight || 1) / 2));
+      svg += `  <line class="link" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke-opacity="${opacity}" stroke-width="${Math.sqrt(edge.weight || 1)}" />\n`;
+    }
+  }
+
+  // Draw nodes
+  for (const node of nodes) {
+    const pos = nodePos.get(node.id);
+    if (pos) {
+      const r = pos.isCenter ? 6 : 4;
+      const color = getNodeColor(node.type);
+      svg += `  <circle class="node" cx="${pos.x}" cy="${pos.y}" r="${r}" fill="${color}" />\n`;
+    }
+  }
+
+  // Draw text labels for central nodes
+  for (const node of nodes) {
+    const pos = nodePos.get(node.id);
+    if (pos && pos.isCenter) {
+      const label = (node.label || node.id).substring(0, 12);
+      svg += `  <text class="node-text" x="${pos.x}" y="${pos.y + 12}">${label}</text>\n`;
+    }
+  }
+
+  svg += '</svg>';
+  writeFileSync(svgPath, svg, 'utf8');
+
+  return { ok: true, path: svgPath, size: (svg.length / 1024).toFixed(0) };
+}
+
+function exportGraphML(cwd, graph) {
+  const graphmlPath = join(cwd, 'vault', 'index', 'graph.graphml');
+  mkdirSync(dirname(graphmlPath), { recursive: true });
+
+  const nodes = graph.nodes || [];
+  const edges = graph.edges || [];
+
+  let graphml = `<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/graphml">
+  <key id="type" for="node" attr.name="type" attr.type="string"/>
+  <key id="label" for="node" attr.name="label" attr.type="string"/>
+  <key id="confidence" for="node" attr.name="confidence" attr.type="string"/>
+  <key id="path" for="node" attr.name="path" attr.type="string"/>
+  <key id="excerpt" for="node" attr.name="excerpt" attr.type="string"/>
+  <key id="edgeType" for="edge" attr.name="edgeType" attr.type="string"/>
+  <key id="weight" for="edge" attr.name="weight" attr.type="double"/>
+  <graph id="peter" edgedefault="directed">\n`;
+
+  for (const node of nodes) {
+    const safeId = node.id.replace(/"/g, '&quot;');
+    graphml += `    <node id="${safeId}">\n`;
+    graphml += `      <data key="type">${node.type}</data>\n`;
+    graphml += `      <data key="label">${(node.label || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</data>\n`;
+    graphml += `      <data key="confidence">${node.confidence || 'unknown'}</data>\n`;
+    graphml += `      <data key="path">${(node.path || '').replace(/"/g, '&quot;')}</data>\n`;
+    graphml += `      <data key="excerpt">${(node.excerpt || '').substring(0, 100).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</data>\n`;
+    graphml += `    </node>\n`;
+  }
+
+  for (const edge of edges) {
+    const safeFrom = edge.from.replace(/"/g, '&quot;');
+    const safeTo = edge.to.replace(/"/g, '&quot;');
+    graphml += `    <edge source="${safeFrom}" target="${safeTo}">\n`;
+    graphml += `      <data key="edgeType">${edge.type}</data>\n`;
+    graphml += `      <data key="weight">${edge.weight || 1}</data>\n`;
+    graphml += `    </edge>\n`;
+  }
+
+  graphml += `  </graph>
+</graphml>`;
+
+  writeFileSync(graphmlPath, graphml, 'utf8');
+
+  return { ok: true, path: graphmlPath, nodeCount: nodes.length, edgeCount: edges.length };
+}
+
+function exportNeo4jCypher(cwd, graph) {
+  const neo4jDir = join(cwd, 'vault', 'index', 'neo4j');
+  mkdirSync(neo4jDir, { recursive: true });
+
+  const nodes = graph.nodes || [];
+  const edges = graph.edges || [];
+  const maxPerFile = 10000;
+
+  // Nodes
+  let nodesCypher = '';
+  nodes.forEach((node, idx) => {
+    if (idx > 0 && idx % maxPerFile === 0) {
+      writeFileSync(join(neo4jDir, `nodes_${Math.floor(idx / maxPerFile)}.cypher`), nodesCypher, 'utf8');
+      nodesCypher = '';
+    }
+    const safeId = node.id.replace(/"/g, '\\"');
+    const safeLabel = (node.label || '').replace(/"/g, '\\"');
+    const safeConfidence = (node.confidence || 'unknown').replace(/"/g, '\\"');
+    nodesCypher += `CREATE (:${node.type.replace(/-/g, '_')} {id: "${safeId}", label: "${safeLabel}", confidence: "${safeConfidence}"});\n`;
+  });
+  if (nodesCypher) writeFileSync(join(neo4jDir, 'nodes_0.cypher'), nodesCypher, 'utf8');
+
+  // Edges
+  let edgesCypher = '';
+  edges.forEach((edge, idx) => {
+    if (idx > 0 && idx % maxPerFile === 0) {
+      writeFileSync(join(neo4jDir, `edges_${Math.floor(idx / maxPerFile)}.cypher`), edgesCypher, 'utf8');
+      edgesCypher = '';
+    }
+    const safeFrom = edge.from.replace(/"/g, '\\"');
+    const safeTo = edge.to.replace(/"/g, '\\"');
+    const safeType = edge.type.replace(/-/g, '_').toUpperCase();
+    edgesCypher += `MATCH (a {id:"${safeFrom}"}),(b {id:"${safeTo}"}) CREATE (a)-[:${safeType}]->(b);\n`;
+  });
+  if (edgesCypher) writeFileSync(join(neo4jDir, 'edges_0.cypher'), edgesCypher, 'utf8');
+
+  // Import script
+  const importScript = `#!/bin/bash
+# Neo4j import script for Peter Knowledge Graph
+# Usage: bash import.sh [optional: cypher-shell-path]
+
+CYPHER=\${1:-cypher-shell}
+
+if ! command -v \$CYPHER &> /dev/null; then
+  echo "Warning: cypher-shell not found. Install Neo4j to use this script."
+  exit 1
+fi
+
+for file in nodes_*.cypher; do
+  echo "Importing \$file..."
+  \$CYPHER < "\$file"
+done
+
+for file in edges_*.cypher; do
+  echo "Importing \$file..."
+  \$CYPHER < "\$file"
+done
+
+echo "Neo4j import complete."
+`;
+
+  writeFileSync(join(neo4jDir, 'import.sh'), importScript, 'utf8');
+
+  return { ok: true, path: neo4jDir, nodeCount: nodes.length, edgeCount: edges.length };
+}
+
+function exportVault(cwd, format) {
+  const graphPath = join(cwd, 'vault', 'index', 'graph.json');
+  if (!existsSync(graphPath)) {
+    return { ok: false, error: 'graph.json absent — lancez : claude-atelier vault graph' };
+  }
+
+  let graph;
+  try {
+    graph = JSON.parse(readFileSync(graphPath, 'utf8'));
+  } catch (err) {
+    return { ok: false, error: `graph.json illisible: ${err.message}` };
+  }
+
+  const handlers = {
+    html: () => exportHtmlGraph(cwd, graph),
+    obsidian: () => exportObsidianVault(cwd, graph),
+    wiki: () => exportWikiVault(cwd, graph),
+    svg: () => exportSvgGraph(cwd, graph),
+    graphml: () => exportGraphML(cwd, graph),
+    neo4j: () => exportNeo4jCypher(cwd, graph),
+  };
+
+  if (!handlers[format]) {
+    return { ok: false, error: `Format inconnu: ${format}. Formats disponibles: html, obsidian, wiki, svg, graphml, neo4j` };
+  }
+
+  return handlers[format]();
+}
+
+function printExport(result, format, cwd) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+    return;
+  }
+
+  console.log(`\n${CYAN}[PETER] vault export --${format}${NC}`);
+
+  if (format === 'html') {
+    console.log(`  → ${relative(cwd, result.path)} (${result.size} KB)`);
+    console.log(`\n${GREEN}✓${NC} Graphe D3 généré. Ouvre : open ${relative(cwd, result.path)}`);
+  } else if (format === 'obsidian') {
+    console.log(`  → ${relative(cwd, result.path)}`);
+    console.log(`  → ${result.count} fichiers .md`);
+    console.log(`\n${GREEN}✓${NC} Vault Obsidian prêt.`);
+  } else if (format === 'wiki') {
+    console.log(`  → ${relative(cwd, result.path)}`);
+    console.log(`  → ${result.typeCount} types (${result.nodeCount} nœuds)`);
+    console.log(`\n${GREEN}✓${NC} Wiki structuré prêt.`);
+  } else if (format === 'svg') {
+    console.log(`  → ${relative(cwd, result.path)} (${result.size} KB)`);
+    console.log(`\n${GREEN}✓${NC} Graphe SVG statique généré.`);
+  } else if (format === 'graphml') {
+    console.log(`  → ${relative(cwd, result.path)}`);
+    console.log(`  → ${result.nodeCount} nœuds, ${result.edgeCount} relations`);
+    console.log(`\n${GREEN}✓${NC} Format GraphML standard généré.`);
+  } else if (format === 'neo4j') {
+    console.log(`  → ${relative(cwd, result.path)}`);
+    console.log(`  → ${result.nodeCount} nœuds, ${result.edgeCount} relations`);
+    console.log(`\n${GREEN}✓${NC} Scripts Cypher Neo4j générés. Utilise : bash import.sh`);
+  }
+}
+
 export async function runVault(argv) {
   const { sub, positional, queryText, cwd, dryRun, json, intervalText } = parseArgs(argv);
 
@@ -2589,7 +3248,52 @@ export async function runVault(argv) {
     return result.ok ? 0 : 1;
   }
 
+  if (sub === 'export') {
+    const formats = ['html', 'obsidian', 'wiki', 'svg', 'graphml', 'neo4j'];
+    const format = formats.find(f => argv.includes(`--${f}`)) || 'html';
+    const result = exportVault(cwd, format);
+    if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    else printExport(result, format, cwd);
+    return result.ok ? 0 : 1;
+  }
+
+  if (sub === 'watch') {
+    const action = positional[0] ?? 'status';
+    const intervalSec = Math.max(5, Math.floor(Number(intervalText) || 30));
+
+    if (action === 'once') {
+      const result = onceVaultWatch(cwd);
+      if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+      else printWatchOnce(result);
+      return result.ok ? 0 : 1;
+    }
+
+    if (action === 'start') {
+      const result = startVaultWatch(cwd, intervalSec);
+      if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+      else printWatchStart(result);
+      return result.ok ? 0 : 1;
+    }
+
+    if (action === 'stop') {
+      const result = stopVaultWatch(cwd);
+      if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+      else printWatchStop(result);
+      return result.ok ? 0 : 1;
+    }
+
+    if (action === 'status') {
+      const result = watchStatus(join(cwd, 'vault'));
+      if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+      else printWatchStatus(result);
+      return 0;
+    }
+
+    process.stderr.write(`${RED}error${NC}: action watch inconnue "${action}"\n`);
+    return 1;
+  }
+
   process.stderr.write(`${RED}error${NC}: sous-commande vault inconnue "${sub}"\n`);
-  process.stderr.write('Usage: claude-atelier vault [init|status|report|stale|update|graph|query|explain|path|maintain|cron] [--cwd <path>] [--dry-run] [--json]\n');
+  process.stderr.write('Usage: claude-atelier vault [init|status|report|stale|update|graph|query|explain|path|export|watch|maintain|cron] [--cwd <path>] [--dry-run] [--json]\n');
   return 1;
 }
