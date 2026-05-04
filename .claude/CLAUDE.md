@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — v0.23.11 livrée sur GitHub (Lots 1/2/3+5+8, Telegram bridge Phase A) · next: Lot 0 modularisation src/vault/ + Lot 4 AST + Lot 10 MCP Peter |
+| Phase | Phase 2 — Telegram bridge Phase A livré + 9 bugs Copilot corrigés (PR #47 mergée) · next: Phase B voix (faster-whisper) + bump version |
 | Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
