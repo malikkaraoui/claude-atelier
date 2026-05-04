@@ -873,7 +873,6 @@ test('vault watch status sans daemon actif retourne { active: false }', () => {
   }
 });
 
-<<<<<<< HEAD
 test('vault docs scan détecte marqueurs BMAD et marque protected', () => {
   const dir = initTestVault();
   try {
@@ -903,7 +902,6 @@ test('vault watch status --json retourne { active: false, pid: null }', () => {
   }
 });
 
-<<<<<<< HEAD
 test('vault docs classify affiche rapport avec regroupement par kind', () => {
   const dir = initTestVault();
   try {
@@ -931,7 +929,6 @@ test('vault watch once exécute un cycle unique synchrone', () => {
   }
 });
 
-<<<<<<< HEAD
 test('vault docs organize --plan affiche plan sans le modifier', () => {
   const dir = initTestVault();
   try {
@@ -964,7 +961,6 @@ test('vault watch once --json retourne { ok, elapsed, changedFiles }', () => {
   }
 });
 
-<<<<<<< HEAD
 test('vault docs organize --apply requires --confirm flag', () => {
   const dir = initTestVault();
   try {
@@ -991,7 +987,6 @@ test('vault watch stop sans daemon actif retourne erreur', () => {
   }
 });
 
-<<<<<<< HEAD
 test('graph v2 crée doc_category nodes depuis catalog', () => {
   const dir = initTestVault();
   try {
