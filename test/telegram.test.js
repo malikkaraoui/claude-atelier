@@ -8,8 +8,9 @@
  * Usage: node test/telegram.test.js
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -204,6 +205,43 @@ test('.claude/settings.json déclare telegram-notify sur git commit + git push',
   ok(content.includes('telegram-notify.sh'), 'hook telegram-notify.sh absent de settings.json');
   const occurrences = (content.match(/telegram-notify\.sh/g) || []).length;
   ok(occurrences >= 2, `attendu ≥ 2 références telegram-notify.sh, trouvé ${occurrences}`);
+});
+
+test('telegram-notify.sh utilise O_NONBLOCK pour éviter le blocage FIFO', () => {
+  const path = resolve(ROOT, 'hooks', 'telegram-notify.sh');
+  const content = readFileSync(path, 'utf8');
+  ok(content.includes('O_NONBLOCK'), 'O_NONBLOCK absent — risque de blocage si aucun lecteur sur le FIFO');
+  ok(content.includes('FIFO_MSG'), 'FIFO_MSG absent — message non transmis au sous-processus python3');
+  ok(!content.includes('\\$MSG'), 'littéral \\$MSG détecté — variable non transmise au sous-shell (bug escaping)');
+});
+
+// ─────────────────────────────────────────────────────────────
+// Phase C — exécution réelle du hook (FIFO temporaire)
+// ─────────────────────────────────────────────────────────────
+console.log('\nPhase C (exécution hook):');
+
+test('telegram-notify.sh exit 0 et silent quand bridge non actif (no FIFO)', () => {
+  // Garantit que /tmp/claude-telegram-out n'est pas un pipe nommé actif
+  const fifoExists = spawnSync('test', ['-p', '/tmp/claude-telegram-out']).status === 0;
+  if (fifoExists) {
+    console.log('    (⚠ bridge actif — test skippé pour éviter écriture réelle)');
+    return;
+  }
+  const hookPath = resolve(ROOT, 'hooks', 'telegram-notify.sh');
+  const stdin = JSON.stringify({
+    tool_name: 'Bash',
+    tool_input: { command: 'git commit -m "test"' },
+    tool_response: { exit_code: 0 }
+  });
+  const result = spawnSync('bash', [hookPath], {
+    input: stdin,
+    encoding: 'utf8',
+    stdio: ['pipe', 'pipe', 'pipe'],
+    env: process.env,
+    timeout: 5000
+  });
+  ok(result.status === 0, `hook exit ${result.status}: ${result.stderr}`);
+  ok(!result.stdout, `sortie inattendue: ${result.stdout}`);
 });
 
 // ─────────────────────────────────────────────────────────────

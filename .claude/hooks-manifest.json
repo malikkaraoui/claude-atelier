@@ -207,9 +207,9 @@
       "rule": ".claude/autonomy/telegram.md — Mode nuit alertes FIFO",
       "test": "test/telegram.test.js → Phase C hooks",
       "exitCodes": {
-        "0": "always (silent, never blocks)"
+        "0": "always (best-effort — skipped si FIFO absent ou aucun lecteur, écriture O_NONBLOCK non-bloquante)"
       },
-      "sha256": "0bd27f079eb38555"
+      "sha256": "14ad6d8572425df2"
     },
     {
       "name": "guard-review-auto",
