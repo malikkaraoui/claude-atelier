@@ -168,6 +168,45 @@ test('src/templates/telegram.env.example contient les vars Phase B', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// Phase C — FIFO hooks (telegram-notify.sh + settings)
+// ─────────────────────────────────────────────────────────────
+console.log('\nPhase C (FIFO hooks):');
+
+test('hooks/telegram-notify.sh existe', () => {
+  const path = resolve(ROOT, 'hooks', 'telegram-notify.sh');
+  ok(existsSync(path), `fichier manquant: ${path}`);
+});
+
+test('hooks/telegram-notify.sh vérifie le named pipe (-p)', () => {
+  const path = resolve(ROOT, 'hooks', 'telegram-notify.sh');
+  const content = readFileSync(path, 'utf8');
+  ok(content.includes('-p "$FIFO_PATH"') || content.includes('-p "${FIFO_PATH}"'),
+    'vérification named pipe (-p) absente — risque de deadlock si bridge éteint');
+});
+
+test('hooks/telegram-notify.sh écrit ✅ Commit sur git commit', () => {
+  const path = resolve(ROOT, 'hooks', 'telegram-notify.sh');
+  const content = readFileSync(path, 'utf8');
+  ok(content.includes('git commit'), 'pattern git commit absent');
+  ok(content.includes('✅ Commit'), 'message ✅ Commit absent');
+});
+
+test('hooks/telegram-notify.sh écrit 🚀 Push sur git push', () => {
+  const path = resolve(ROOT, 'hooks', 'telegram-notify.sh');
+  const content = readFileSync(path, 'utf8');
+  ok(content.includes('git push'), 'pattern git push absent');
+  ok(content.includes('🚀 Push'), 'message 🚀 Push absent');
+});
+
+test('.claude/settings.json déclare telegram-notify sur git commit + git push', () => {
+  const path = resolve(ROOT, '.claude', 'settings.json');
+  const content = readFileSync(path, 'utf8');
+  ok(content.includes('telegram-notify.sh'), 'hook telegram-notify.sh absent de settings.json');
+  const occurrences = (content.match(/telegram-notify\.sh/g) || []).length;
+  ok(occurrences >= 2, `attendu ≥ 2 références telegram-notify.sh, trouvé ${occurrences}`);
+});
+
+// ─────────────────────────────────────────────────────────────
 // Vérifications des dépendances Python (optionnel)
 // ─────────────────────────────────────────────────────────────
 console.log('\nDépendances Python:');

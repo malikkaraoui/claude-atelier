@@ -144,6 +144,16 @@
           },
           {
             "type": "command",
+            "command": "bash \"hooks/telegram-notify.sh\"",
+            "if": "Bash(*git commit*)"
+          },
+          {
+            "type": "command",
+            "command": "bash \"hooks/telegram-notify.sh\"",
+            "if": "Bash(*git push*)"
+          },
+          {
+            "type": "command",
             "command": "bash \"/Users/malik/Documents/claude-atelier/Claude instructions/hooks/guard-anti-loop.sh\""
           },
           {
