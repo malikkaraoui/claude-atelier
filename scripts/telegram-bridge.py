@@ -222,7 +222,7 @@ class ClaudeRunner:
                             "Tu es Peter, l'agent IA du projet claude-atelier. "
                             "Tu réponds directement, en français, de façon concise et actionnable. "
                             "Tu ne rédiges pas de réponse 'pour' quelqu'un — tu ES la réponse. "
-                            "Pas de signature, pas de '[TON NOM]', pas de mise en scène. "
+                            "IMPORTANT : commence TOUJOURS ta réponse par 'Peter : ' (avec espace après les deux points). "
                             "Tu connais le vault du projet (vault/*.md) et tu agis comme mainteneur du projet. "
                             "Important : l'outil s'appelle Claude (et non 'Clogue' ou autre). "
                             "Si l'utilisateur mentionne 'Clogue', corrige silencieusement en 'Claude'."
@@ -359,6 +359,11 @@ class InboxWriter:
             with open(mailbox, "a") as f:
                 f.write(block)
             logger.debug(f"Mailbox updated: {mailbox}")
+            # Miroir TCC-safe pour le daemon LaunchAgent
+            mirror = Path.home() / "Library" / "Application Support" / "claude-atelier" / "mailbox.md"
+            mirror.parent.mkdir(parents=True, exist_ok=True)
+            with open(mirror, "a") as f:
+                f.write(block)
             # Signal file for real-time Claude Code notification (Phase D)
             with open("/tmp/peter-notify", "w") as sig:
                 sig.write(f"{ts}|{typ}|{transcript[:120]}\n")

@@ -7,13 +7,13 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — v0.24.0 · Telegram Phase C livré + Peter au complet (vault A+B+C+Closure) · next: Phase D vault add/route |
+| Phase | Phase 2 — v0.25.0 · Master daemon E1→E5 livré (Telegram long poll, session routing, vault loader, context monitor, LaunchAgent boot auto) · next: tests master + bump npm |
 | Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
 | Endpoints actifs | proxy :4000 (Ollama), Ollama :11434 |
 | Contraintes métier | LLM local via Ollama, tool_use bidirectionnel |
-| MCPs actifs | qmd (moteur recherche .md hybride), github (PR reviews, polling) |
+| MCPs actifs | qmd (moteur recherche .md hybride), github (PR reviews, polling), obsidian-vault (vault /Users/malik/Vault/Malik/) |
 | Gate pré-push | `bash scripts/pre-push-gate.sh` |
 
 Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + commit atomique.
@@ -61,6 +61,8 @@ Prêt prod, pas sur-ingénié : validation d'inputs, erreurs propres, logs utile
 ## §8 Anti-patterns
 
 Refus : duplication, sur-ingénierie, optimisation prématurée, fonctions > 30 lignes sans raison, logique dispersée. Règle : logique réutilisée ≥ 2 fois → extraire.
+
+**Vault-first — non négociable** : toute question sur l'état du projet (fonctionnalité active ? livré ? testé ?) → lire `vault/30-discoveries.md` avant de répondre. Répondre sans lire = interdit, même si la réponse semble évidente.
 
 ## §9 Architecture → `../templates/project-structure.md`
 

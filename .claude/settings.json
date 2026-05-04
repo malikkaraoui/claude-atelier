@@ -71,6 +71,11 @@
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/",
       "_comment": "MCP GitHub officiel — outils: get_pull_request, request_copilot_review, create_pull_request. Auth: OAuth Copilot (automatique si CLI gh authentifié)."
+    },
+    "obsidian-vault": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/malik/Vault/Malik"],
+      "_comment": "MCP filesystem vault Obsidian — lecture/écriture .md directs, sans dépendance API Obsidian. Vault global : /Users/malik/Vault/Malik/"
     }
   },
   "hooks": {

@@ -38,3 +38,28 @@
 - Décision : `website/docs/*.md` fait partie du périmètre Peter (scan + manifest + stale detection). La routine commit/push/bump/publish inclut systématiquement une passe de mise à jour de `website/docs/`
 - Conséquence : Peter doit scanner `website/docs/` et signaler quand des features sont commitées sans MAJ doc correspondante. La doc Vercel = source de vérité publique du npm ; elle doit refléter l'état réel du package
 - À revalider si : le site Docusaurus migre vers un repo séparé
+
+---
+
+### 2026-05-04 — Master daemon : architecture Claude Atelier comme sous-couche universelle
+
+- **Décision** : Claude Atelier devient un runtime Master autonome, pas seulement un npm de config
+- **Architecture** :
+  ```
+  Malik (Telegram)
+       ↕
+  [MASTER] claude-atelier daemon (LaunchAgent, KeepAlive)
+       ├── Obsidian Vault /Users/malik/Vault/Malik/ (contexte global)
+       ├── spawn sessions Claude Code par projet (cwd = repo projet)
+       ├── monitor token burn → restart session avec summary
+       └── Claude A / B / C ... (subagents projets)
+  ```
+- **Règles de contrôle** : le Master a tous les pouvoirs d'orchestration, mais Malik garde le contrôle ferme (commandes Telegram, budget, permission gates)
+- **Capacités requises** :
+  1. Boot automatique (LaunchAgent macOS, KeepAlive=true)
+  2. Redémarre après shutdown machine
+  3. Lance `claude` sessions dans le bon répertoire projet
+  4. Détecte context burn → crée summary → relance session
+  5. Route les messages Telegram vers le bon projet ou répond en Master
+- **Conséquence** : le CLI `claude-atelier master start/stop/status` devient l'interface de contrôle. `bin/master.js` = nouveau entry point principal
+- **À revalider si** : Anthropic sort une API sessions persistantes
