@@ -1,0 +1,81 @@
+{
+  "pr_number": 46,
+  "title": "feat(vault): Lot 5 — watch daemon + CLI",
+  "branch": "feat/vault-watch",
+  "base": "main",
+  "summary": "Implements Lot 5: vault watch daemon for incremental polling of vault changes with background daemon spawning, PID tracking, and synchronous watch cycles.",
+  "files_changed": [
+    {
+      "path": "src/vault/watch.js",
+      "type": "new",
+      "purpose": "Core watcher module with watchOnce() for single cycles, watchStatus() for daemon status, and watchLoop() for background polling",
+      "key_functions": [
+        "watchOnce(vaultPath, updateFn, graphFn) — Synchronous cycle with SHA256 manifest hashing",
+        "watchStatus(vaultPath) — Check daemon status via PID",
+        "watchLoop(vaultPath, intervalSec, updateFn, graphFn) — Background polling with signal handling"
+      ]
+    },
+    {
+      "path": "bin/vault-watch.js",
+      "type": "new",
+      "purpose": "Daemon launcher script spawned detached from bin/vault.js",
+      "key_logic": "Parses --vault-path and --interval args, calls watchLoop() with polling interval clamped to min 5s"
+    },
+    {
+      "path": "bin/vault.js",
+      "type": "modified",
+      "purpose": "Added watch command dispatch and helper functions",
+      "changes": [
+        "Added imports: spawn from child_process, watchOnce/watchStatus from src/vault/watch.js",
+        "Added startVaultWatch(cwd, intervalSec) — spawns daemon detached with stdio:ignore",
+        "Added stopVaultWatch(cwd) — kills PID via SIGTERM, removes watch.json",
+        "Added onceVaultWatch(cwd) — synchronous cycle with update/graph callbacks",
+        "Added printWatch* functions for formatted output",
+        "Added 'watch' dispatch in runVault with actions: once|start|stop|status"
+      ]
+    },
+    {
+      "path": "test/vault.js",
+      "type": "modified",
+      "purpose": "Added 6 tests for Lot 5 functionality",
+      "tests": [
+        "vault watch status sans daemon retourne { active: false }",
+        "vault watch status --json format validation",
+        "vault watch once execution synchrone",
+        "vault watch once --json format validation",
+        "vault watch stop error handling",
+        "vault watch start creates watch.json with pid"
+      ]
+    }
+  ],
+  "architecture": {
+    "polling_strategy": "File hashing via SHA256 of all vault/*.md files, stored in .peter/state.json lastWatchManifest",
+    "daemon_lifecycle": "spawn detached + stdio:ignore, PID file in .peter/watch.json, SIGTERM cleanup",
+    "intervals": "Configurable via --interval, clamped to min 5s, max ~30s default",
+    "event_logging": "Appends to .peter/events.jsonl with watch_cycle events including elapsed, changedFiles, updateOk, graphOk"
+  },
+  "test_coverage": {
+    "total_vault_tests": 50,
+    "new_tests": 6,
+    "passing": "50/50",
+    "gate_status": "PASSED — secrets, lint, build, tests all clean"
+  },
+  "review_focus": [
+    "Daemon spawning logic — verify detached and stdio handling is correct",
+    "PID checking — process.kill(pid, 0) for validation",
+    "Signal handlers — SIGTERM/SIGINT cleanup in watchLoop",
+    "File hashing — SHA256 manifest comparison for change detection",
+    "Test isolation — ensure daemon processes don't leak between tests"
+  ],
+  "integration_points": [
+    "Calls updateVault() and graphVault() callbacks when changes detected",
+    "Uses existing vault/.peter/ directory for state and config storage",
+    "Compatible with vault update/graph commands for incremental rebuilds"
+  ],
+  "next_steps_if_approved": [
+    "Merge to main",
+    "Bump version in package.json and bin/cli.js",
+    "Verify npm publish with new version",
+    "Consider git hook installation if requested in Phase D"
+  ]
+}
