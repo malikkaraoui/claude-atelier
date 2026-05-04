@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — v0.23.12 · Telegram Phase C livré (hook FIFO PostToolUse + portabilité macOS O_NONBLOCK, PR #52 mergée) · next: Phase D vault add/route |
+| Phase | Phase 2 — v0.24.0 · Telegram Phase C livré + Peter au complet (vault A+B+C+Closure) · next: Phase D vault add/route |
 | Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
