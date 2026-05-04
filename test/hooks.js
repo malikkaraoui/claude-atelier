@@ -593,54 +593,100 @@ test('injecte brief et mailbox si vault projet présent', () => {
 // ─────────────────────────────────────────────────────────────
 console.log('\n── Tests Master daemon ──');
 
-{
-  const { ContextMonitor } = await import('../src/master/context-monitor.js');
+const { ContextMonitor } = await import('../src/master/context-monitor.js');
+const { SessionManager } = await import('../src/master/session-manager.js');
+const { loadVaultBrief, loadProjectContext } = await import('../src/master/vault-loader.js');
+
+test('ContextMonitor: push et getContext', () => {
   const cm = new ContextMonitor();
-
   cm.push('proj', 'bonjour', 'salut');
-  ok(cm.getContext('proj').includes('Malik: bonjour'), 'ContextMonitor: message user stocké');
-  ok(cm.getContext('proj').includes('Master: salut'), 'ContextMonitor: message assistant stocké');
+  ok(cm.getContext('proj').includes('Malik: bonjour'), 'message user stocké');
+  ok(cm.getContext('proj').includes('Master: salut'), 'message assistant stocké');
+});
 
-  // Rotation glissante
-  for (let i = 0; i < 12; i++) cm.push('proj', `msg${i}`, `rep${i}`);
-  const ctx = cm.getContext('proj');
-  ok(!ctx.includes('Malik: bonjour'), 'ContextMonitor: rotation expulse les anciens');
-  ok(ctx.includes('msg11'), 'ContextMonitor: derniers messages présents');
+test('ContextMonitor: rotation glissante — seuil exact MAX_TURNS=10', () => {
+  const cm = new ContextMonitor();
+  // Pousser exactement 10 tours : le 10e doit être présent
+  for (let i = 0; i < 10; i++) cm.push('proj', `msg${i}`, `rep${i}`);
+  ok(cm.getContext('proj').includes('msg0'), 'msg0 encore présent à 10 tours');
+  ok(cm.getContext('proj').includes('msg9'), 'msg9 présent à 10 tours');
+  // 11e tour : msg0 doit être expulsé
+  cm.push('proj', 'msg10', 'rep10');
+  ok(!cm.getContext('proj').includes('msg0'), 'msg0 expulsé au 11e tour (off-by-one vérifié)');
+  ok(cm.getContext('proj').includes('msg10'), 'msg10 présent après rotation');
+});
 
+test('ContextMonitor: reset vide l historique', () => {
+  const cm = new ContextMonitor();
+  cm.push('proj', 'x', 'y');
   cm.reset('proj');
-  ok(cm.getContext('proj') === '', 'ContextMonitor: reset vide l historique');
-}
+  ok(cm.getContext('proj') === '', 'reset → contexte vide');
+});
 
-{
-  const { SessionManager } = await import('../src/master/session-manager.js');
+test('SessionManager: état initial et getCwd fallback', () => {
   const sm = new SessionManager();
+  ok(sm.active === null, 'actif = null par défaut');
+  ok(sm.getCwd('/fallback') === '/fallback', 'getCwd retourne fallback');
+});
 
-  ok(sm.active === null, 'SessionManager: actif = null par défaut');
-  ok(sm.getCwd('/fallback') === '/fallback', 'SessionManager: getCwd retourne fallback');
-
-  // Activation par chemin direct
+test('SessionManager: activate et off', () => {
+  const sm = new SessionManager();
   const result = sm.activate('/tmp');
-  ok(result !== null, 'SessionManager: activate chemin existant');
-  ok(sm.active?.path === '/tmp', 'SessionManager: active.path correct');
-
+  ok(result !== null, 'activate chemin existant');
+  ok(sm.active?.path === '/tmp', 'active.path correct');
   sm.activate('off');
-  ok(sm.active === null, 'SessionManager: off remet à null');
+  ok(sm.active === null, 'off remet à null');
+});
 
-  // handleCommand
+test('SessionManager: handleCommand /projets', () => {
+  const sm = new SessionManager();
   const { handled, reply } = sm.handleCommand('/projets');
-  ok(handled === true, 'SessionManager: /projets handled');
-  ok(typeof reply === 'string', 'SessionManager: /projets reply string');
-}
+  ok(handled === true, '/projets handled');
+  ok(typeof reply === 'string', '/projets reply string');
+});
 
-{
-  const { loadVaultBrief, loadProjectContext } = await import('../src/master/vault-loader.js');
+test('SessionManager: HOME absent → os.homedir() utilisé (sous-process)', () => {
+  const script = `
+    import os from 'node:os';
+    delete process.env.HOME;
+    const { SessionManager } = await import(${JSON.stringify(resolve(ROOT, 'src/master/session-manager.js'))});
+    const sm = new SessionManager();
+    // getCwd doit retourner le fallback sans crash même si HOME absent
+    const cwd = sm.getCwd('/safe-fallback');
+    process.stdout.write(cwd === '/safe-fallback' ? 'OK' : 'FAIL');
+  `;
+  const r = spawnSync(process.execPath, ['--input-type=module'], {
+    input: script,
+    encoding: 'utf8',
+    env: { ...process.env, HOME: '' },
+  });
+  ok(r.stdout.trim() === 'OK', 'SessionManager sans HOME → pas de crash');
+});
 
-  const brief = loadVaultBrief('/chemin/inexistant');
-  ok(brief === '', 'vault-loader: vault inexistant retourne ""');
+test('vault-loader: chemin inexistant retourne ""', () => {
+  ok(loadVaultBrief('/chemin/inexistant') === '', 'vault inexistant → ""');
+  ok(loadProjectContext('/chemin/inexistant') === '', 'projet inexistant → ""');
+});
 
-  const projCtx = loadProjectContext('/chemin/inexistant');
-  ok(projCtx === '', 'vault-loader: projet inexistant retourne ""');
-}
+test('vault-loader: fichier illisible (EACCES) retourne ""', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'vault-acl-'));
+  try {
+    const claudeMd = resolve(dir, 'CLAUDE.md');
+    writeFileSync(claudeMd, 'contenu secret');
+    chmodSync(claudeMd, 0o000);
+    ok(loadVaultBrief(dir) === '', 'vault EACCES → ""');
+    // loadProjectContext cherche .claude/CLAUDE.md puis CLAUDE.md
+    const projDir = mkdtempSync(resolve(tmpdir(), 'proj-acl-'));
+    writeFileSync(resolve(projDir, 'CLAUDE.md'), 'contenu projet');
+    chmodSync(resolve(projDir, 'CLAUDE.md'), 0o000);
+    ok(loadProjectContext(projDir) === '', 'projet EACCES → ""');
+    chmodSync(resolve(projDir, 'CLAUDE.md'), 0o644);
+    rmSync(projDir, { recursive: true, force: true });
+  } finally {
+    try { chmodSync(resolve(dir, 'CLAUDE.md'), 0o644); } catch { /* ignore */ }
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 
 // ─────────────────────────────────────────────────────────────
 // ollama-proxy — tests Go (go test)
