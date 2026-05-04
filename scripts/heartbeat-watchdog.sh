@@ -29,7 +29,7 @@ _bridge_running() {
 _start_bridge() {
     _log "Démarrage du telegram bridge..."
     cd "$ROOT" || return 1
-    node bin/telegram.js start
+    node bin/telegram.js start || { _log "ERREUR: node bin/telegram.js start a échoué"; return 1; }
     sleep 1
     if _bridge_running; then
         _log "Bridge démarré (PID $(cat "$PID_FILE"))"
@@ -41,9 +41,10 @@ _start_bridge() {
 
 _notify_telegram() {
     local msg="$1"
-    # Tente d'envoyer une alerte via le FIFO si disponible
+    # Écriture non-bloquante via timeout pour éviter le gel si aucun lecteur n'est actif
     if [[ -p "/tmp/claude-telegram-out" ]]; then
-        echo "⚠️ Heartbeat: $msg" > /tmp/claude-telegram-out 2>/dev/null || true
+        HEARTBEAT_MSG="⚠️ Heartbeat: $msg" \
+            timeout 1 sh -c 'echo "$HEARTBEAT_MSG" > /tmp/claude-telegram-out' 2>/dev/null || true
     fi
 }
 

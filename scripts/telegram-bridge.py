@@ -73,6 +73,7 @@ try:
 except (json.JSONDecodeError, Exception):
     OPENROUTER_AGENT_MODELS = {}
 OPENROUTER_DEFAULT_MODEL = os.getenv("OPENROUTER_DEFAULT_MODEL", "openrouter/auto")
+OPENROUTER_DEFAULT_AGENT = os.getenv("OPENROUTER_DEFAULT_AGENT", "default")
 
 VAULT_INBOX = os.getenv("VAULT_INBOX", "vault/.peter/inbox/telegram")
 VAULT_MAILBOX = os.getenv("VAULT_MAILBOX", "vault/10-mailbox.md")
@@ -302,7 +303,7 @@ class ClaudeRunner:
         proc = await asyncio.create_subprocess_exec(
             *args,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
             cwd=self.cwd
         )
         self.current_process = proc
@@ -717,7 +718,7 @@ class TelegramBot:
 
         await update.message.reply_text("Processing...")
 
-        output, cost = await runner.run_command(user_message)
+        output, cost = await runner.run_command(user_message, agent=OPENROUTER_DEFAULT_AGENT)
 
         if cost > 0:
             new_total = self.session_mgr.update_cost(user_id, project_dir, cost)
@@ -784,7 +785,7 @@ class TelegramBot:
 
         session = self.session_mgr.get_or_create(user_id, project_dir)
         runner = self._get_claude_runner(user_id, project_dir)
-        output, cost = await runner.run_command(polished)
+        output, cost = await runner.run_command(polished, agent=OPENROUTER_DEFAULT_AGENT)
 
         if cost > 0:
             new_total = self.session_mgr.update_cost(user_id, project_dir, cost)
