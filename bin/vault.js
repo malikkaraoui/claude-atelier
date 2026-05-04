@@ -1177,6 +1177,261 @@ function getFileMtime(filePath) {
   try { return statSync(filePath).mtime.toISOString(); } catch { return ''; }
 }
 
+// ── Lot 1+2: docs scan, classify, organize + graph v2 enrichi ──
+
+function extractH1(filePath) {
+  try {
+    const content = readFileSync(filePath, 'utf8');
+    const match = content.match(/^#\s+(.+)$/m);
+    return match ? match[1].trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+function extractBmadSignals(filePath) {
+  try {
+    const content = readFileSync(filePath, 'utf8');
+    const signals = [];
+    if (content.includes('.bmad')) signals.push('.bmad');
+    if (content.includes('.bmad-method')) signals.push('.bmad-method');
+    if (content.includes('bmad-core')) signals.push('bmad-core');
+    return signals;
+  } catch {
+    return [];
+  }
+}
+
+function classifyMarkdownKind(filename, relPath, content) {
+  const pathLower = relPath.toLowerCase();
+  
+  if (pathLower.includes('decision') || content.includes('## Décision')) return 'decision';
+  if (pathLower.includes('roadmap') || pathLower.includes('plan') || pathLower.includes('milestone')) return 'roadmap';
+  if (pathLower.includes('brief') || pathLower.includes('overview') || pathLower.includes('intro')) return 'brief';
+  if (pathLower.includes('skill') || pathLower.includes('competence')) return 'skill';
+  if (pathLower.includes('template') || pathLower.includes('modele')) return 'template';
+  if (pathLower.includes('config') || pathLower.includes('configuration')) return 'config';
+  if (pathLower.includes('handoff')) return 'handoff';
+  if (pathLower.includes('log') || pathLower.includes('journal') || pathLower.includes('report')) return 'log';
+  if (filename.toLowerCase() === 'readme.md') return 'readme';
+  
+  return 'unknown';
+}
+
+function calculateVaultRelevance(kind, pathLower) {
+  if (pathLower.startsWith('vault/')) return 0.9;
+  if (['config', 'skill'].includes(kind)) return 0.7;
+  if (['decision', 'roadmap'].includes(kind)) return 0.5;
+  if (['readme', 'log'].includes(kind)) return 0.3;
+  return 0.1;
+}
+
+function suggestDestination(kind, pathLower, hasBmad) {
+  if (hasBmad) return pathLower; // Protégé, ne pas déplacer
+  if (pathLower.startsWith('vault/')) return pathLower;
+  
+  const suggestions = {
+    decision: 'vault/decisions/',
+    roadmap: 'vault/roadmap/',
+    brief: 'vault/briefs/',
+    skill: 'vault/skills/',
+    template: 'vault/templates/',
+    config: 'vault/configs/',
+    handoff: 'vault/handoffs/',
+    log: 'vault/logs/',
+    readme: 'vault/library/readme/',
+    unknown: 'vault/library/archive/',
+  };
+  
+  return suggestions[kind] || 'vault/library/archive/';
+}
+
+function scanDocs(cwd) {
+  const vaultDir = join(cwd, 'vault');
+  if (!existsSync(vaultDir)) {
+    return { ok: false, error: 'Aucun vault projet. Lancez : claude-atelier vault init' };
+  }
+
+  const documents = [];
+  const libraryDir = join(vaultDir, 'library');
+  mkdirSync(libraryDir, { recursive: true });
+
+  const findMarkdownFiles = (dir, basePath = '') => {
+    if (!existsSync(dir)) return;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = join(dir, entry.name);
+      const relPath = join(basePath, entry.name).replace(/\\/g, '/');
+
+      if (['node_modules', '.git', '.venv', 'dist', 'build', '.next'].includes(entry.name)) continue;
+      if (relPath.includes('.claude/worktrees/')) continue;
+
+      if (entry.isDirectory()) {
+        findMarkdownFiles(fullPath, relPath);
+      } else if (entry.name.endsWith('.md')) {
+        try {
+          const content = readFileSync(fullPath, 'utf8');
+          const stat = statSync(fullPath);
+          const hash = createHash('sha256').update(content).digest('hex');
+          const title = extractH1(fullPath) || entry.name.replace(/\.md$/, '');
+          const kind = classifyMarkdownKind(entry.name, relPath, content);
+          const bmadSignals = extractBmadSignals(fullPath);
+          const vaultRelevance = calculateVaultRelevance(kind, relPath.toLowerCase());
+          const suggested = suggestDestination(kind, relPath.toLowerCase(), bmadSignals.length > 0);
+
+          documents.push({
+            path: relPath,
+            filename: entry.name,
+            title,
+            sha256: hash,
+            mtime: stat.mtime.toISOString(),
+            size: stat.size,
+            kind,
+            confidence: 0.85,
+            status: 'active',
+            vaultRelevance,
+            reason: `Classification ${kind} basée sur structure fichier et contenu`,
+            suggestedDestination: suggested,
+            protected: bmadSignals.length > 0,
+            bmadSignals,
+            graphNodeId: `markdown_document:${relPath}`,
+          });
+        } catch (e) {
+          // Ignore les fichiers illisibles
+        }
+      }
+    }
+  };
+
+  findMarkdownFiles(cwd);
+
+  const catalogPath = join(libraryDir, 'catalog.json');
+  writeFileSync(catalogPath, JSON.stringify({ documents }, null, 2) + '\n', 'utf8');
+
+  return {
+    ok: true,
+    catalogPath,
+    fileCount: documents.length,
+    byKind: documents.reduce((acc, e) => { acc[e.kind] = (acc[e.kind] || 0) + 1; return acc; }, {}),
+    protected: documents.filter(e => e.protected).length,
+  };
+}
+
+function classifyDocs(cwd) {
+  const vaultDir = join(cwd, 'vault');
+  const catalogPath = join(vaultDir, 'library', 'catalog.json');
+  if (!existsSync(catalogPath)) {
+    return { ok: false, error: 'catalog.json absent — lancez : claude-atelier vault docs scan' };
+  }
+
+  let documents;
+  try {
+    const parsed = JSON.parse(readFileSync(catalogPath, 'utf8'));
+    documents = parsed.documents || parsed;
+  } catch {
+    return { ok: false, error: 'catalog.json illisible' };
+  }
+
+  const byKind = {};
+  const protected_ = [];
+  const unknown = [];
+  const byVaultRelevance = documents.slice().sort((a, b) => b.vaultRelevance - a.vaultRelevance);
+
+  for (const doc of documents) {
+    if (!byKind[doc.kind]) byKind[doc.kind] = [];
+    byKind[doc.kind].push(doc);
+    if (doc.protected) protected_.push(doc);
+    if (doc.kind === 'unknown') unknown.push(doc);
+  }
+
+  return {
+    ok: true,
+    byKind,
+    protected: protected_,
+    topByVaultRelevance: byVaultRelevance.slice(0, 10),
+    unknown,
+    totalCount: documents.length,
+  };
+}
+
+function organizeDocs(cwd, apply = false, confirm = false) {
+  const vaultDir = join(cwd, 'vault');
+  const catalogPath = join(vaultDir, 'library', 'catalog.json');
+  if (!existsSync(catalogPath)) {
+    return { ok: false, error: 'catalog.json absent — lancez : claude-atelier vault docs scan' };
+  }
+
+  if (apply && !confirm) {
+    return { ok: false, error: 'Drapeaux --apply ET --confirm requis pour modifier les fichiers' };
+  }
+
+  let documents;
+  try {
+    const parsed = JSON.parse(readFileSync(catalogPath, 'utf8'));
+    documents = parsed.documents || parsed;
+  } catch {
+    return { ok: false, error: 'catalog.json illisible' };
+  }
+
+  const plan = [];
+  const protected_ = [];
+  const moved = [];
+  const libraryDir = join(vaultDir, 'library');
+  const migrationsPath = join(libraryDir, 'migrations.json');
+  const eventsPath = join(libraryDir, 'events.jsonl');
+
+  // Identifier les fichiers à déplacer
+  for (const doc of documents) {
+    if (doc.protected) {
+      protected_.push(doc);
+    } else if (doc.kind === 'unknown' && !doc.path.startsWith('vault/')) {
+      const dest = suggestDestination(doc.kind, doc.path.toLowerCase(), false);
+      plan.push({
+        from: doc.path,
+        to: dest + doc.filename,
+        kind: doc.kind,
+        reason: 'Document non classifié dans le vault',
+      });
+    }
+  }
+
+  // Sauvegarder le plan
+  writeFileSync(migrationsPath, JSON.stringify({ plan, protected: protected_.length, timestamp: new Date().toISOString() }, null, 2) + '\n', 'utf8');
+
+  if (!apply) {
+    return {
+      ok: true,
+      simulation: true,
+      migrationsPath,
+      plan,
+      protected: protected_,
+      message: 'Plan de réorganisation (lecture seule)',
+    };
+  }
+
+  // Appliquer le plan
+  for (const migration of plan) {
+    try {
+      const srcPath = join(cwd, migration.from);
+      const destPath = join(cwd, migration.to);
+      mkdirSync(dirname(destPath), { recursive: true });
+      renameSync(srcPath, destPath);
+      moved.push(migration);
+      appendFileSync(eventsPath, JSON.stringify({ type: 'moved', from: migration.from, to: migration.to, timestamp: new Date().toISOString() }) + '\n', 'utf8');
+    } catch (e) {
+      // Ignorer les erreurs de déplacement
+    }
+  }
+
+  return {
+    ok: true,
+    simulation: false,
+    migrationsPath,
+    moved,
+    protected: protected_,
+    eventsPath,
+  };
+}
+
 function buildGraph(cwd) {
   const vaultDir = join(cwd, 'vault');
   const manifestPath = join(vaultDir, 'index', 'manifest.json');
@@ -1367,6 +1622,125 @@ function buildGraph(cwd) {
     .slice(0, 8)
     .map(n => n.id);
 
+  // ── Lot 1+2 graph v2 enrichment ──
+  const catalogPath = join(vaultDir, 'library', 'catalog.json');
+  let catalogDocuments = [];
+  if (existsSync(catalogPath)) {
+    try {
+      const catalogData = JSON.parse(readFileSync(catalogPath, 'utf8'));
+      catalogDocuments = catalogData.documents || catalogData;
+    } catch {
+      // Ignorer les erreurs
+    }
+  }
+  
+  // Créer doc_category nodes et classified_as edges
+  for (const doc of catalogDocuments) {
+    const catId = `doc_category:${doc.kind}`;
+    if (!nodes.has(catId)) {
+      addNode({
+        id: catId,
+        type: 'doc_category',
+        label: doc.kind,
+        path: '',
+        tags: ['category'],
+        excerpt: `Catégorie: ${doc.kind}`,
+        mtime: now,
+        sha256: '',
+        confidence: 'INFERRED',
+      });
+    }
+    addEdge({
+      from: `markdown_document:${doc.path}`,
+      to: catId,
+      type: 'classified_as',
+      confidence: 'CATALOGUE',
+      source: 'catalog.json',
+      weight: 1,
+    });
+  }
+  
+  // Extraire risques et questions depuis vault files
+  const vaultFilenames = ['00-brief.md', '10-mailbox.md', '20-decisions.md', '30-discoveries.md', '40-roadmap.md', '90-sources.md'];
+  for (const filename of vaultFilenames) {
+    const fp = join(vaultDir, filename);
+    if (!existsSync(fp)) continue;
+    try {
+      const content = readFileSync(fp, 'utf8');
+      const lines = content.split('\n');
+      
+      for (const line of lines) {
+        if (line.match(/^(⚠️|\s*[-*]\s*⚠️|[-*]\s*(Risque|RISQUE|risk):\s*)/i)) {
+          const text = line.replace(/^(⚠️|\s*[-*]\s*⚠️|[-*]\s*(Risque|RISQUE|risk):\s*)/i, '').trim();
+          if (text.length > 0) {
+            const slug = text.slice(0, 40).toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const nodeId = `risk:${slug}`;
+            if (!nodes.has(nodeId)) {
+              addNode({
+                id: nodeId,
+                type: 'risk',
+                label: text.slice(0, 80),
+                path: `vault/${filename}`,
+                tags: ['risk'],
+                excerpt: text.slice(0, 120),
+                mtime: now,
+                sha256: '',
+                confidence: 'EXTRACTED',
+              });
+              addEdge({
+                from: `vault_file:vault/${filename}`,
+                to: nodeId,
+                type: 'identifies',
+                confidence: 'EXTRACTED',
+                source: `vault/${filename}`,
+                weight: 1,
+              });
+            }
+          }
+        }
+      }
+      
+      for (const line of lines) {
+        if (line.match(/^([-*]\s*\?|[-*]\s*Question:|[-*]\s*Q:)/i)) {
+          const text = line.replace(/^([-*]\s*\?|[-*]\s*Question:|[-*]\s*Q:)\s*/i, '').trim();
+          if (text.length > 0) {
+            const slug = text.slice(0, 40).toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const nodeId = `question:${slug}`;
+            if (!nodes.has(nodeId)) {
+              addNode({
+                id: nodeId,
+                type: 'question',
+                label: text.slice(0, 80),
+                path: `vault/${filename}`,
+                tags: ['question'],
+                excerpt: text.slice(0, 120),
+                mtime: now,
+                sha256: '',
+                confidence: 'EXTRACTED',
+              });
+              addEdge({
+                from: `vault_file:vault/${filename}`,
+                to: nodeId,
+                type: 'asks',
+                confidence: 'EXTRACTED',
+                source: `vault/${filename}`,
+                weight: 1,
+              });
+            }
+          }
+        }
+      }
+    } catch {
+      // Ignorer
+    }
+  }
+  
+  // Ajouter byKind stats
+  const byKindStats = {};
+  for (const doc of catalogDocuments) {
+    byKindStats[doc.kind] = (byKindStats[doc.kind] || 0) + 1;
+  }
+
   // Calculer les communautés
   const communities = computeCommunities([...nodes.values()], edges);
 
@@ -1386,6 +1760,7 @@ function buildGraph(cwd) {
       nodeCount: nodeList.length,
       edgeCount: edges.length,
       byType,
+      byKind: byKindStats,
       centralNodes,
       communities: {
         count: communities.count,
@@ -1966,6 +2341,92 @@ function statusVaultCron(cwd) {
   };
 }
 
+
+function printScanDocs(result, cwd) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+    return;
+  }
+  process.stdout.write(`${CYAN}[PETER] vault docs scan${NC}\n`);
+  process.stdout.write(`  Fichiers : ${result.fileCount} fichiers .md indexés\n\n`);
+  
+  process.stdout.write('Classification :\n');
+  for (const [kind, count] of Object.entries(result.byKind).sort()) {
+    process.stdout.write(`  - ${kind}: ${count}\n`);
+  }
+  
+  process.stdout.write(`\n  Protégés (BMAD) : ${result.protected}\n`);
+  process.stdout.write(`  ${GREEN}→${NC} ${result.catalogPath} généré\n\n`);
+  process.stdout.write(`${GREEN}✓${NC} Catalogue Markdown scanné.\n`);
+}
+
+function printClassifyDocs(result, cwd) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+    return;
+  }
+  process.stdout.write(`${CYAN}[PETER] vault docs classify${NC}\n`);
+  process.stdout.write(`\nClassification : ${result.totalCount} documents\n\n`);
+  
+  for (const [kind, docs] of Object.entries(result.byKind).sort()) {
+    process.stdout.write(`  ${kind}: ${docs.length}\n`);
+  }
+  
+  if (result.protected.length > 0) {
+    process.stdout.write(`\nProtected (BMAD) : ${result.protected.length}\n`);
+    for (const doc of result.protected) {
+      process.stdout.write(`  - ${doc.path}\n`);
+    }
+  }
+  
+  if (result.unknown.length > 0) {
+    process.stdout.write(`\nUnknown (à réorganiser) : ${result.unknown.length}\n`);
+    for (const doc of result.unknown.slice(0, 5)) {
+      process.stdout.write(`  - ${doc.path}\n`);
+    }
+    if (result.unknown.length > 5) {
+      process.stdout.write(`  ... et ${result.unknown.length - 5} de plus\n`);
+    }
+  }
+  process.stdout.write('\n');
+}
+
+function printOrganizeDocs(result, cwd) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+    return;
+  }
+  
+  process.stdout.write(`${CYAN}[PETER] vault docs organize${NC}\n`);
+  const mode = result.simulation ? 'PLAN' : 'APPLIED';
+  process.stdout.write(`\nMode : ${mode}\n`);
+  
+  if (result.plan && result.plan.length > 0) {
+    process.stdout.write(`\nMigrations prévues : ${result.plan.length}\n`);
+    for (const mig of result.plan.slice(0, 5)) {
+      process.stdout.write(`  ${mig.from} → ${mig.to}\n`);
+    }
+    if (result.plan.length > 5) {
+      process.stdout.write(`  ... et ${result.plan.length - 5} de plus\n`);
+    }
+  }
+  
+  if (result.protected && result.protected.length > 0) {
+    process.stdout.write(`\n⚠️  Fichiers protégés (BMAD) : ${result.protected.length}\n`);
+    for (const doc of result.protected.slice(0, 3)) {
+      process.stdout.write(`  - ${doc.path}\n`);
+    }
+  }
+  
+  if (result.simulation) {
+    process.stdout.write(`\n${result.migrationsPath} généré\n`);
+    process.stdout.write(`Lancez : claude-atelier vault docs organize --apply --confirm\n`);
+  } else {
+    process.stdout.write(`\n${result.moved.length} fichiers déplacés\n`);
+  }
+  process.stdout.write('\n');
+}
+
 function printCron(result, cwd, action) {
   if (!result.ok) {
     process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
@@ -2059,6 +2520,34 @@ export async function runVault(argv) {
     if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     else printMaintain(result, cwd);
     return result.ok ? 0 : 1;
+  }
+
+
+  if (sub === 'docs') {
+    const action = positional[0];
+    if (action === 'scan') {
+      const result = scanDocs(cwd);
+      if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+      else printScanDocs(result, cwd);
+      return result.ok ? 0 : 1;
+    }
+    if (action === 'classify') {
+      const result = classifyDocs(cwd);
+      if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+      else printClassifyDocs(result, cwd);
+      return result.ok ? 0 : 1;
+    }
+    if (action === 'organize') {
+      const apply = argv.includes('--apply');
+      const confirm = argv.includes('--confirm');
+      const isPlan = argv.includes('--plan');
+      const result = organizeDocs(cwd, apply && !isPlan, confirm);
+      if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+      else printOrganizeDocs(result, cwd);
+      return result.ok ? 0 : 1;
+    }
+    process.stderr.write(`${RED}error${NC}: vault docs <scan|classify|organize>\n`);
+    return 1;
   }
 
   if (sub === 'cron') {

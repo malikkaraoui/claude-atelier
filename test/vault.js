@@ -824,6 +824,184 @@ test('communautés : nœuds dans la même composante connexe ont le même commun
   }
 });
 
+// ── Lot 1+2 — docs scan, classify, organize + graph v2 enrichi ──
+
+test('vault docs scan génère catalog.json avec tous les champs requis', () => {
+  const dir = initTestVault();
+  try {
+    mkdirSync(join(dir, 'docs', 'proposals'), { recursive: true });
+    writeFileSync(join(dir, 'docs', 'proposals', 'test-decision.md'), '# Test Decision\n\n## Décision\n\nTest content', 'utf8');
+    writeFileSync(join(dir, 'README.md'), '# README\n\nProject readme', 'utf8');
+
+    const r = cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
+    ok(r.status === 0, `vault docs scan doit passer: ${r.stderr}`);
+    ok(r.stdout.includes('catalog.json'), 'message catalog.json attendu');
+
+    const catalogPath = join(dir, 'vault', 'library', 'catalog.json');
+    ok(existsSync(catalogPath), 'vault/library/catalog.json doit exister');
+
+    const catalog = JSON.parse(readFileSync(catalogPath, 'utf8'));
+    ok(Array.isArray(catalog.documents), 'documents array attendu');
+    ok(catalog.documents.length > 0, 'au moins un document scanné');
+
+    const sample = catalog.documents[0];
+    ok(sample.path, 'path attendu');
+    ok(sample.filename, 'filename attendu');
+    ok(sample.kind, 'kind attendu');
+    ok(sample.sha256, 'sha256 attendu');
+    ok(sample.title, 'title attendu');
+    ok(typeof sample.protected === 'boolean', 'protected boolean attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault docs scan détecte marqueurs BMAD et marque protected', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '20-decisions.md'),
+      '# Décisions\n\n.bmad-method\n\nContent',
+      'utf8');
+
+    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
+    const catalog = JSON.parse(readFileSync(join(dir, 'vault', 'library', 'catalog.json'), 'utf8'));
+    const decisionDoc = catalog.documents.find(d => d.filename === '20-decisions.md');
+    ok(decisionDoc && decisionDoc.protected === true, 'BMAD files should be protected');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault docs classify affiche rapport avec regroupement par kind', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
+    const r = cli(['vault', 'docs', 'classify', '--cwd', dir], dir);
+    ok(r.status === 0, `vault docs classify doit passer: ${r.stderr}`);
+    ok(r.stdout.includes('Classification') || r.stdout.includes('kind'), 'report doit inclure classification');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault docs organize --plan affiche plan sans le modifier', () => {
+  const dir = initTestVault();
+  try {
+    mkdirSync(join(dir, 'docs', 'random'), { recursive: true });
+    writeFileSync(join(dir, 'docs', 'random', 'unknown.md'), '# Unknown\n\nContent', 'utf8');
+
+    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
+    const r = cli(['vault', 'docs', 'organize', '--plan', '--cwd', dir], dir);
+    ok(r.status === 0, `organize --plan doit passer: ${r.stderr}`);
+    ok(r.stdout.includes('migrations') || r.stdout.includes('plan'), 'should mention plan');
+    ok(existsSync(join(dir, 'docs', 'random', 'unknown.md')), 'file should not move in plan mode');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault docs organize --apply requires --confirm flag', () => {
+  const dir = initTestVault();
+  try {
+    mkdirSync(join(dir, 'docs', 'other'), { recursive: true });
+    writeFileSync(join(dir, 'docs', 'other', 'orphan.md'), '# Orphan\n\nContent', 'utf8');
+
+    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
+    const r = cli(['vault', 'docs', 'organize', '--apply', '--cwd', dir], dir);
+    ok(r.status === 1, 'sans --confirm doit exit 1');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('graph v2 crée doc_category nodes depuis catalog', () => {
+  const dir = initTestVault();
+  try {
+    mkdirSync(join(dir, 'docs'), { recursive: true });
+    writeFileSync(join(dir, 'docs', 'test.md'), '# Test\n\nContent', 'utf8');
+
+    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
+    cli(['vault', 'graph', '--cwd', dir], dir);
+
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const docCategoryNodes = graph.nodes.filter(n => n.type === 'doc_category');
+    ok(docCategoryNodes.length > 0, 'doc_category nodes should exist');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('graph v2 crée classified_as edges vers doc_category', () => {
+  const dir = initTestVault();
+  try {
+    mkdirSync(join(dir, 'docs'), { recursive: true });
+    writeFileSync(join(dir, 'docs', 'test.md'), '# Test\n\nContent', 'utf8');
+
+    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
+    cli(['vault', 'graph', '--cwd', dir], dir);
+
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const classifiedEdges = graph.edges.filter(e => e.type === 'classified_as');
+    ok(classifiedEdges.length > 0, 'classified_as edges should exist');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('graph v2 extrait risk nodes depuis vault files', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '20-decisions.md'),
+      '# Décisions\n\n⚠️ Risque mtime\n\n- ⚠️ Cache issue\n',
+      'utf8');
+
+    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
+    cli(['vault', 'graph', '--cwd', dir], dir);
+
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const riskNodes = graph.nodes.filter(n => n.type === 'risk');
+    ok(riskNodes.length > 0, 'risk nodes should be extracted');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('graph v2 extrait question nodes depuis vault files', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '30-discoveries.md'),
+      '# Découvertes\n\n- ? Comment faire ?\n\n- Question: Quoi faire ?\n',
+      'utf8');
+
+    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
+    cli(['vault', 'graph', '--cwd', dir], dir);
+
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const questionNodes = graph.nodes.filter(n => n.type === 'question');
+    ok(questionNodes.length > 0, 'question nodes should be extracted');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('graph v2 ajoute stats.byKind avec comptes par catégorie', () => {
+  const dir = initTestVault();
+  try {
+    mkdirSync(join(dir, 'docs'), { recursive: true });
+    writeFileSync(join(dir, 'docs', 'test.md'), '# Test\n\nContent', 'utf8');
+
+    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
+    cli(['vault', 'graph', '--cwd', dir], dir);
+
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    ok(graph.stats.byKind, 'stats.byKind should exist');
+    ok(typeof graph.stats.byKind === 'object', 'byKind should be object');
+    ok(Object.keys(graph.stats.byKind).length > 0, 'byKind should have entries');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 const total = pass + fail;
 console.log(`\n── Vault : ${pass}/${total} tests passés${fail > 0 ? ` · ${fail} ÉCHECS` : ''} ──\n`);
 if (fail > 0) process.exit(1);
