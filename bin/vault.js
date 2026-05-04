@@ -10,6 +10,8 @@
  *   claude-atelier vault update  [--cwd <path>] [--json]
  *   claude-atelier vault graph   [--cwd <path>] [--json]
  *   claude-atelier vault query   "<texte>" [--cwd <path>] [--json]
+ *   claude-atelier vault path    <nodeA> <nodeB> [--cwd <path>] [--json]
+ *   claude-atelier vault explain <node> [--cwd <path>] [--json]
  *   claude-atelier vault maintain [--cwd <path>] [--json]
  *   claude-atelier vault cron    start|stop|status [--cwd <path>] [--interval <15m|6h|1d>] [--json]
  */
@@ -1365,7 +1367,14 @@ function buildGraph(cwd) {
     .slice(0, 8)
     .map(n => n.id);
 
-  const nodeList = [...nodes.values()];
+  // Calculer les communautés
+  const communities = computeCommunities([...nodes.values()], edges);
+
+  const nodeList = [...nodes.values()].map(node => ({
+    ...node,
+    community: communities.nodeIdToCommunityId.get(node.id) ?? 0,
+  }));
+
   return {
     version: GRAPH_VERSION,
     generatedAt: now,
@@ -1373,7 +1382,16 @@ function buildGraph(cwd) {
     sourceManifest: existsSync(manifestPath) ? relative(cwd, manifestPath) : null,
     nodes: nodeList,
     edges,
-    stats: { nodeCount: nodeList.length, edgeCount: edges.length, byType, centralNodes },
+    stats: {
+      nodeCount: nodeList.length,
+      edgeCount: edges.length,
+      byType,
+      centralNodes,
+      communities: {
+        count: communities.count,
+        byId: communities.byId,
+      },
+    },
   };
 }
 
@@ -1464,6 +1482,286 @@ function queryVaultGraph(cwd, queryText) {
   try { graph = JSON.parse(readFileSync(graphPath, 'utf8')); }
   catch { return { ok: false, error: 'graph.json illisible — relancez vault graph' }; }
   return queryGraph(graph, queryText);
+}
+
+// ─── Lot 3 — vault path + vault explain + communautés ────────────────────────
+
+function findNodeByIdOrLabel(nodes, searchTerm) {
+  const normalized = (searchTerm || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  // Cherche d'abord une correspondance exacte sur l'id
+  for (const node of nodes) {
+    if (node.id.toLowerCase() === searchTerm.toLowerCase()) return node;
+  }
+  // Puis une correspondance partielle sur label ou id
+  for (const node of nodes) {
+    const label = (node.label || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const id = node.id.toLowerCase();
+    if (label.includes(normalized) || id.includes(normalized)) return node;
+  }
+  return null;
+}
+
+function bfsPath(nodes, edges, startId, endId) {
+  if (startId === endId) return { path: [startId], edges: [] };
+
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const edgesByFrom = {};
+  const edgesByTo = {};
+
+  for (const edge of edges) {
+    if (!edgesByFrom[edge.from]) edgesByFrom[edge.from] = [];
+    if (!edgesByTo[edge.to]) edgesByTo[edge.to] = [];
+    edgesByFrom[edge.from].push(edge);
+    edgesByTo[edge.to].push(edge);
+  }
+
+  const visited = new Set();
+  const queue = [{ id: startId, path: [startId], edgesUsed: [] }];
+  visited.add(startId);
+
+  while (queue.length > 0) {
+    const { id, path, edgesUsed } = queue.shift();
+
+    // Explore edges partant de ce nœud
+    if (edgesByFrom[id]) {
+      for (const edge of edgesByFrom[id]) {
+        if (!visited.has(edge.to)) {
+          visited.add(edge.to);
+          const newPath = [...path, edge.to];
+          const newEdges = [...edgesUsed, edge];
+
+          if (edge.to === endId) {
+            return { path: newPath, edges: newEdges };
+          }
+          queue.push({ id: edge.to, path: newPath, edgesUsed: newEdges });
+        }
+      }
+    }
+
+    // Explore edges pointant vers ce nœud (graphe non orienté)
+    if (edgesByTo[id]) {
+      for (const edge of edgesByTo[id]) {
+        if (!visited.has(edge.from)) {
+          visited.add(edge.from);
+          const newPath = [edge.from, ...path];
+          const newEdges = [...edgesUsed, { ...edge, reversed: true }];
+
+          if (edge.from === endId) {
+            return { path: newPath, edges: newEdges };
+          }
+          queue.push({ id: edge.from, path: newPath, edgesUsed: newEdges });
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function pathVaultGraph(cwd, nodeA, nodeB) {
+  const graphPath = join(cwd, 'vault', 'index', 'graph.json');
+  if (!existsSync(graphPath)) {
+    return { ok: false, error: 'graph.json absent — lancez : claude-atelier vault graph' };
+  }
+  let graph;
+  try { graph = JSON.parse(readFileSync(graphPath, 'utf8')); }
+  catch { return { ok: false, error: 'graph.json illisible — relancez vault graph' }; }
+
+  const nodeA_obj = findNodeByIdOrLabel(graph.nodes, nodeA);
+  const nodeB_obj = findNodeByIdOrLabel(graph.nodes, nodeB);
+
+  if (!nodeA_obj || !nodeB_obj) {
+    return { ok: false, error: `Nœud(s) introuvable(s): "${nodeA}", "${nodeB}"` };
+  }
+
+  const result = bfsPath(graph.nodes, graph.edges, nodeA_obj.id, nodeB_obj.id);
+  if (!result) {
+    return { ok: true, path: [], edges: [], message: `Aucun chemin entre "${nodeA_obj.label}" et "${nodeB_obj.label}"` };
+  }
+
+  const pathWithLabels = result.path.map(id => {
+    const node = graph.nodes.find(n => n.id === id);
+    return { id, label: node?.label || id, type: node?.type || 'unknown' };
+  });
+
+  return { ok: true, path: pathWithLabels, edges: result.edges };
+}
+
+function printPath(result, nodeA, nodeB) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+    return;
+  }
+  console.log(`\n${CYAN}[PETER] vault path${NC}`);
+  console.log(`  De   : ${nodeA}`);
+  console.log(`  À    : ${nodeB}`);
+  console.log('');
+
+  if (!result.path.length || result.message) {
+    console.log(`  ${result.message || 'Aucun chemin trouvé'}`);
+    return;
+  }
+
+  console.log(`Chemin (${result.path.length} nœud${result.path.length > 1 ? 's' : ''}):`);
+  for (let i = 0; i < result.path.length; i++) {
+    const node = result.path[i];
+    console.log(`  ${i}. ${node.label} (${node.type})`);
+    if (i < result.edges.length) {
+      const edge = result.edges[i];
+      console.log(`     → ${edge.type}${edge.confidence ? ` [${edge.confidence}]` : ''}`);
+    }
+  }
+}
+
+function explainVaultNode(cwd, nodeId) {
+  const graphPath = join(cwd, 'vault', 'index', 'graph.json');
+  if (!existsSync(graphPath)) {
+    return { ok: false, error: 'graph.json absent — lancez : claude-atelier vault graph' };
+  }
+  let graph;
+  try { graph = JSON.parse(readFileSync(graphPath, 'utf8')); }
+  catch { return { ok: false, error: 'graph.json illisible — relancez vault graph' }; }
+
+  const node = findNodeByIdOrLabel(graph.nodes, nodeId);
+  if (!node) {
+    return { ok: false, error: `Nœud introuvable: "${nodeId}"` };
+  }
+
+  // Collecter les voisins entrants et sortants
+  const neighbors = { in: [], out: [] };
+  for (const edge of graph.edges) {
+    if (edge.to === node.id) {
+      const neighbor = graph.nodes.find(n => n.id === edge.from);
+      if (neighbor) {
+        neighbors.in.push({ node: neighbor, edgeType: edge.type, confidence: edge.confidence });
+      }
+    } else if (edge.from === node.id) {
+      const neighbor = graph.nodes.find(n => n.id === edge.to);
+      if (neighbor) {
+        neighbors.out.push({ node: neighbor, edgeType: edge.type, confidence: edge.confidence });
+      }
+    }
+  }
+
+  // Générer une explication textuelle simple
+  const parts = [];
+  parts.push(`Ce nœud est un ${node.type}.`);
+
+  if (node.label) {
+    parts.push(`Son label est "${node.label}".`);
+  }
+
+  const allNeighbors = [...neighbors.out, ...neighbors.in];
+  if (allNeighbors.length > 0) {
+    const keyNeighbors = allNeighbors.slice(0, 2).map(n => n.node.label).join(', ');
+    parts.push(`Il est lié à: ${keyNeighbors}.`);
+  }
+
+  const explanation = parts.join(' ');
+
+  return {
+    ok: true,
+    node: {
+      id: node.id,
+      type: node.type,
+      label: node.label,
+      excerpt: node.excerpt || '',
+      path: node.path || '',
+      tags: node.tags || [],
+      mtime: node.mtime || '',
+      confidence: node.confidence || '',
+    },
+    neighbors: {
+      incoming: neighbors.in.map(n => ({ edgeType: n.edgeType, node: n.node.label, confidence: n.confidence })),
+      outgoing: neighbors.out.map(n => ({ edgeType: n.edgeType, node: n.node.label, confidence: n.confidence })),
+    },
+    explanation,
+  };
+}
+
+function printExplain(result) {
+  if (!result.ok) {
+    process.stderr.write(`${RED}[PETER]${NC} ${result.error}\n`);
+    return;
+  }
+  const node = result.node;
+  console.log(`\n${CYAN}[PETER] vault explain${NC}`);
+  console.log(`  Nœud    : ${node.id}`);
+  console.log(`  Type    : ${node.type}`);
+  console.log(`  Label   : ${node.label}`);
+  if (node.path) console.log(`  Path    : ${node.path}`);
+  if (node.tags?.length) console.log(`  Tags    : ${node.tags.join(', ')}`);
+  if (node.mtime) console.log(`  MTime   : ${node.mtime}`);
+  console.log('');
+  console.log(`${result.explanation}`);
+
+  if (result.neighbors.incoming.length > 0) {
+    console.log('');
+    console.log('Entrantes :');
+    for (const n of result.neighbors.incoming) {
+      console.log(`  - ${n.node} (via ${n.edgeType})`);
+    }
+  }
+  if (result.neighbors.outgoing.length > 0) {
+    console.log('');
+    console.log('Sortantes :');
+    for (const n of result.neighbors.outgoing) {
+      console.log(`  - ${n.node} (via ${n.edgeType})`);
+    }
+  }
+}
+
+function computeCommunities(nodes, edges) {
+  const adjacency = new Map();
+  for (const node of nodes) {
+    adjacency.set(node.id, []);
+  }
+  for (const edge of edges) {
+    if (!adjacency.has(edge.from)) adjacency.set(edge.from, []);
+    if (!adjacency.has(edge.to)) adjacency.set(edge.to, []);
+    adjacency.get(edge.from).push(edge.to);
+    adjacency.get(edge.to).push(edge.from);
+  }
+
+  const communities = new Map();
+  const visited = new Set();
+  let communityId = 0;
+
+  for (const nodeId of adjacency.keys()) {
+    if (visited.has(nodeId)) continue;
+
+    // BFS pour trouver la composante connexe
+    const queue = [nodeId];
+    const community = [];
+    visited.add(nodeId);
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      community.push(current);
+
+      for (const neighbor of adjacency.get(current) || []) {
+        if (!visited.has(neighbor)) {
+          visited.add(neighbor);
+          queue.push(neighbor);
+        }
+      }
+    }
+
+    communities.set(communityId, community);
+    communityId++;
+  }
+
+  // Retourner { nodeIdToCommunityId, byId }
+  const nodeIdToCommunityId = new Map();
+  const byId = {};
+  for (const [cid, members] of communities) {
+    byId[cid] = members;
+    for (const nid of members) {
+      nodeIdToCommunityId.set(nid, cid);
+    }
+  }
+
+  return { nodeIdToCommunityId, byId, count: communities.size };
 }
 
 function printQuery(result, queryText) {
@@ -1777,7 +2075,32 @@ export async function runVault(argv) {
     return result.ok ? 0 : 1;
   }
 
+  if (sub === 'path') {
+    const nodeA = positional[0];
+    const nodeB = positional[1];
+    if (!nodeA || !nodeB) {
+      process.stderr.write(`${RED}error${NC}: vault path <nodeA> <nodeB>\n`);
+      return 1;
+    }
+    const result = pathVaultGraph(cwd, nodeA, nodeB);
+    if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    else printPath(result, nodeA, nodeB);
+    return result.ok ? 0 : 1;
+  }
+
+  if (sub === 'explain') {
+    const nodeId = positional[0];
+    if (!nodeId) {
+      process.stderr.write(`${RED}error${NC}: vault explain <node>\n`);
+      return 1;
+    }
+    const result = explainVaultNode(cwd, nodeId);
+    if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    else printExplain(result);
+    return result.ok ? 0 : 1;
+  }
+
   process.stderr.write(`${RED}error${NC}: sous-commande vault inconnue "${sub}"\n`);
-  process.stderr.write('Usage: claude-atelier vault [init|status|report|stale|update|graph|query|maintain|cron] [--cwd <path>] [--dry-run] [--json]\n');
+  process.stderr.write('Usage: claude-atelier vault [init|status|report|stale|update|graph|query|explain|path|maintain|cron] [--cwd <path>] [--dry-run] [--json]\n');
   return 1;
 }
