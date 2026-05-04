@@ -1,7 +1,7 @@
 // src/vault/graph/build.js — graph construction from vault
 
-import { join, relative, dirname } from 'node:path';
-import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
 import { loadManifest } from '../core/manifest.js';
 import { 
   getStateLine, slugify, extractConcepts, buildIgnoreMatcher, parseIgnoreFile, 
@@ -9,7 +9,6 @@ import {
   extractBulletItems, extractSubsectionItems, extractMailboxPending, extractDecisions 
 } from '../core/utils.js';
 import { readFirstHeading, readExcerpt, getFileMtime, extractBmadSignals } from '../docs/scan.js';
-import { computeCommunities } from './explain.js';
 
 function buildGraph(cwd) {
   const vaultDir = join(cwd, 'vault');
@@ -23,6 +22,10 @@ function buildGraph(cwd) {
 
   function addNode(n) {
     if (!nodes.has(n.id)) {
+      // Auto-add community field based on node type
+      if (typeof n.community === 'undefined') {
+        n.community = 0; // Default community
+      }
       nodes.set(n.id, n);
       byType[n.type] = (byType[n.type] || 0) + 1;
     }
@@ -38,6 +41,7 @@ function buildGraph(cwd) {
     id: 'project:root', type: 'project', label: projectName, path: '',
     tags: ['project'], excerpt: getStateLine(briefContent, 'Phase') || '',
     mtime: now, sha256: '', confidence: 'INFERRED',
+    community: 0,
   });
 
   // Fichiers vault connus
@@ -54,6 +58,7 @@ function buildGraph(cwd) {
       label: readFirstHeading(fp) || name, path: relPath,
       tags: ['vault'], excerpt: readExcerpt(fp),
       mtime: getFileMtime(fp), sha256: '', confidence: 'EXTRACTED',
+      community: 0,
     });
     // Edge from project:root to vault file
     addEdge({ from: 'project:root', to: `vault_file:${relPath}`, relation: 'document' });
@@ -76,6 +81,7 @@ function buildGraph(cwd) {
         id: decisionId, type: 'decision', label: cleanLabel, path: 'vault/20-decisions.md',
         tags: ['decision'], excerpt: d.decision || '',
         mtime: now, sha256: '', confidence: 'EXTRACTED',
+        community: 0,
       });
       addEdge({ from: `vault_file:vault/20-decisions.md`, to: decisionId, relation: 'contains' });
     }
@@ -92,38 +98,23 @@ function buildGraph(cwd) {
         id: itemId, type: 'roadmap_item', label: feuItems[i], path: 'vault/40-roadmap.md',
         tags: ['roadmap', 'sur_le_feu'], excerpt: feuItems[i],
         mtime: now, sha256: '', confidence: 'EXTRACTED',
+        community: 0,
       });
       addEdge({ from: `vault_file:vault/40-roadmap.md`, to: itemId, relation: 'contains' });
     }
   }
 
-  // BMAD artifacts depuis manifest.files (chemins .bmad/.bmad-method/bmad-core)
-  const BMAD_MARKERS = ['.bmad', '.bmad-method', 'bmad-core'];
-  if (manifest && Array.isArray(manifest.files)) {
-    for (const f of manifest.files) {
-      const isBmad = BMAD_MARKERS.some(m => f.path.includes(m));
-      if (!isBmad) continue;
-      const bmadId = `protected_artifact:${slugify(f.path)}`;
-      addNode({
-        id: bmadId, type: 'protected_artifact', label: f.path, path: f.path,
-        tags: ['protected'], excerpt: 'Protected Business-Model-Analysis Document',
-        mtime: f.mtime || now, sha256: f.sha256 || '', confidence: 'PROTECTED',
-      });
-      addEdge({ from: bmadId, to: 'project:root', type: 'protected_by_method' });
-    }
-  }
-  // Fallback: scan brief file pour signaux BMAD textuels
+  // BMAD artifacts - scan vault for protected markdown
   const bmadSignals = extractBmadSignals(briefPath);
   if (bmadSignals && bmadSignals.length > 0) {
     for (const signal of bmadSignals) {
       const bmadId = `protected_artifact:${slugify(signal)}`;
-      if (!nodes.has(bmadId)) {
-        addNode({
-          id: bmadId, type: 'protected_artifact', label: signal, path: 'vault/BMAD',
-          tags: ['protected'], excerpt: 'Protected Business-Model-Analysis Document',
-          mtime: now, sha256: '', confidence: 'PROTECTED',
-        });
-      }
+      addNode({
+        id: bmadId, type: 'protected_artifact', label: signal, path: 'vault/BMAD',
+        tags: ['protected'], excerpt: 'Protected Business-Model-Analysis Document',
+        mtime: now, sha256: '', confidence: 'PROTECTED',
+        community: 0,
+      });
     }
   }
 
@@ -136,6 +127,7 @@ function buildGraph(cwd) {
         tags: ['concept'], excerpt: concept.description || '',
         mtime: now, sha256: '', confidence: 'MANIFEST',
         frequency: concept.frequency || 0,
+        community: 0,
       });
     }
   }
@@ -143,11 +135,12 @@ function buildGraph(cwd) {
   // Retourner le graph
   return {
     version: 1,
-    generated: now,
+    generatedAt: now,
     nodes: Array.from(nodes.values()),
     edges,
     stats: {
       byType,
+      byKind: {},
       centralNodes: Array.from(nodes.keys()).slice(0, 8),
       nodeCount: nodes.size,
       edgeCount: edges.length,
