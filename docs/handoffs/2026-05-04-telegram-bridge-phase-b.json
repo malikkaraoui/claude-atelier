@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "subject": "Telegram Bridge Phase B — voix faster-whisper, Ollama polish, 9 bugs Copilot corrigés",
+    "date": "2026-05-04",
+    "type": "review",
+    "priority": "haute",
+    "reviewedRange": "facca3bd586ccbc56d8ef51308edeae2bc6a9234..cbe0df2bc772b733e6fbbaa21dd26e04a2e77aa8"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "3 commits feat/fix depuis le dernier handoff intégré (facca3bd). (1) fix b183c8c: 9 bugs de sécurité/robustesse issus de la review Copilot #47 — validate_project_dir corrigé (os.path.commonpath), ClaudeRunner utilise create_subprocess_exec sans shell, budget check retourne le nouveau total, TelegramBot.claude_runners keyed (user_id, project_dir), _parse_int_env pour env vars potentiellement vides, SessionManager.get_or_create retourne dict complet. (2) fix 4feefa2: correction reviewedRange handoff précédent (SHA main). (3) feat cbe0df2: Phase B complète — VoiceTranscriber (faster-whisper, lazy-load, asyncio.to_thread, device=cpu/int8), OllamaPolisher (httpx async, POST /api/generate, timeout 10s, fallback texte brut), handle_voice câblé dans TelegramBot (download ogg/mp3, transcription, polish, reply, run_command, inbox write type=vocal), handler filters.VOICE|filters.AUDIO enregistré dans run(). 4 smoke tests Phase B ajoutés dans test/telegram.test.js (17/17 passants). 332 lignes ajoutées sur 9 fichiers.",
+    "question": "La chaîne voix complète (download → transcribe asyncio.to_thread → polish httpx → reply → run_command → inbox write) est-elle robuste face aux cas de défaillance partielle : fichier temp non supprimé si transcription plante, réponse Ollama vide ou malformée, runner Claude qui timeout, inbox_writer.write qui lève une exception ? Est-ce que le cleanup du tmp_path dans le `finally` est suffisant, ou faut-il un try/except autour de inbox_writer.write également ?",
+    "filesToRead": [
+      "scripts/telegram-bridge.py",
+      "test/telegram.test.js",
+      "src/templates/telegram.env.example"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+  },
+  "integration": null
+}
