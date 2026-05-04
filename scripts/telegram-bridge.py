@@ -347,10 +347,12 @@ class VoiceTranscriber:
         return self._whisper
 
     async def transcribe(self, audio_path: str) -> str:
-        whisper = await asyncio.to_thread(self._load)
-        lang = self.language if self.language != "auto" else None
-        segments, _ = await asyncio.to_thread(whisper.transcribe, audio_path, language=lang)
-        return " ".join(s.text for s in segments).strip()
+        def _run():
+            whisper = self._load()
+            lang = self.language if self.language != "auto" else None
+            segments, _ = whisper.transcribe(audio_path, language=lang)
+            return " ".join(s.text for s in segments).strip()
+        return await asyncio.to_thread(_run)
 
 
 class OllamaPolisher:
@@ -600,11 +602,16 @@ class TelegramBot:
         tg_file = await voice.get_file()
         suffix = ".ogg" if update.message.voice else ".mp3"
         tmp_path = f"/tmp/tg_voice_{user_id}_{int(time.time())}{suffix}"
-        await tg_file.download_to_drive(tmp_path)
 
         try:
-            transcript = await self.transcriber.transcribe(tmp_path)
-            polished = await self.polisher.polish(transcript)
+            await tg_file.download_to_drive(tmp_path)
+            try:
+                transcript = await self.transcriber.transcribe(tmp_path)
+                polished = await self.polisher.polish(transcript)
+            except Exception as e:
+                logger.error(f"Voice transcription/polish error: {e}")
+                await update.message.reply_text("Erreur lors de la transcription. Réessaie.")
+                return
         finally:
             try:
                 os.remove(tmp_path)
@@ -615,10 +622,11 @@ class TelegramBot:
             await update.message.reply_text("Transcription vide.")
             return
 
-        await update.message.reply_text(f"🎤 {polished}")
+        await update.message.reply_text(f"🎤 {polished[:4000]}")
 
         project_dir = validate_project_dir(context.user_data.get("project_dir", APPROVED_DIRECTORY))
         if not project_dir:
+            await update.message.reply_text("Invalid or unset project directory. Use /cd first.")
             return
 
         session = self.session_mgr.get_or_create(user_id, project_dir)
@@ -635,14 +643,17 @@ class TelegramBot:
 
         await update.message.reply_text(output)
 
-        self.inbox_writer.write({
-            "ts": datetime.utcnow().isoformat(),
-            "type": "vocal",
-            "transcript": polished,
-            "response_summary": output[:200],
-            "session": session["session_id"],
-            "cost_usd": cost,
-        })
+        try:
+            self.inbox_writer.write({
+                "ts": datetime.utcnow().isoformat(),
+                "type": "vocal",
+                "transcript": polished,
+                "response_summary": output[:200],
+                "session": session["session_id"],
+                "cost_usd": cost,
+            })
+        except Exception as e:
+            logger.warning(f"inbox_writer.write failed: {e}")
 
     async def run(self):
         if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
