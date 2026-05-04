@@ -4,7 +4,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync, utimesSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync, utimesSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -1111,6 +1111,142 @@ test('vault watch start crée watch.json avec pid', () => {
       // Arrêter le daemon gracieusement
       cli(['vault', 'watch', 'stop', '--cwd', dir], dir);
     }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ─── Lot 8 — vault export (HTML/Obsidian/Wiki/SVG/GraphML/Neo4j) ────────────────
+
+console.log('\n── vault export (Lot 8) ──');
+
+function createTestGraph() {
+  return {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    root: '/tmp/test',
+    sourceManifest: 'vault/index/manifest.json',
+    nodes: [
+      { id: 'concept:test', type: 'concept', label: 'Test Concept', path: '', tags: ['test'], excerpt: 'A test node', mtime: new Date().toISOString(), sha256: '', confidence: 'EXTRACTED' },
+      { id: 'concept:second', type: 'concept', label: 'Second Node', path: '', tags: ['test'], excerpt: 'Another node', mtime: new Date().toISOString(), sha256: '', confidence: 'EXTRACTED' },
+      { id: 'markdown_document:readme', type: 'markdown_document', label: 'README', path: 'README.md', tags: [], excerpt: 'Documentation', mtime: new Date().toISOString(), sha256: '', confidence: 'EXTRACTED' },
+    ],
+    edges: [
+      { from: 'concept:test', to: 'concept:second', type: 'related_to', confidence: 'EXTRACTED', source: 'test', weight: 1 },
+      { from: 'concept:test', to: 'markdown_document:readme', type: 'documents', confidence: 'EXTRACTED', source: 'test', weight: 1 },
+    ],
+    stats: {
+      nodeCount: 3,
+      edgeCount: 2,
+      byType: { concept: 2, markdown_document: 1 },
+      centralNodes: ['concept:test', 'concept:second'],
+    },
+  };
+}
+
+test('vault export --html sans graph.json retourne erreur', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-html-'));
+  try {
+    const r = cli(['vault', 'export', '--html', '--cwd', dir], dir);
+    ok(r.status !== 0, 'exit non-zéro attendu');
+    ok(r.stderr.includes('graph.json absent'), 'message erreur attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --html génère un fichier avec "Peter Knowledge Graph"', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-html-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--html', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(existsSync(join(dir, 'vault', 'index', 'graph.html')), 'graph.html doit exister');
+    const html = readFileSync(join(dir, 'vault', 'index', 'graph.html'), 'utf8');
+    ok(html.includes('Peter Knowledge Graph'), 'titre Peter Knowledge Graph attendu');
+    ok(html.includes('d3'), 'D3.js CDN attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --graphml génère un fichier avec balise <graphml', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-graphml-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--graphml', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(existsSync(join(dir, 'vault', 'index', 'graph.graphml')), 'graph.graphml doit exister');
+    const graphml = readFileSync(join(dir, 'vault', 'index', 'graph.graphml'), 'utf8');
+    ok(graphml.includes('<graphml'), 'balise <graphml attendue');
+    ok(graphml.includes('<node'), 'balise <node attendue');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --obsidian génère des fichiers .md dans vault/index/obsidian/', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-obsidian-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--obsidian', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const obsidianDir = join(dir, 'vault', 'index', 'obsidian');
+    ok(existsSync(obsidianDir), 'obsidian/ doit exister');
+    const files = readdirSync(obsidianDir);
+    ok(files.length > 0, 'au moins un fichier .md attendu');
+    ok(files.some(f => f.endsWith('.md')), 'fichier .md attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --neo4j génère nodes.cypher et edges.cypher', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-neo4j-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--neo4j', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const neo4jDir = join(dir, 'vault', 'index', 'neo4j');
+    ok(existsSync(neo4jDir), 'neo4j/ doit exister');
+    ok(existsSync(join(neo4jDir, 'nodes_0.cypher')), 'nodes_0.cypher doit exister');
+    ok(existsSync(join(neo4jDir, 'edges_0.cypher')), 'edges_0.cypher doit exister');
+    ok(existsSync(join(neo4jDir, 'import.sh')), 'import.sh doit exister');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --svg génère un fichier SVG', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-svg-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--svg', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(existsSync(join(dir, 'vault', 'index', 'graph.svg')), 'graph.svg doit exister');
+    const svg = readFileSync(join(dir, 'vault', 'index', 'graph.svg'), 'utf8');
+    ok(svg.includes('<svg'), 'balise <svg attendue');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault export --wiki génère vault/index/wiki/index.md et répertoires par type', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'export-wiki-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'vault', 'index', 'graph.json'), JSON.stringify(createTestGraph()), 'utf8');
+    const r = cli(['vault', 'export', '--wiki', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(existsSync(join(dir, 'vault', 'index', 'wiki', 'index.md')), 'wiki/index.md doit exister');
+    ok(existsSync(join(dir, 'vault', 'index', 'wiki', 'concept')), 'wiki/concept/ doit exister');
+    const index = readFileSync(join(dir, 'vault', 'index', 'wiki', 'index.md'), 'utf8');
+    ok(index.includes('Par type'), 'section "Par type" attendue');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
