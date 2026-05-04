@@ -36,3 +36,26 @@
 - Peter Phase F — Apple Notes / captures / vocaux (dépendances lourdes)
 - Peter Phase G — MCP Peter complet
 - MIRROR global multi-projets (futur lointain)
+
+---
+
+### Phase E — Master Daemon (claude-atelier runtime universel)
+
+**Objectif** : `claude-atelier master start` → daemon autonome, LaunchAgent, orchestre tous les projets via Telegram
+
+**Composants à construire** :
+1. `bin/master.js` — event loop principal (Telegram polling + dispatch)
+2. `src/master/session-manager.js` — spawn/monitor/restart sessions `claude` par projet
+3. `src/master/context-monitor.js` — détecte token burn → summary → relance
+4. `src/master/vault-loader.js` — charge Obsidian au boot comme system context
+5. `src/master/telegram-router.js` — parse commandes → route vers projet ou répond Master
+6. LaunchAgent plist Master (séparé du watcher existant)
+
+**Séquence de build** :
+- E1 : `bin/master.js` + Telegram polling minimal + réponse Claude stateless
+- E2 : session-manager (spawn claude dans bon cwd, track PIDs)
+- E3 : vault-loader (injecter Obsidian brief en system prompt)
+- E4 : context-monitor (token threshold → summary → restart)
+- E5 : LaunchAgent + boot automatique
+
+**Dépendances** : MCP obsidian-vault (✅ configuré), telegram-bridge existant, .env BOT_TOKEN/CHAT_ID

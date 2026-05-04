@@ -40,6 +40,7 @@ Commands:
   pulse             Gestion du pouls multi-agents (statut, init, mise à jour)
   vault             Initialise et inspecte le vault dynamique projet maintenu par Peter
   apply             Injecte un profil de config dans un worktree cible (API Paperclip)
+  master            Daemon maître : écoute Telegram, orchestre les projets (start|stop|restart|status)
 
 Options:
   --version, -v       Affiche la version et quitte
@@ -103,7 +104,7 @@ async function main(argv) {
   }
 
   const command = args[0];
-  const knownCommands = ['init', 'update', 'doctor', 'lint', 'features', 'review-local', 'apply', 'pulse', 'vault'];
+  const knownCommands = ['init', 'update', 'doctor', 'lint', 'features', 'review-local', 'apply', 'pulse', 'vault', 'master'];
 
   if (!knownCommands.includes(command)) {
     process.stderr.write(`error: unknown command "${command}"\n`);
@@ -152,6 +153,11 @@ async function main(argv) {
   if (command === 'vault') {
     const { runVault } = await import('./vault.js');
     return runVault(process.argv);
+  }
+
+  if (command === 'master') {
+    const { runMaster } = await import('../src/master/index.js');
+    return runMaster(process.argv);
   }
 
   process.stderr.write(
