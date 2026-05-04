@@ -672,6 +672,158 @@ test('vault maintain ignore un GIT_DIR/GIT_WORK_TREE ambiant pollué', () => {
   }
 });
 
+// ─── Lot 3 — vault path + vault explain + communautés ─────────────────────────
+
+console.log('\n── claude-atelier vault path / explain / communautés ──');
+
+test('vault path calcule un chemin entre deux nœuds connus', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'path', 'project:root', 'vault_file:vault/00-brief.md', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(r.stdout.includes('Chemin') || r.stdout.includes('chemin'), 'titre chemin attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault path avec nœuds inexistants : exit 1 + message propre', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'path', 'unknown_a', 'unknown_b', '--cwd', dir], dir);
+    ok(r.status === 1, `exit 1 attendu si nœuds introuvables, reçu ${r.status}`);
+    ok(r.stderr.includes('introuvable') || r.stdout.includes('introuvable'), 'message introuvable attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault path avec A = B : chemin vide ou longueur 1', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'path', 'project:root', 'project:root', '--cwd', dir, '--json'], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.ok === true, 'ok:true attendu');
+    ok(result.path.length === 1, 'chemin de longueur 1 attendu pour A = A');
+    ok(result.path[0].id === 'project:root', 'le nœud attendu dans le chemin');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault path --json retourne { ok, path, edges }', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'path', 'project:root', 'vault_file:vault/00-brief.md', '--cwd', dir, '--json'], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.ok === true, 'ok:true attendu');
+    ok(Array.isArray(result.path), 'path array attendu');
+    ok(Array.isArray(result.edges), 'edges array attendu');
+    if (result.path.length > 1) {
+      ok(result.path[0].id === 'project:root', 'chemin commence au nœud attendu');
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault explain affiche un nœud connu', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'explain', 'project:root', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(r.stdout.includes('project:root'), 'id du nœud attendu');
+    ok(r.stdout.includes('Type') || r.stdout.includes('type'), 'affichage Type attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault explain avec nœud inconnu : exit 1 + message propre', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'explain', 'unknown_node', '--cwd', dir], dir);
+    ok(r.status === 1, `exit 1 attendu si nœud introuvable, reçu ${r.status}`);
+    ok(r.stderr.includes('introuvable'), 'message introuvable attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault explain --json retourne { ok, node, neighbors, explanation }', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'explain', 'project:root', '--cwd', dir, '--json'], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.ok === true, 'ok:true attendu');
+    ok(result.node, 'node object attendu');
+    ok(result.node.id === 'project:root', 'id du nœud attendu');
+    ok(typeof result.explanation === 'string', 'explanation string attendue');
+    ok(result.neighbors, 'neighbors object attendu');
+    ok(Array.isArray(result.neighbors.incoming), 'neighbors.incoming array attendu');
+    ok(Array.isArray(result.neighbors.outgoing), 'neighbors.outgoing array attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('graph.json contient community sur chaque nœud après vault graph', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    for (const node of graph.nodes) {
+      ok(typeof node.community === 'number', `community must be a number for node ${node.id}`);
+    }
+    ok(graph.stats.communities, 'stats.communities attendu');
+    ok(typeof graph.stats.communities.count === 'number', 'stats.communities.count attendu');
+    ok(typeof graph.stats.communities.byId === 'object', 'stats.communities.byId attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('communautés : nœuds dans la même composante connexe ont le même community id', () => {
+  const dir = initTestVault();
+  try {
+    // Créer une décision qui sera liée à project:root via vault_file
+    writeFileSync(join(dir, 'vault', '20-decisions.md'),
+      '# Décisions\n\n## Décisions durables\n\n### 2026-05-01 — Test community\n\n- Contexte : test\n- Décision : test\n- Conséquence : test\n- À revalider si : jamais\n',
+      'utf8');
+
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+
+    const rootNode = graph.nodes.find(n => n.id === 'project:root');
+    const briefNode = graph.nodes.find(n => n.id === 'vault_file:vault/00-brief.md');
+
+    if (rootNode && briefNode) {
+      ok(typeof rootNode.community === 'number', 'rootNode doit avoir community');
+      ok(typeof briefNode.community === 'number', 'briefNode doit avoir community');
+      // S'il y a une arête entre eux, ils doivent être dans la même communauté
+      const hasEdge = graph.edges.some(e =>
+        (e.from === rootNode.id && e.to === briefNode.id) ||
+        (e.from === briefNode.id && e.to === rootNode.id)
+      );
+      if (hasEdge) {
+        ok(rootNode.community === briefNode.community, 'nœuds liés doivent être dans la même communauté');
+      }
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 const total = pass + fail;
 console.log(`\n── Vault : ${pass}/${total} tests passés${fail > 0 ? ` · ${fail} ÉCHECS` : ''} ──\n`);
 if (fail > 0) process.exit(1);
