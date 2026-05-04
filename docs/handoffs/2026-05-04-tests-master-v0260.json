@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "subject": "Tests master daemon + fixes Copilot intégrés — v0.26.0",
+    "date": "2026-05-04",
+    "type": "review",
+    "priority": "moyenne",
+    "reviewedRange": "e15c3622f6dbfa1e9d5bb8baa0531527248b8138..98b86d7efa121dbad5669c5d9cce8f56b1d2180e"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "Depuis le dernier handoff intégré (e15c3622), 4 commits livrés : (1) db452f8 fix: appliquer review Copilot #55 — PID recyclé via ps identity check, boot crash detection 250ms, try/catch TCC vault-loader, OR true mailbox-watcher, strip préfixe double 'Claude :' dans claude-notify.sh. (2) 1f05755 chore: bump v0.26.0 — ajout de 34 tests pour les modules master daemon (ContextMonitor : push/getContext/rotation 12 tours/reset, SessionManager : active null/getCwd fallback/activate/handleCommand, vault-loader : inexistant retourne ''). (3) chore commits mailbox + handoff merge PR #55. Total : 14 fichiers, +335/-22 lignes.",
+    "question": "Les 34 nouveaux tests dans test/hooks.js pour ContextMonitor, SessionManager et vault-loader couvrent-ils les cas limites critiques du master daemon ? En particulier : la rotation glissante à 12 tours (off-by-one possible), le fallback os.homedir() dans SessionManager quand HOME est absent, et la résilience try/catch de vault-loader face aux erreurs TCC/permissions — y a-t-il des scénarios de défaillance non couverts ?",
+    "filesToRead": [
+      "test/hooks.js",
+      "src/master/context-monitor.js",
+      "src/master/session-manager.js",
+      "src/master/vault-loader.js",
+      "src/master/index.js",
+      "scripts/mailbox-watcher.sh",
+      "scripts/claude-notify.sh"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+  },
+  "integration": null
+}
