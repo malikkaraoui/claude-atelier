@@ -5,9 +5,9 @@
 ## État court
 
 - Projet : claude-atelier (framework Claude Code)
-- Phase : Phase 2 — v0.23.5 livrée (Phase B vault : index incrémental Peter) · next: Phase C graphe minimal
-- Objectif courant : Phase C — vault/index/graph.json + vault query + nœuds centraux dans PETER_REPORT
-- Prochaine action utile : Démarrer Phase C (graph.json — nœuds fichiers/docs/décisions, relations extraites Markdown)
+- Phase : Phase 2 — v0.23.11 livrée (Phases A+B+C vault livrées : index SHA256, graphe, query/path/explain, export multi-formats, watch daemon, cron, MCP) · next: Phase D vault add/route
+- Objectif courant : Phase D — `vault add` (inbox intelligente) + `vault route` (classification automatique) + storytelling Peter à jour
+- Prochaine action utile : Définir scope Phase D + bump version v0.23.12
 
 ## À lire en priorité
 
