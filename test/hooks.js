@@ -589,6 +589,60 @@ test('injecte brief et mailbox si vault projet présent', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// src/master — ContextMonitor, SessionManager, vault-loader
+// ─────────────────────────────────────────────────────────────
+console.log('\n── Tests Master daemon ──');
+
+{
+  const { ContextMonitor } = await import('../src/master/context-monitor.js');
+  const cm = new ContextMonitor();
+
+  cm.push('proj', 'bonjour', 'salut');
+  ok(cm.getContext('proj').includes('Malik: bonjour'), 'ContextMonitor: message user stocké');
+  ok(cm.getContext('proj').includes('Master: salut'), 'ContextMonitor: message assistant stocké');
+
+  // Rotation glissante
+  for (let i = 0; i < 12; i++) cm.push('proj', `msg${i}`, `rep${i}`);
+  const ctx = cm.getContext('proj');
+  ok(!ctx.includes('Malik: bonjour'), 'ContextMonitor: rotation expulse les anciens');
+  ok(ctx.includes('msg11'), 'ContextMonitor: derniers messages présents');
+
+  cm.reset('proj');
+  ok(cm.getContext('proj') === '', 'ContextMonitor: reset vide l historique');
+}
+
+{
+  const { SessionManager } = await import('../src/master/session-manager.js');
+  const sm = new SessionManager();
+
+  ok(sm.active === null, 'SessionManager: actif = null par défaut');
+  ok(sm.getCwd('/fallback') === '/fallback', 'SessionManager: getCwd retourne fallback');
+
+  // Activation par chemin direct
+  const result = sm.activate('/tmp');
+  ok(result !== null, 'SessionManager: activate chemin existant');
+  ok(sm.active?.path === '/tmp', 'SessionManager: active.path correct');
+
+  sm.activate('off');
+  ok(sm.active === null, 'SessionManager: off remet à null');
+
+  // handleCommand
+  const { handled, reply } = sm.handleCommand('/projets');
+  ok(handled === true, 'SessionManager: /projets handled');
+  ok(typeof reply === 'string', 'SessionManager: /projets reply string');
+}
+
+{
+  const { loadVaultBrief, loadProjectContext } = await import('../src/master/vault-loader.js');
+
+  const brief = loadVaultBrief('/chemin/inexistant');
+  ok(brief === '', 'vault-loader: vault inexistant retourne ""');
+
+  const projCtx = loadProjectContext('/chemin/inexistant');
+  ok(projCtx === '', 'vault-loader: projet inexistant retourne ""');
+}
+
+// ─────────────────────────────────────────────────────────────
 // ollama-proxy — tests Go (go test)
 // ─────────────────────────────────────────────────────────────
 console.log('\n── ollama-proxy (Go) ──');
