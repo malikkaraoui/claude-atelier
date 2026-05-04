@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — Telegram bridge Phase A livré + 9 bugs Copilot corrigés (PR #47 mergée) · next: Phase B voix (faster-whisper) + bump version |
+| Phase | Phase 2 — Lots 0+4+10 mergés (modularisation vault/, AST extracteurs, MCP squelette) + 6 bugs Copilot corrigés (PR #50 mergée) · next: bump version + Phase B voix (faster-whisper) |
 | Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
