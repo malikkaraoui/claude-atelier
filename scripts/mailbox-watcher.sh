@@ -7,10 +7,14 @@ MAILBOX="$SCRIPT_DIR/../vault/10-mailbox.md"
 LOCKFILE="/tmp/mailbox-watcher.lock"
 LASTLINE_FILE="/tmp/mailbox-watcher-lastline"
 
-# Évite les doublons de process
-if [[ -f "$LOCKFILE" ]] && kill -0 "$(cat "$LOCKFILE")" 2>/dev/null; then
-  echo "Watcher déjà actif (PID $(cat "$LOCKFILE"))" >&2
-  exit 1
+# Évite les doublons de process (+ vérification identité pour PID recyclés)
+if [[ -f "$LOCKFILE" ]]; then
+  LOCK_PID=$(cat "$LOCKFILE" 2>/dev/null || echo "")
+  if [[ -n "$LOCK_PID" ]] && kill -0 "$LOCK_PID" 2>/dev/null \
+     && ps -p "$LOCK_PID" -o comm= 2>/dev/null | grep -q "bash"; then
+    echo "Watcher déjà actif (PID $LOCK_PID)" >&2
+    exit 1
+  fi
 fi
 echo $$ > "$LOCKFILE"
 trap 'rm -f "$LOCKFILE"' EXIT
@@ -39,8 +43,8 @@ while true; do
     continue
   fi
 
-  # Extraire le résumé
-  MESSAGE=$(echo "$NEW_CONTENT" | grep "Résumé :" | sed 's/.*Résumé : //' | head -1)
+  # Extraire le résumé (|| true : évite arrêt du watcher si grep ne trouve rien)
+  MESSAGE=$(echo "$NEW_CONTENT" | grep "Résumé :" | sed 's/.*Résumé : //' | head -1 || true)
   if [[ -z "$MESSAGE" ]]; then
     continue
   fi

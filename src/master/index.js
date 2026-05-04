@@ -3,7 +3,7 @@
  * Utilisé par `claude-atelier master <sub>` via bin/cli.js
  */
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,11 +24,15 @@ function readPid() {
 
 function isRunning(pid) {
   if (!pid || isNaN(pid)) return false;
-  try { process.kill(pid, 0); return true; }
-  catch { return false; }
+  try {
+    process.kill(pid, 0);
+    // Vérifier que c'est bien un process node (pas un PID recyclé)
+    const r = spawnSync('ps', ['-p', String(pid), '-o', 'comm='], { encoding: 'utf8' });
+    return r.stdout.trim().includes('node');
+  } catch { return false; }
 }
 
-export function runMaster(argv) {
+export async function runMaster(argv) {
   const sub = argv[3]; // claude-atelier master <sub>
 
   if (sub === 'start') {
@@ -43,6 +47,19 @@ export function runMaster(argv) {
       stdio: 'ignore',
       env: { ...process.env }
     });
+
+    // Détecter un crash immédiat (lockfile persistant, erreur boot)
+    let exited = false;
+    child.on('exit', () => { exited = true; });
+    child.on('error', e => { err(`spawn échoué: ${e.message}`); exited = true; });
+
+    await new Promise(r => setTimeout(r, 250));
+
+    if (exited) {
+      err('daemon a quitté immédiatement — vérifier lockfile ou logs');
+      return 1;
+    }
+
     writeFileSync(PID_FILE, `${child.pid}\n`);
     child.unref();
     log(`démarré (PID ${child.pid})`);

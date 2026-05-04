@@ -8,9 +8,10 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import os from 'node:os';
 import { loadProjectContext } from './vault-loader.js';
 
-const CONFIG_DIR = join(process.env.HOME, '.claude-atelier');
+const CONFIG_DIR = join(process.env.HOME || os.homedir(), '.claude-atelier');
 const REGISTRY_FILE = join(CONFIG_DIR, 'projects.json');
 
 function ensureConfigDir() {

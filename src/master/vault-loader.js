@@ -15,7 +15,9 @@ export function loadVaultBrief(vaultPath) {
     join(vaultPath, 'Bienvenue.md'),
   ];
   for (const p of candidates) {
-    if (existsSync(p)) return readFileSync(p, 'utf8').slice(0, MAX_CHARS);
+    if (existsSync(p)) {
+      try { return readFileSync(p, 'utf8').slice(0, MAX_CHARS); } catch { return ''; }
+    }
   }
   return '';
 }
@@ -24,7 +26,9 @@ export function loadProjectContext(projectPath) {
   const claudeMd = join(projectPath, '.claude', 'CLAUDE.md');
   const fallback = join(projectPath, 'CLAUDE.md');
   for (const p of [claudeMd, fallback]) {
-    if (existsSync(p)) return readFileSync(p, 'utf8').slice(0, 1000);
+    if (existsSync(p)) {
+      try { return readFileSync(p, 'utf8').slice(0, 1000); } catch { return ''; }
+    }
   }
   return '';
 }

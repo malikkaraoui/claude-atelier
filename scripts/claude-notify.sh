@@ -26,10 +26,14 @@ if [[ -z "$BOT_TOKEN" || -z "$CHAT_ID" ]]; then
   exit 1
 fi
 
+# Strip éventuel préfixe "Claude :" déjà présent pour éviter le doublon
+CLEAN_MESSAGE="${MESSAGE#Claude : }"
+CLEAN_MESSAGE="${CLEAN_MESSAGE#Claude: }"
+
 # Envoi Telegram
 RESPONSE=$(curl -s "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
   -d "chat_id=${CHAT_ID}" \
-  --data-urlencode "text=Claude : ${MESSAGE}")
+  --data-urlencode "text=Claude : ${CLEAN_MESSAGE}")
 
 OK=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('ok','false'))")
 

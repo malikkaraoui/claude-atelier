@@ -2,7 +2,7 @@
  * src/master/context-monitor.js — Historique conversationnel par session (E4)
  *
  * Maintient un buffer glissant de messages par projet.
- * Quand le buffer dépasse MAX_TURNS, résume + repart propre.
+ * Quand le buffer dépasse MAX_TURNS, les tours les plus anciens sont supprimés (rotation glissante).
  * Commande /reset pour vider manuellement.
  */
 
