@@ -24,8 +24,8 @@ const pkg = JSON.parse(
 // ⚠️  BLOC GÉNÉRÉ — ne pas éditer manuellement.
 // Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
-claude-atelier v0.23.12
-Framework complet Claude Code: 31 agents, 18 skills, MCP GitHub intégré, vault Peter (graphe + query), loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.
+claude-atelier v0.24.0
+Framework complet Claude Code: 31 agents, 18 skills, MCP GitHub intégré, vault Peter (graphe + query + MCP), bridge Telegram bidirectionnel (voix + alertes FIFO temps réel), loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.
 
 Usage:
   claude-atelier <command> [options]
@@ -54,6 +54,7 @@ Highlights:
   • Skills slash commands (/handoff, /angle-mort, /token-routing…)
   • Hooks : horodatage, métriques, garde-fous commits
   • Système de présence multi-agents (pouls.md) avec Maestro §0 watcher
+  • Bridge Telegram bidirectionnel : commandes mobile + alertes FIFO temps réel (O_NONBLOCK)
 
 Repo: https://github.com/malikkaraoui/claude-atelier#readme
 `;

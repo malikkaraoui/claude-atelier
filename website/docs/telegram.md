@@ -3,7 +3,7 @@ id: telegram
 title: Bridge Telegram
 ---
 
-Bridge bidirectionnel Telegram ↔ Claude Code. Reçoit des commandes depuis votre mobile, envoie des alertes de session en temps réel. Zéro dépendance cloud — transcription vocale et polish par Ollama en local.
+Bridge bidirectionnel Telegram ↔ Claude Code. **Production-ready v0.24.0** — reçoit des commandes depuis votre mobile, envoie des alertes de session en temps réel. Zéro dépendance cloud — transcription vocale et polish par Ollama en local. Les alertes FIFO sont non-bloquantes (O_NONBLOCK) : le bridge peut être arrêté sans bloquer Claude.
 
 ---
 
@@ -69,22 +69,25 @@ Si Ollama est indisponible, la transcription brute est utilisée directement. Le
 
 ---
 
-## Alertes FIFO — Mode nuit
+## Alertes FIFO — Mode nuit (Phase C)
 
-Claude envoie des alertes via `/tmp/claude-telegram-out`. Le bridge écoute et relaie vers Telegram (< 2s).
+Claude envoie des alertes via `/tmp/claude-telegram-out`. Le bridge écoute et relaie vers Telegram (< 2s). Le hook `hooks/telegram-notify.sh` est actif automatiquement après chaque `git commit` ou `git push` réussi.
 
 | Alerte | Déclencheur |
 |---|---|
-| `✅ Commit : {message}` | hook git post-commit |
-| `🚀 Push sur {branch}` | hook git post-push |
+| `✅ Commit : {message}` | hook PostToolUse git commit |
+| `🚀 Push sur {branch}` | hook PostToolUse git push |
 | `🔴 Gate KO : {étape}` | pre-push-gate.sh |
 | `⚠️ Session silencieuse depuis {durée}` | heartbeat checker |
 | `💰 Budget {max}$ atteint` | meter avant appel API |
 
-Écrire une alerte depuis un hook :
+Le hook utilise `os.O_WRONLY | os.O_NONBLOCK` — l'écriture est **non-bloquante** : si le bridge est arrêté, Claude n'est pas suspendu. Écriture manuelle depuis un script :
 
 ```bash
+# Écriture manuelle (test)
 echo "✅ Commit : feat: add oauth" > /tmp/claude-telegram-out
+
+# Le hook automatique gère déjà git commit/push via PostToolUse
 ```
 
 ---

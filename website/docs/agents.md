@@ -133,7 +133,9 @@ npx claude-atelier vault mcp           # serveur MCP stdio (tools query_vault / 
 - MCP stdio natif — `query_vault`, `get_node`, `neighbors`, `stale_status` accessibles par tout client MCP
 - Local-first, aucun LLM externe, aucun cloud requis
 
-**Phases livrées :** A (init + hook) · B (index + watch + cron) · C (graphe + query + export + MCP — Lots 0+4+10, PR #50)
+**Phases livrées :** A (init + hook) · B (index + watch + cron) · C (graphe + query + export + MCP — PR #50) · Closure (storytelling vault/00-brief.md + roadmap + website/docs/ — PR #51)
+
+**Statut v0.24.0 :** Peter tourne en autonomie complète — vault à jour, graphe navigable, MCP stdio actif, rapport hebdomadaire automatique.
 
 ---
 
