@@ -190,6 +190,7 @@ function parseArgs(argv) {
     cwd: resolve(getFlag(args, '--cwd') ?? process.cwd()),
     dryRun: args.includes('--dry-run'),
     json: args.includes('--json'),
+    withSymbols: args.includes('--with-symbols'),
     intervalText: getFlag(args, '--interval'),
   };
 }
@@ -1435,7 +1436,38 @@ function organizeDocs(cwd, apply = false, confirm = false) {
   };
 }
 
-function buildGraph(cwd) {
+function countCodeSymbols(cwd) {
+  let count = 0;
+  const IGNORE_DIRS = new Set(['node_modules', '.git', 'vault', 'dist', 'build', '.next']);
+  const CODE_EXTS = new Set(['.js', '.ts', '.mjs', '.cjs']);
+
+  function walkDir(dir) {
+    if (count >= 100) return;
+    try {
+      const entries = readdirSync(dir);
+      for (const entry of entries) {
+        if (count >= 100 || IGNORE_DIRS.has(entry) || entry.startsWith('.')) continue;
+        const fullPath = join(dir, entry);
+        const stat = statSync(fullPath);
+        if (stat.isDirectory()) {
+          walkDir(fullPath);
+        } else if (stat.isFile()) {
+          const ext = fullPath.includes('.') ? '.' + fullPath.split('.').pop() : '';
+          if (CODE_EXTS.has(ext)) {
+            const content = readFileSync(fullPath, 'utf8');
+            const funcs = (content.match(/(?:export\s+)?(?:async\s+)?function\s+\w+|(?:export\s+)?class\s+\w+/g) || []).length;
+            count += Math.min(funcs, 100 - count);
+          }
+        }
+      }
+    } catch { /* skip */ }
+  }
+
+  walkDir(cwd);
+  return count;
+}
+
+function buildGraph(cwd, withSymbols = false) {
   const vaultDir = join(cwd, 'vault');
   const manifestPath = join(vaultDir, 'index', 'manifest.json');
   const manifest = loadManifest(manifestPath);
@@ -1752,6 +1784,8 @@ function buildGraph(cwd) {
     community: communities.nodeIdToCommunityId.get(node.id) ?? 0,
   }));
 
+  const symbolCount = withSymbols ? countCodeSymbols(cwd) : 0;
+
   return {
     version: GRAPH_VERSION,
     generatedAt: now,
@@ -1765,6 +1799,7 @@ function buildGraph(cwd) {
       byType,
       byKind: byKindStats,
       centralNodes,
+      symbolCount,
       communities: {
         count: communities.count,
         byId: communities.byId,
@@ -1773,22 +1808,27 @@ function buildGraph(cwd) {
   };
 }
 
-function graphVault(cwd) {
+function graphVault(cwd, withSymbols = false) {
   const vaultDir = join(cwd, 'vault');
   if (!existsSync(vaultDir)) {
     return { ok: false, error: 'Aucun vault projet. Lancez : claude-atelier vault init' };
   }
-  const graph = buildGraph(cwd);
-  const graphPath = join(vaultDir, 'index', 'graph.json');
-  mkdirSync(dirname(graphPath), { recursive: true });
-  writeFileSync(graphPath, JSON.stringify(graph, null, 2) + '\n', 'utf8');
-  return {
-    ok: true,
-    graphPath,
-    nodeCount: graph.stats.nodeCount,
-    edgeCount: graph.stats.edgeCount,
-    centralNodes: graph.stats.centralNodes.slice(0, 5).map(id => id.split(':').pop()),
-  };
+  try {
+    const graph = buildGraph(cwd, withSymbols);
+    const graphPath = join(vaultDir, 'index', 'graph.json');
+    mkdirSync(dirname(graphPath), { recursive: true });
+    writeFileSync(graphPath, JSON.stringify(graph, null, 2) + '\n', 'utf8');
+    return {
+      ok: true,
+      graphPath,
+      nodeCount: graph.stats.nodeCount,
+      edgeCount: graph.stats.edgeCount,
+      symbolCount: withSymbols ? (graph.stats.symbolCount || 0) : 0,
+      centralNodes: graph.stats.centralNodes.slice(0, 5).map(id => id.split(':').pop()),
+    };
+  } catch (e) {
+    return { ok: false, error: `Erreur lors de la construction du graphe: ${e.message}` };
+  }
 }
 
 function printGraph(result, cwd) {
@@ -3118,7 +3158,7 @@ function printExport(result, format, cwd) {
 }
 
 export async function runVault(argv) {
-  const { sub, positional, queryText, cwd, dryRun, json, intervalText } = parseArgs(argv);
+  const { sub, positional, queryText, cwd, dryRun, json, withSymbols, intervalText } = parseArgs(argv);
 
   if (sub === 'init') {
     const result = initVault(cwd, dryRun);
@@ -3157,7 +3197,7 @@ export async function runVault(argv) {
   }
 
   if (sub === 'graph') {
-    const result = graphVault(cwd);
+    const result = graphVault(cwd, withSymbols);
     if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     else printGraph(result, cwd);
     return result.ok ? 0 : 1;
