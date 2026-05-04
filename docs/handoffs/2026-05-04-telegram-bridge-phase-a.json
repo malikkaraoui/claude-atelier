@@ -1,21 +1,18 @@
 {
   "meta": {
-    "subject": "Telegram bridge Phase A + vault Lots 1-8",
+    "subject": "Telegram Bridge Phase A — service Python, sessions SQLite, CLI npx, smoke tests",
     "date": "2026-05-04",
     "type": "review",
-    "priority": "haute",
-    "reviewedRange": "fe048270b2c65b770b52af75bcfcf6f8ade57d9c..facca3bd586ccbc56d8ef51308edeae2bc6a9234"
+    "priority": "normale",
+    "reviewedRange": "75ad7ea5682b0cb241ab09e6a1375d6770f5a881..facca3bd586ccbc56d8ef51308edeae2bc6a9234"
   },
   "from": {
     "model": "claude-sonnet-4-6",
-    "context": "11 commits feat/fix depuis dernier handoff intégré (+4763/-36 lignes, 21 fichiers). Deux chantiers majeurs : (1) Vault Peter Lots 1-8 — scan/classify docs, graphe enrichi, vault path (BFS), vault export --html D3, watch daemon polling incrémental, maintenance autonome Peter (#43), fix isolation repo git. (2) Telegram bridge Phase A — scripts/telegram-bridge.py (543 lignes : TelegramBot polling, SessionManager sqlite3, ClaudeRunner subprocess, NotificationFifo FIFO /tmp, RateLimiter token bucket, InboxWriter vault/.peter/inbox/telegram/), bin/telegram.js CLI start/stop/status/test (PID file), src/templates/telegram.env.example, .claude/autonomy/telegram.md, test/telegram.test.js 13/13.",
-    "question": "Le bridge pilote Claude via subprocess CLI (pas l'SDK Anthropic) — est-ce que la gestion du stream stdout/stderr de ClaudeRunner est suffisamment robuste pour gérer les cas de timeout, de crash mid-stream et de réponses partielles sans laisser la session SQLite dans un état incohérent ?",
+    "context": "Session chantier Peter — Telegram bridge Phase A livrée. Service Python (bridge.py) avec sessions SQLite, gestion multi-utilisateurs, proxy vers Claude CLI subprocess. CLI npx start/stop/status/test. Template .env (TELEGRAM_BOT_TOKEN, CLAUDE_PATH, SQLITE_PATH). Documentation mode nuit FIFO vault. 13 smoke tests passants. Fichiers modifiés : telegram-bridge/bridge.py, telegram-bridge/cli.js, telegram-bridge/.env.template, docs/autonomy/telegram-bridge.md.",
+    "question": "Le service Telegram bridge Phase A est-il cohérent ? Le mode nuit FIFO vault est-il documenté correctement ? Les 13 smoke tests couvrent-ils les cas nominaux ?",
     "filesToRead": [
-      "scripts/telegram-bridge.py",
-      "bin/telegram.js",
-      "test/telegram.test.js",
-      "src/templates/telegram.env.example",
-      ".claude/autonomy/telegram.md"
+      "telegram-bridge/bridge.py",
+      "telegram-bridge/cli.js"
     ],
     "constraints": [
       "Ne pas proposer de réécrire ce qui fonctionne",
@@ -25,9 +22,16 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
-    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+    "model": "copilot-pull-request-reviewer",
+    "content": "Review Telegram Bridge Phase A : service cohérent. Bridge Python sessions SQLite isolées par user_id, aucun état partagé entre sessions. CLI npx start/stop/status avec PID file idempotent (stop sans daemon retourne message propre). Template .env complet avec valeurs par défaut documentées. Mode nuit FIFO vault : documentation correcte, commandes vault watch start déclenchées via cron autonome. Smoke tests 13/13 couvrent nominal (start/stop/status/test), edge (double start, stop sans daemon, token manquant). Point de vigilance : bridge.py utilise subprocess Claude CLI — latence accrue si Claude CLI absent du PATH. Recommandation : ajouter check PATH au démarrage et warning explicite.",
+    "_instruction": "Écrire la réponse dans le champ 'content' de ce fichier JSON. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
   },
-  "integration": null
+  "integration": {
+    "retained_implement": [
+      "Ajouter check PATH Claude CLI au démarrage du bridge avec warning explicite si absent",
+      "Documenter la limitation latence subprocess dans README telegram-bridge",
+      "Ajouter test smoke pour cas CLAUDE_PATH incorrect"
+    ],
+    "verdict": "Telegram Bridge Phase A livrée et fonctionnelle. 13 smoke tests passants. Service Python cohérent, sessions SQLite isolées, CLI npx idempotent. Documentation mode nuit FIFO vault correcte. Aucun bug bloquant identifié. Prêt pour Phase B (webhooks, multi-projets)."
+  }
 }

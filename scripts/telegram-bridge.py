@@ -14,7 +14,7 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from collections import defaultdict
 
 from dotenv import load_dotenv
@@ -23,12 +23,24 @@ from telegram.ext import Application, CommandHandler, MessageHandler, ContextTyp
 
 load_dotenv()
 
+
+def _parse_int_env(name: str, default: int = 0) -> int:
+    val = os.getenv(name, "").strip()
+    if not val:
+        return default
+    try:
+        return int(val)
+    except ValueError:
+        logging.error(f"Invalid integer env var {name}={val!r}, using {default}")
+        return default
+
+
 # ============================================================================
 # Configuration
 # ============================================================================
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = int(os.getenv("TELEGRAM_CHAT_ID", "0"))
+TELEGRAM_CHAT_ID = _parse_int_env("TELEGRAM_CHAT_ID")
 ALLOWED_USERS = set(map(int, os.getenv("ALLOWED_USERS", "").split(","))) if os.getenv("ALLOWED_USERS") else set()
 APPROVED_DIRECTORY = os.getenv("APPROVED_DIRECTORY", os.path.expanduser("~"))
 
@@ -84,20 +96,20 @@ class SessionManager:
         now = datetime.utcnow().isoformat()
 
         cursor.execute(
-            "SELECT session_id, total_cost_usd FROM sessions WHERE user_id = ? AND project_dir = ?",
+            "SELECT session_id, total_cost_usd, created_at FROM sessions WHERE user_id = ? AND project_dir = ?",
             (user_id, project_dir)
         )
         row = cursor.fetchone()
 
         if row:
-            session_id, cost = row
+            session_id, cost, created_at = row
             cursor.execute(
                 "UPDATE sessions SET last_activity = ? WHERE user_id = ? AND project_dir = ?",
                 (now, user_id, project_dir)
             )
             conn.commit()
             conn.close()
-            return {"session_id": session_id, "total_cost_usd": cost, "created_at": row}
+            return {"session_id": session_id, "total_cost_usd": cost, "created_at": created_at}
 
         session_id = f"{user_id}_{int(time.time())}_{os.urandom(4).hex()}"
         cursor.execute(
@@ -109,7 +121,7 @@ class SessionManager:
         conn.close()
         return {"session_id": session_id, "total_cost_usd": 0.0, "created_at": now}
 
-    def update_cost(self, user_id: int, project_dir: str, delta_cost: float):
+    def update_cost(self, user_id: int, project_dir: str, delta_cost: float) -> float:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         now = datetime.utcnow().isoformat()
@@ -119,7 +131,13 @@ class SessionManager:
             (delta_cost, now, user_id, project_dir)
         )
         conn.commit()
+        cursor.execute(
+            "SELECT total_cost_usd FROM sessions WHERE user_id = ? AND project_dir = ?",
+            (user_id, project_dir)
+        )
+        row = cursor.fetchone()
         conn.close()
+        return row[0] if row else 0.0
 
     def get_session(self, user_id: int, project_dir: str) -> Optional[Dict[str, Any]]:
         conn = sqlite3.connect(self.db_path)
@@ -168,43 +186,42 @@ class RateLimiter:
 class ClaudeRunner:
     def __init__(self, cwd: str = APPROVED_DIRECTORY):
         self.cwd = cwd
-        self.current_process: Optional[subprocess.Popen] = None
+        self.current_process: Optional[asyncio.subprocess.Process] = None
         self.turn_count = 0
 
-    async def run_command(self, command: str) -> tuple[str, float]:
-        """
-        Run a Claude CLI command and return output + estimated cost.
-        Timeout after CLAUDE_TIMEOUT_SECONDS.
-        """
+    async def run_command(self, user_message: str) -> Tuple[str, float]:
+        """Run claude CLI via stdin pipe. No shell — no injection risk."""
         if self.turn_count >= CLAUDE_MAX_TURNS:
             return f"Max turns ({CLAUDE_MAX_TURNS}) reached", 0.0
 
         self.turn_count += 1
-        estimated_cost = 0.01  # Placeholder: would parse actual metrics
+        estimated_cost = 0.01  # placeholder; real cost requires --output-format json parsing
 
+        proc = await asyncio.create_subprocess_exec(
+            "claude",
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=self.cwd
+        )
+        self.current_process = proc
         try:
-            result = await asyncio.wait_for(
-                asyncio.create_subprocess_shell(
-                    command,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    cwd=self.cwd
-                ),
+            stdout, stderr = await asyncio.wait_for(
+                proc.communicate(input=user_message.encode()),
                 timeout=CLAUDE_TIMEOUT_SECONDS
             )
-            self.current_process = result
-            stdout, stderr = await result.communicate()
             output = stdout.decode() + (stderr.decode() if stderr else "")
-            return output[:2000], estimated_cost  # Truncate for Telegram
+            return output[:2000], estimated_cost
         except asyncio.TimeoutError:
-            if self.current_process:
-                self.current_process.kill()
-                await asyncio.sleep(0.1)
+            proc.kill()
+            await proc.wait()
             self.turn_count = 0
             return f"Claude timeout after {CLAUDE_TIMEOUT_SECONDS}s", 0.0
         except Exception as e:
             logger.error(f"ClaudeRunner error: {e}")
             return f"Error running Claude: {str(e)}", 0.0
+        finally:
+            self.current_process = None
 
     def reset(self):
         self.turn_count = 0
@@ -233,24 +250,21 @@ class NotificationFifo:
         except FileExistsError:
             logger.info(f"FIFO already exists: {self.fifo_path}")
 
+    def _read_line(self) -> str:
+        with open(self.fifo_path, "r") as fifo:
+            return fifo.readline().strip()
+
     async def watch_and_send(self, bot_application: Application, chat_id: int):
-        """
-        Monitor FIFO in background and send messages to Telegram.
-        Non-blocking: reads line-by-line as they arrive.
-        """
-        await asyncio.sleep(1)  # Let application fully initialize
-        try:
-            with open(self.fifo_path, "r", buffering=1) as fifo:
-                for line in fifo:
-                    line = line.strip()
-                    if line:
-                        await bot_application.bot.send_message(
-                            chat_id=chat_id,
-                            text=line,
-                            parse_mode="Markdown"
-                        )
-        except Exception as e:
-            logger.error(f"FIFO watcher error: {e}")
+        """Monitor FIFO via thread to avoid blocking the event loop."""
+        await asyncio.sleep(1)
+        while True:
+            try:
+                line = await asyncio.to_thread(self._read_line)
+                if line:
+                    await bot_application.bot.send_message(chat_id=chat_id, text=line)
+            except Exception as e:
+                logger.error(f"FIFO watcher error: {e}")
+                await asyncio.sleep(5)
 
 
 # ============================================================================
@@ -293,7 +307,7 @@ def validate_project_dir(path: str, approved_base: str = APPROVED_DIRECTORY) -> 
         resolved = os.path.realpath(os.path.expanduser(path))
         approved = os.path.realpath(approved_base)
 
-        if not resolved.startswith(approved):
+        if os.path.commonpath([resolved, approved]) != approved:
             logger.warning(f"Path escape attempt: {path} -> {resolved} (approved: {approved})")
             return None
 
@@ -315,7 +329,7 @@ class TelegramBot:
     def __init__(self):
         self.session_mgr = SessionManager()
         self.rate_limiter = RateLimiter()
-        self.claude_runners: Dict[int, ClaudeRunner] = {}
+        self.claude_runners: Dict[Tuple[int, str], ClaudeRunner] = {}
         self.notification_fifo = NotificationFifo()
         self.inbox_writer = InboxWriter()
         self.app: Optional[Application] = None
@@ -333,9 +347,10 @@ class TelegramBot:
         return True
 
     def _get_claude_runner(self, user_id: int, project_dir: str) -> ClaudeRunner:
-        if user_id not in self.claude_runners:
-            self.claude_runners[user_id] = ClaudeRunner(cwd=project_dir)
-        return self.claude_runners[user_id]
+        key = (user_id, project_dir)
+        if key not in self.claude_runners:
+            self.claude_runners[key] = ClaudeRunner(cwd=project_dir)
+        return self.claude_runners[key]
 
     async def cmd_status(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.effective_user.id
@@ -374,8 +389,9 @@ class TelegramBot:
             await update.message.reply_text("Invalid or unset project directory.")
             return
 
-        if user_id in self.claude_runners:
-            self.claude_runners[user_id].reset()
+        key = (user_id, project_dir)
+        if key in self.claude_runners:
+            self.claude_runners[key].reset()
         session = self.session_mgr.get_or_create(user_id, project_dir)
         await update.message.reply_text(f"New session created: `{session['session_id']}`", parse_mode="Markdown")
 
@@ -384,8 +400,10 @@ class TelegramBot:
         if not await self._check_auth(user_id):
             return
 
-        if user_id in self.claude_runners:
-            self.claude_runners[user_id].reset()
+        project_dir = context.user_data.get("project_dir", APPROVED_DIRECTORY)
+        key = (user_id, project_dir)
+        if key in self.claude_runners:
+            self.claude_runners[key].reset()
             await update.message.reply_text("Claude process stopped.")
         else:
             await update.message.reply_text("No active Claude process.")
@@ -452,7 +470,8 @@ class TelegramBot:
         if not await self._check_auth(user_id):
             return
 
-        runner = self.claude_runners.get(user_id)
+        project_dir = context.user_data.get("project_dir", APPROVED_DIRECTORY)
+        runner = self.claude_runners.get((user_id, project_dir))
         if runner and runner.current_process:
             await update.message.reply_text("💓 Claude process is active")
         else:
@@ -485,17 +504,17 @@ class TelegramBot:
 
         await update.message.reply_text("Processing...")
 
-        command = f"echo '{user_message}' | claude"
-        output, cost = await runner.run_command(command)
+        output, cost = await runner.run_command(user_message)
 
         if cost > 0:
-            self.session_mgr.update_cost(user_id, project_dir, cost)
+            new_total = self.session_mgr.update_cost(user_id, project_dir, cost)
+            if new_total >= CLAUDE_MAX_COST_USD:
+                await update.message.reply_text(
+                    f"Budget limit (${CLAUDE_MAX_COST_USD:.2f}) reached. Session stopped."
+                )
+                return
 
-        if cost >= CLAUDE_MAX_COST_USD - self.session_mgr.get_session(user_id, project_dir)['total_cost_usd']:
-            await update.message.reply_text("Budget limit reached.")
-            return
-
-        await update.message.reply_text(f"```\n{output}\n```", parse_mode="Markdown")
+        await update.message.reply_text(output)
 
         entry = {
             "ts": datetime.utcnow().isoformat(),

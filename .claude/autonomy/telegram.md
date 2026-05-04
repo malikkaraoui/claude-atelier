@@ -8,9 +8,9 @@ Bridge unidirectionnel Telegram ↔ Claude Code. Reçoit des prompts / commandes
 
 ```bash
 # 1. Copier le template env
-cp src/templates/telegram.env.example .env.telegram
+cp src/templates/telegram.env.example .env
 
-# 2. Remplir les valeurs obligatoires dans .env.telegram
+# 2. Remplir les valeurs obligatoires dans .env
 TELEGRAM_BOT_TOKEN=<de @BotFather>
 TELEGRAM_CHAT_ID=<ton chat ID>
 ALLOWED_USERS=<ton user_id Telegram>
@@ -36,7 +36,7 @@ npx claude-atelier telegram start
 | `/stop` | Pause la session Claude | `/stop` → `⏸️ Session pausée` |
 | `/resume` | Reprend après `/stop` | `/resume` → `▶️ Session active` |
 | `/cd <path>` | Change le répertoire de travail | `/cd /Users/moi/projects/autre-app` |
-| `/budget <usd>` | Affiche ou redéfinit le max | `/budget` → `Limit: $50` |
+| `/budget` | Affiche le budget utilisé / restant | `/budget` → `Used: $11.5 / Limit: $50` |
 | `/pulse` | Logs 10 dernières lignes | `/pulse` → affiche console Claude |
 
 Vocal : envoyer un message vocal → transcrit en français (faster-whisper), polished par Ollama, envoyé à Claude.
@@ -97,13 +97,15 @@ Chaque interaction Telegram est enregistrée dans `vault/.peter/inbox/telegram/`
 
 ```
 vault/.peter/inbox/telegram/
-├── 2026-05-04_14-32-45_prompt.md    # prompt brut Telegram
-├── 2026-05-04_14-32-45_transcript.json  # réponse Claude complète
-├── 2026-05-04_14-35-12_vocal.wav    # fichier vocal (optionnel)
-└── 2026-05-04_14-35-12_alert.md     # alerte FIFO relayée
+└── 2026-05-04.jsonl    # une entrée JSON par ligne (append-only)
 ```
 
-Désactiver : `VAULT_WRITE_ENABLED=false` dans `.env.telegram`.
+Format d'une entrée :
+```json
+{"ts":"2026-05-04T22:31:00","type":"text","transcript":"...","response_summary":"...","session":"abc123","cost_usd":0.01}
+```
+
+Désactiver : `VAULT_WRITE_ENABLED=false` dans `.env`.
 
 ## Sécurité
 
@@ -111,6 +113,6 @@ Désactiver : `VAULT_WRITE_ENABLED=false` dans `.env.telegram`.
 - **Path isolation** : `APPROVED_DIRECTORY` = racine de tous les chemins relatifs
 - **Rate limit** : `RATE_LIMIT_REQUESTS` / `RATE_LIMIT_WINDOW` bloque les flood
 - **Secrets** : jamais de logs API keys, tokens relayés via env vars uniquement
-- **Token Telegram** : jamais en dur, toujours `.env.telegram` ignoré par git
+- **Token Telegram** : jamais en dur, toujours `.env` ignoré par git
 
-Vérifier : `.gitignore` inclut `.env.telegram` et `/tmp/claude-telegram-*`.
+Vérifier : `.gitignore` inclut `.env` et `/tmp/claude-telegram-*`.
