@@ -132,6 +132,42 @@ test('.claude/autonomy/telegram.md ne contient pas de secrets', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// Phase B — voix (faster-whisper + Ollama polish)
+// ─────────────────────────────────────────────────────────────
+console.log('\nPhase B (voix):');
+
+test('scripts/telegram-bridge.py contient VoiceTranscriber', () => {
+  const path = resolve(ROOT, 'scripts', 'telegram-bridge.py');
+  const content = readFileSync(path, 'utf8');
+  ok(content.includes('class VoiceTranscriber'), 'classe VoiceTranscriber absente');
+  ok(content.includes('faster_whisper'), 'import faster_whisper absent');
+  ok(content.includes('asyncio.to_thread'), 'asyncio.to_thread absent');
+});
+
+test('scripts/telegram-bridge.py contient OllamaPolisher', () => {
+  const path = resolve(ROOT, 'scripts', 'telegram-bridge.py');
+  const content = readFileSync(path, 'utf8');
+  ok(content.includes('class OllamaPolisher'), 'classe OllamaPolisher absente');
+  ok(content.includes('httpx'), 'httpx absent');
+  ok(content.includes('/api/generate'), 'endpoint Ollama absent');
+});
+
+test('scripts/telegram-bridge.py câble handle_voice + handler VOICE|AUDIO', () => {
+  const path = resolve(ROOT, 'scripts', 'telegram-bridge.py');
+  const content = readFileSync(path, 'utf8');
+  ok(content.includes('async def handle_voice'), 'méthode handle_voice absente');
+  ok(content.includes('filters.VOICE | filters.AUDIO'), 'handler VOICE|AUDIO absent');
+});
+
+test('src/templates/telegram.env.example contient les vars Phase B', () => {
+  const path = resolve(ROOT, 'src', 'templates', 'telegram.env.example');
+  const content = readFileSync(path, 'utf8');
+  ok(content.includes('WHISPER_MODEL'), 'WHISPER_MODEL absent du template');
+  ok(content.includes('OLLAMA_POLISH_MODEL'), 'OLLAMA_POLISH_MODEL absent du template');
+  ok(content.includes('OLLAMA_POLISH_ENABLED'), 'OLLAMA_POLISH_ENABLED absent du template');
+});
+
+// ─────────────────────────────────────────────────────────────
 // Vérifications des dépendances Python (optionnel)
 // ─────────────────────────────────────────────────────────────
 console.log('\nDépendances Python:');

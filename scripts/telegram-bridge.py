@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Telegram Bridge for claude-atelier — Phase A (text only)
-Bidirectional Telegram ↔ Claude CLI communication with session management,
-rate limiting, cost tracking, and Peter vault integration.
+Telegram Bridge for claude-atelier — Phase A+B
+Bidirectional Telegram ↔ Claude CLI with session management, rate limiting,
+cost tracking, voice transcription (faster-whisper) and Peter vault integration.
 """
 
 import asyncio
@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, Tuple
 from collections import defaultdict
 
+import httpx
 from dotenv import load_dotenv
 from telegram import Update, Chat
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
@@ -50,6 +51,14 @@ CLAUDE_MAX_COST_USD = float(os.getenv("CLAUDE_MAX_COST_USD", "50.0"))
 
 RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "100"))
 RATE_LIMIT_WINDOW = int(os.getenv("RATE_LIMIT_WINDOW", "3600"))
+
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "tiny")
+WHISPER_LANGUAGE = os.getenv("WHISPER_LANGUAGE", "fr")
+
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+OLLAMA_POLISH_MODEL = os.getenv("OLLAMA_POLISH_MODEL", "qwen2.5:3b")
+OLLAMA_POLISH_TIMEOUT = _parse_int_env("OLLAMA_POLISH_TIMEOUT", 10)
+OLLAMA_POLISH_ENABLED = os.getenv("OLLAMA_POLISH_ENABLED", "true").lower() == "true"
 
 VAULT_INBOX = os.getenv("VAULT_INBOX", "vault/.peter/inbox/telegram")
 VAULT_WRITE_ENABLED = os.getenv("VAULT_WRITE_ENABLED", "true").lower() == "true"
@@ -322,6 +331,53 @@ def validate_project_dir(path: str, approved_base: str = APPROVED_DIRECTORY) -> 
 
 
 # ============================================================================
+# Voice Transcription (Phase B)
+# ============================================================================
+
+class VoiceTranscriber:
+    def __init__(self, model: str = WHISPER_MODEL, language: str = WHISPER_LANGUAGE):
+        self.model = model
+        self.language = language
+        self._whisper = None  # lazy-loaded to avoid startup cost
+
+    def _load(self):
+        from faster_whisper import WhisperModel
+        if self._whisper is None:
+            self._whisper = WhisperModel(self.model, device="cpu", compute_type="int8")
+        return self._whisper
+
+    async def transcribe(self, audio_path: str) -> str:
+        whisper = await asyncio.to_thread(self._load)
+        lang = self.language if self.language != "auto" else None
+        segments, _ = await asyncio.to_thread(whisper.transcribe, audio_path, language=lang)
+        return " ".join(s.text for s in segments).strip()
+
+
+class OllamaPolisher:
+    def __init__(self):
+        self.host = OLLAMA_HOST
+        self.model = OLLAMA_POLISH_MODEL
+        self.timeout = OLLAMA_POLISH_TIMEOUT
+        self.enabled = OLLAMA_POLISH_ENABLED
+
+    async def polish(self, text: str) -> str:
+        if not self.enabled or not text:
+            return text
+        prompt = f"Corrige légèrement ce texte transcrit sans le réécrire:\n{text}"
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                resp = await client.post(
+                    f"{self.host}/api/generate",
+                    json={"model": self.model, "prompt": prompt, "stream": False}
+                )
+                resp.raise_for_status()
+                return resp.json().get("response", text).strip() or text
+        except Exception as e:
+            logger.warning(f"Ollama polish fallback (texte brut): {e}")
+            return text
+
+
+# ============================================================================
 # Telegram Bot Handlers
 # ============================================================================
 
@@ -332,6 +388,8 @@ class TelegramBot:
         self.claude_runners: Dict[Tuple[int, str], ClaudeRunner] = {}
         self.notification_fifo = NotificationFifo()
         self.inbox_writer = InboxWriter()
+        self.transcriber = VoiceTranscriber()
+        self.polisher = OllamaPolisher()
         self.app: Optional[Application] = None
 
     async def _check_auth(self, user_id: int) -> bool:
@@ -526,6 +584,66 @@ class TelegramBot:
         }
         self.inbox_writer.write(entry)
 
+    async def handle_voice(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_id = update.effective_user.id
+        if not await self._check_auth(user_id):
+            return
+        if not await self._check_ratelimit(user_id):
+            await update.message.reply_text("Rate limit exceeded.")
+            return
+
+        voice = update.message.voice or update.message.audio
+        if not voice:
+            return
+
+        await update.message.reply_text("Transcription en cours...")
+        tg_file = await voice.get_file()
+        suffix = ".ogg" if update.message.voice else ".mp3"
+        tmp_path = f"/tmp/tg_voice_{user_id}_{int(time.time())}{suffix}"
+        await tg_file.download_to_drive(tmp_path)
+
+        try:
+            transcript = await self.transcriber.transcribe(tmp_path)
+            polished = await self.polisher.polish(transcript)
+        finally:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+
+        if not polished:
+            await update.message.reply_text("Transcription vide.")
+            return
+
+        await update.message.reply_text(f"🎤 {polished}")
+
+        project_dir = validate_project_dir(context.user_data.get("project_dir", APPROVED_DIRECTORY))
+        if not project_dir:
+            return
+
+        session = self.session_mgr.get_or_create(user_id, project_dir)
+        runner = self._get_claude_runner(user_id, project_dir)
+        output, cost = await runner.run_command(polished)
+
+        if cost > 0:
+            new_total = self.session_mgr.update_cost(user_id, project_dir, cost)
+            if new_total >= CLAUDE_MAX_COST_USD:
+                await update.message.reply_text(
+                    f"Budget limit (${CLAUDE_MAX_COST_USD:.2f}) reached. Session stopped."
+                )
+                return
+
+        await update.message.reply_text(output)
+
+        self.inbox_writer.write({
+            "ts": datetime.utcnow().isoformat(),
+            "type": "vocal",
+            "transcript": polished,
+            "response_summary": output[:200],
+            "session": session["session_id"],
+            "cost_usd": cost,
+        })
+
     async def run(self):
         if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
             raise ValueError("TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID required")
@@ -540,6 +658,7 @@ class TelegramBot:
         self.app.add_handler(CommandHandler("budget", self.cmd_budget))
         self.app.add_handler(CommandHandler("pulse", self.cmd_pulse))
         self.app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+        self.app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, self.handle_voice))
 
         async with self.app:
             asyncio.create_task(self.notification_fifo.watch_and_send(self.app, TELEGRAM_CHAT_ID))
