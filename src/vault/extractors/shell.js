@@ -6,6 +6,6 @@
  * @returns {number} Nombre de fonctions trouvées
  */
 export function extractShellSymbols(content) {
-  const matches = content.match(/^[a-zA-Z_][a-zA-Z0-9_]*\s*\(\s*\)/gm) || [];
+  const matches = content.match(/^[a-zA-Z_][a-zA-Z0-9_]*\s*\(\s*\)\s*(?:\{|$)/gm) || [];
   return matches.length;
 }

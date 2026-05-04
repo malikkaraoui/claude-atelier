@@ -6,7 +6,7 @@
  * @returns {number} Nombre de fonctions + types trouvés
  */
 export function extractGoSymbols(content) {
-  const funcs = (content.match(/^func\s+\w+/gm) || []).length;
+  const funcs = (content.match(/^func(?:\s+\([^)]*\))?\s+\w+/gm) || []).length;
   const types = (content.match(/^type\s+\w+/gm) || []).length;
   return funcs + types;
 }
