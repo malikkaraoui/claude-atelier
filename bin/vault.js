@@ -43,6 +43,10 @@ import { findNodeByIdOrLabel, bfsPath } from '../src/vault/graph/path.js';
 import { scoreNode, queryGraph } from '../src/vault/graph/query.js';
 import { buildGraph, graphVault } from '../src/vault/graph/build.js';
 import { startVaultWatch, stopVaultWatch, onceVaultWatch } from '../src/vault/watch/daemon.js';
+import { extractJsSymbols } from '../src/vault/extractors/js.js';
+import { extractJsonSymbols } from '../src/vault/extractors/json.js';
+import { extractShellSymbols } from '../src/vault/extractors/shell.js';
+import { extractGoSymbols } from '../src/vault/extractors/go.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
@@ -209,6 +213,7 @@ function parseArgs(argv) {
     cwd: resolve(getFlag(args, '--cwd') ?? process.cwd()),
     dryRun: args.includes('--dry-run'),
     json: args.includes('--json'),
+    withSymbols: args.includes('--with-symbols'),
     intervalText: getFlag(args, '--interval'),
   };
 }
@@ -542,6 +547,45 @@ const ROADMAP_SECTION_TAGS = {
 };
 
 // ── Lot 1+2: docs scan, classify, organize + graph v2 enrichi ──
+
+
+function countCodeSymbols(cwd) {
+  let count = 0;
+  const IGNORE_DIRS = new Set(['node_modules', '.git', 'vault', 'dist', 'build', '.next']);
+  const EXT_EXTRACTORS = {
+    '.js': extractJsSymbols, '.ts': extractJsSymbols, '.mjs': extractJsSymbols, '.cjs': extractJsSymbols,
+    '.json': extractJsonSymbols,
+    '.sh': extractShellSymbols, '.bash': extractShellSymbols, '.zsh': extractShellSymbols,
+    '.go': extractGoSymbols,
+  };
+
+  function walkDir(dir) {
+    if (count >= 100) return;
+    try {
+      const entries = readdirSync(dir);
+      for (const entry of entries) {
+        if (count >= 100 || IGNORE_DIRS.has(entry) || entry.startsWith('.')) continue;
+        const fullPath = join(dir, entry);
+        const stat = statSync(fullPath);
+        if (stat.isDirectory()) {
+          walkDir(fullPath);
+        } else if (stat.isFile()) {
+          const ext = fullPath.includes('.') ? '.' + fullPath.split('.').pop() : '';
+          const extractor = EXT_EXTRACTORS[ext];
+          if (extractor) {
+            try {
+              const content = readFileSync(fullPath, 'utf8');
+              count += Math.min(extractor(content), 100 - count);
+            } catch { /* skip */ }
+          }
+        }
+      }
+    } catch { /* skip */ }
+  }
+
+  walkDir(cwd);
+  return count;
+}
 
 function printGraph(result, cwd) {
   if (!result.ok) {
@@ -1065,7 +1109,7 @@ function printExport(result, format, cwd) {
 }
 
 export async function runVault(argv) {
-  const { sub, positional, queryText, cwd, dryRun, json, intervalText } = parseArgs(argv);
+  const { sub, positional, queryText, cwd, dryRun, json, withSymbols, intervalText } = parseArgs(argv);
 
   if (sub === 'init') {
     const result = initVault(cwd, dryRun);
@@ -1104,7 +1148,8 @@ export async function runVault(argv) {
   }
 
   if (sub === 'graph') {
-    const result = graphVault(cwd);
+    const symCount = withSymbols ? countCodeSymbols(cwd) : 0;
+    const result = graphVault(cwd, symCount);
     if (json) process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     else printGraph(result, cwd);
     return result.ok ? 0 : 1;

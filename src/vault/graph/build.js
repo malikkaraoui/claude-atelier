@@ -13,7 +13,7 @@ import { computeCommunities } from './explain.js';
 
 const BMAD_MARKERS = ['.bmad', '.bmad-method', 'bmad-core'];
 
-function buildGraph(cwd) {
+function buildGraph(cwd, opts = {}) {
   const vaultDir = join(cwd, 'vault');
   const manifestPath = join(vaultDir, 'index', 'manifest.json');
   const manifest = loadManifest(manifestPath);
@@ -192,17 +192,18 @@ function buildGraph(cwd) {
       centralNodes,
       nodeCount: nodes.size,
       edgeCount: edges.length,
+      symbolCount: opts.symbolCount ?? 0,
       communities: { count: commCount, byId: commById },
     },
   };
 }
 
-function graphVault(cwd) {
+function graphVault(cwd, symbolCount = 0) {
   const vaultDir = join(cwd, 'vault');
   if (!existsSync(vaultDir)) {
     return { ok: false, error: 'Aucun vault projet. Lancez : claude-atelier vault init' };
   }
-  const graph = buildGraph(cwd);
+  const graph = buildGraph(cwd, { symbolCount });
   const graphPath = join(vaultDir, 'index', 'graph.json');
   mkdirSync(dirname(graphPath), { recursive: true });
   writeFileSync(graphPath, JSON.stringify(graph, null, 2) + '\n', 'utf8');
@@ -211,6 +212,7 @@ function graphVault(cwd) {
     graphPath,
     nodeCount: graph.stats.nodeCount,
     edgeCount: graph.stats.edgeCount,
+    symbolCount: graph.stats.symbolCount,
     centralNodes: graph.stats.centralNodes.slice(0, 5).map(id => id.split(':').pop()),
   };
 }

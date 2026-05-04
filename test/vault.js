@@ -1247,6 +1247,66 @@ test('vault export --wiki génère vault/index/wiki/index.md et répertoires par
   }
 });
 
+console.log('\n── Lot 4 — AST symboles ──');
+
+test('vault graph sans --with-symbols ignore les symboles (symbolCount = 0)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'graph-no-symbols-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'test.js'), 'function foo() {}\nclass Bar {}', 'utf8');
+    const r = cli(['vault', 'graph', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    ok(graph.stats.symbolCount === 0, `symbolCount = 0 sans --with-symbols, trouvé ${graph.stats.symbolCount}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault graph --with-symbols compte les symboles JS/TS (symbolCount > 0)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'graph-with-symbols-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'example.js'), 'function foo() {}\nclass Bar {}\nexport default foo;', 'utf8');
+    const r = cli(['vault', 'graph', '--with-symbols', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    ok(graph.stats.symbolCount > 0, `symbolCount > 0 attendu, trouvé ${graph.stats.symbolCount}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault graph --with-symbols --json retourne symbolCount en réponse', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'graph-symbols-json-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    writeFileSync(join(dir, 'example.js'), 'function foo() {}\nfunction bar() {}', 'utf8');
+    const r = cli(['vault', 'graph', '--with-symbols', '--json', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const output = JSON.parse(r.stdout);
+    ok(typeof output.symbolCount === 'number', `symbolCount doit être un nombre, trouvé ${typeof output.symbolCount}`);
+    ok(output.symbolCount > 0, `symbolCount > 0 attendu, trouvé ${output.symbolCount}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault graph --with-symbols compte jusqu\'à 100 symboles max', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'graph-symbols-max-'));
+  try {
+    mkdirSync(join(dir, 'vault', 'index'), { recursive: true });
+    const funcs = Array.from({ length: 150 }, (_, i) => `function f${i}() {}`).join('\n');
+    writeFileSync(join(dir, 'test.js'), funcs, 'utf8');
+    const r = cli(['vault', 'graph', '--with-symbols', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    ok(graph.stats.symbolCount <= 100, `symbolCount ≤ 100 (cap), trouvé ${graph.stats.symbolCount}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 const total = pass + fail;
 console.log(`\n── Vault : ${pass}/${total} tests passés${fail > 0 ? ` · ${fail} ÉCHECS` : ''} ──\n`);
 if (fail > 0) process.exit(1);
