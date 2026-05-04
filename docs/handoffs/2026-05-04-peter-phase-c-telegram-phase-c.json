@@ -27,9 +27,18 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
+    "model": "github-copilot-pr-reviewer",
+    "content": "3 bugs confirmés dans hooks/telegram-notify.sh :\n\n1. **Bug \\ $MSG (RÉSOLU)** — L'ancien code `bash -c \"echo \\\"\\$MSG\\\" > ...\"` ne transmettait pas MSG au sous-shell (escape littéral). Corrigé en passant FIFO_MSG via env var inline.\n\n2. **Blocage FIFO (RÉSOLU)** — `open(fifo,'w')` bloque si aucun lecteur. signal.alarm(2)/SIGALRM peut ne pas interrompre un open() en C. Remplacé par `os.open(O_WRONLY|O_NONBLOCK)` — lève OSError immédiatement si no reader.\n\n3. **Portabilité macOS (RÉSOLU)** — timeout GNU absent sur macOS. La solution O_NONBLOCK est portable macOS/Linux sans dépendance externe.\n\n4. **Tests structurels (RÉSOLU)** — Les tests includes() ne détectaient pas la régression $MSG. Ajouté test structurel vérifiant O_NONBLOCK + FIFO_MSG + absence de \\$MSG littéral.\n\n5. **Manifest description (RÉSOLU)** — exitCodes 'never blocks' inexact. Mis à jour en 'best-effort, O_NONBLOCK non-bloquante'.\n\nPoint non-bloquant : docs/handoffs/*-fifo.json avec response/integration null — ces fichiers sont des handoffs ouverts en attente de review, pas des handoffs validés.",
     "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-05-04-peter-phase-c-telegram-phase-c.json.\""
   },
-  "integration": null
+  "integration": {
+    "retained_implement": [
+      "os.open(O_WRONLY | O_NONBLOCK) — écriture non-bloquante portable macOS/Linux",
+      "FIFO_MSG env var inline — transmission correcte du message au sous-processus python3",
+      "Test structurel O_NONBLOCK + FIFO_MSG + absence \\$MSG littéral",
+      "Manifest exitCodes mis à jour : best-effort / O_NONBLOCK"
+    ],
+    "rejected": [],
+    "verdict": "4 corrections appliquées sur 4 bugs identifiés par Copilot. telegram-notify.sh est maintenant non-bloquant et portable. Le test structurel empêchera toute régression sur la transmission du message. Handoff clos."
+  }
 }

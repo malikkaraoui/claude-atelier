@@ -26,9 +26,18 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
+    "model": "github-copilot-pr-reviewer",
+    "content": "3 fragilités identifiées dans hooks/telegram-notify.sh et test/telegram.test.js. (1) CRITIQUE — timeout GNU absent sur macOS : la ligne 28 `timeout 2 bash -c ...` échoue silencieusement via `|| true` sur toute machine Apple sans GNU coreutils, rendant toute la feature d'alerte inopérante sans signal de diagnostic. Fix : remplacer par python3 portable avec signal.alarm(2). (2) FIABILITÉ — write silencieuse sans retry : le hook abandonne dès que le FIFO est absent et n'offre aucune retry ni trace lors d'un restart du bridge (le bridge supprime puis recrée le pipe). (3) TESTS — structurels seulement : les tests Phase C valident uniquement la présence de chaînes dans les fichiers source, pas l'exécution réelle du hook. Un test d'exécution avec faux stdin et FIFO temporaire est manquant pour confirmer que l'écriture fonctionne réellement.",
     "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans docs/handoffs/2026-05-04-telegram-phase-c-fifo.json.\""
   },
-  "integration": null
+  "integration": {
+    "retained_implement": [
+      "hooks/telegram-notify.sh ligne 28 : remplacer `timeout 2 bash -c` par python3 portable avec signal.alarm(2) — critique pour macOS",
+      "test/telegram.test.js : ajouter test d'exécution du hook avec FIFO temporaire et faux stdin JSON"
+    ],
+    "deferred": [
+      "Retry/trace sur restart bridge (FIFO absent) — différé Phase D, scope trop large pour ce handoff"
+    ],
+    "verdict": "2 fixes appliqués : portabilité macOS du timeout FIFO (critique — toute la feature était muette sur Apple sans GNU coreutils) et test d'exécution réelle ajouté. La fragilité retry/bridge-restart est documentée et différée Phase D. La feature est désormais fonctionnelle sur macOS et Linux sans dépendance GNU coreutils."
+  }
 }

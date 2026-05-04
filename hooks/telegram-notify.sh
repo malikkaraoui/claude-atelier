@@ -24,6 +24,14 @@ fi
 
 [[ -z "$MSG" ]] && exit 0
 
-# Écriture non-bloquante — timeout 2s évite deadlock si bridge lent à lire
-timeout 2 bash -c "echo \"\$MSG\" > \"$FIFO_PATH\"" 2>/dev/null || true
+# Écriture non-bloquante — O_NONBLOCK portable macOS/Linux (pas de timeout GNU requis)
+FIFO_PATH="$FIFO_PATH" FIFO_MSG="$MSG" python3 -c "
+import os
+try:
+    fd = os.open(os.environ['FIFO_PATH'], os.O_WRONLY | os.O_NONBLOCK)
+    os.write(fd, (os.environ['FIFO_MSG'] + '\n').encode())
+    os.close(fd)
+except OSError:
+    pass
+" 2>/dev/null || true
 exit 0
