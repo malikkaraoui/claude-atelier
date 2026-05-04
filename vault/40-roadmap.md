@@ -4,13 +4,21 @@
 
 ## Roadmap vivante
 
+### Livré
+
+- ✅ Telegram bridge Phase A — service Python, sessions SQLite, CLI npx (PR #47)
+- ✅ Telegram bridge Phase B — voix faster-whisper + Ollama polish + 6 fixes robustesse (PR #49)
+
 ### Sur le feu
 
+- **Bump version** (post-Phase B)
+- **Telegram Phase C** — FIFO hardening : hook PostToolUse → alertes commit/push/gate en temps réel
 - Peter Phase C — graphe minimal : graph.json + `vault query` + nœuds centraux PETER_REPORT
 - proxy tool_use mapping Go (ollama-proxy bidirectionnel)
 
 ### Ensuite
 
+- Telegram Phase D — vault inbox + lifecycle CLI
 - Peter Phase C — graphe minimal : graph.json + `vault query` + `vault path` + `vault explain`
 - Enrichissement PETER_REPORT.md avec nœuds centraux (god nodes)
 - Peter Phase D — `vault add` + `vault route` + inbox intelligente

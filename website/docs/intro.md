@@ -37,6 +37,7 @@ C'est tout. Claude Code est configuré avec 15 rails d'enforcement et un cockpit
 - **20 slash commands** — `/review-copilot`, `/night-launch`, `/angle-mort`…
 - **Satellites de stack** — JS, Python, iOS, Docker… chargés selon le projet
 - **Mode nuit** — Claude travaille seul, le pouls surveille, vous dormez
+- **Bridge Telegram** — commandes depuis mobile + alertes temps réel + messages vocaux (faster-whisper + Ollama local)
 - **Gate pré-push** — 5 vérifications avant chaque `git push`
 
 ---
@@ -95,4 +96,5 @@ scripts/
 - [Skills](./skills) — 20 slash commands
 - [Satellites par stack](./stacks) — iOS, JS, Python…
 - [Sécurité](./securite) — gate, secrets, permissions
+- [Bridge Telegram](./telegram) — commandes mobile + voix + alertes FIFO
 - [Contribuer](./contribuer) — ajouter un hook, un satellite
