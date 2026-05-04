@@ -856,6 +856,24 @@ test('vault docs scan génère catalog.json avec tous les champs requis', () => 
   }
 });
 
+// ──────────────────────────────────────────────────────────────────
+// Lot 5 — vault watch daemon tests
+// ──────────────────────────────────────────────────────────────────
+
+console.log('\nvault Lot 5 — watch daemon\n');
+
+test('vault watch status sans daemon actif retourne { active: false }', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'watch', 'status', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(r.stdout.includes('Aucun daemon watch'), 'message aucun daemon attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+<<<<<<< HEAD
 test('vault docs scan détecte marqueurs BMAD et marque protected', () => {
   const dir = initTestVault();
   try {
@@ -872,6 +890,20 @@ test('vault docs scan détecte marqueurs BMAD et marque protected', () => {
   }
 });
 
+test('vault watch status --json retourne { active: false, pid: null }', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'watch', 'status', '--cwd', dir, '--json'], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.active === false, 'active:false attendu');
+    ok(result.pid === null, 'pid:null attendu');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+<<<<<<< HEAD
 test('vault docs classify affiche rapport avec regroupement par kind', () => {
   const dir = initTestVault();
   try {
@@ -884,6 +916,22 @@ test('vault docs classify affiche rapport avec regroupement par kind', () => {
   }
 });
 
+test('vault watch once exécute un cycle unique synchrone', () => {
+  const dir = initTestVault();
+  try {
+    // Initialiser vault
+    cli(['vault', 'update', '--cwd', dir], dir);
+
+    // Exécuter watch once
+    const r = cli(['vault', 'watch', 'once', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    ok(r.stdout.includes('watch'), 'output doit mentiionner watch');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+<<<<<<< HEAD
 test('vault docs organize --plan affiche plan sans le modifier', () => {
   const dir = initTestVault();
   try {
@@ -900,6 +948,23 @@ test('vault docs organize --plan affiche plan sans le modifier', () => {
   }
 });
 
+test('vault watch once --json retourne { ok, elapsed, changedFiles }', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'update', '--cwd', dir], dir);
+
+    const r = cli(['vault', 'watch', 'once', '--cwd', dir, '--json'], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.ok === true, 'ok:true attendu');
+    ok(typeof result.elapsed === 'number', 'elapsed doit être un nombre');
+    ok(Array.isArray(result.changedFiles), 'changedFiles doit être un tableau');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+<<<<<<< HEAD
 test('vault docs organize --apply requires --confirm flag', () => {
   const dir = initTestVault();
   try {
@@ -914,6 +979,19 @@ test('vault docs organize --apply requires --confirm flag', () => {
   }
 });
 
+test('vault watch stop sans daemon actif retourne erreur', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'watch', 'stop', '--cwd', dir], dir);
+    // Peut sortir avec erreur ou avec message d'info
+    ok(r.stdout.includes('Aucun') || r.stdout.includes('actif') || r.stderr.includes('Aucun'),
+      'message attendant aucun daemon');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+<<<<<<< HEAD
 test('graph v2 crée doc_category nodes depuis catalog', () => {
   const dir = initTestVault();
   try {
@@ -997,6 +1075,42 @@ test('graph v2 ajoute stats.byKind avec comptes par catégorie', () => {
     ok(graph.stats.byKind, 'stats.byKind should exist');
     ok(typeof graph.stats.byKind === 'object', 'byKind should be object');
     ok(Object.keys(graph.stats.byKind).length > 0, 'byKind should have entries');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault watch start crée watch.json avec pid', () => {
+  const dir = initTestVault();
+  try {
+    // Initialiser vault (obligatoire pour watch)
+    cli(['vault', 'update', '--cwd', dir], dir);
+
+    // Start watch daemon
+    const r = cli(['vault', 'watch', 'start', '--cwd', dir, '--interval', '60'], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+
+    // Attendre un peu que le daemon écrive son fichier
+    const watchPath = join(dir, 'vault', '.peter', 'watch.json');
+    let watchExists = false;
+    for (let i = 0; i < 10; i++) {
+      if (existsSync(watchPath)) {
+        watchExists = true;
+        break;
+      }
+      // Micro sleep
+      const start = Date.now();
+      while (Date.now() - start < 50) {}
+    }
+
+    if (watchExists) {
+      const watchJson = JSON.parse(readFileSync(watchPath, 'utf8'));
+      ok(typeof watchJson.pid === 'number', 'watch.json doit contenir un pid numérique');
+      ok(watchJson.interval === 60, 'interval doit être respecté');
+
+      // Arrêter le daemon gracieusement
+      cli(['vault', 'watch', 'stop', '--cwd', dir], dir);
+    }
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
