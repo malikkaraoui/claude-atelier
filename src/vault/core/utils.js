@@ -1,9 +1,9 @@
 // src/vault/core/utils.js — helpers partagés
 
 import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
-import { execSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { join } from 'node:path';
+import { execSync } from 'node:child_process';;
+import { createHash } from 'node:crypto';;
+import { join } from 'node:path';;
 
 const DEFAULT_CRON_INTERVAL = '6h';
 
@@ -140,7 +140,10 @@ function extractDecisions(content) {
     }
     if (inSec && line.startsWith('### ')) {
       if (cur) decisions.push(cur);
-      cur = { title: line.slice(4).trim(), decision: '' };
+      const rawTitle = line.slice(4).trim();
+      const dashIdx = rawTitle.indexOf(' — ');
+      const title = dashIdx >= 0 ? rawTitle.slice(dashIdx + 3) : rawTitle;
+      cur = { title, rawTitle, decision: '' };
     }
     if (cur && line.trim().startsWith('- Décision : ')) {
       cur.decision = line.trim().slice('- Décision : '.length).trim();
@@ -211,7 +214,7 @@ function generateReport(vaultDir) {
   s('## Décisions actives');
   s('');
   if (decisionItems.length) {
-    decisionItems.forEach(d => s(`- **${d.title}**${d.decision ? ` — ${d.decision}` : ''}`));
+    decisionItems.forEach(d => s(`- **${d.rawTitle || d.title}**${d.decision ? ` — ${d.decision}` : ''}`));
   } else {
     s('- Aucune décision enregistrée dans 20-decisions.md');
   }
@@ -452,8 +455,25 @@ export {
   isProductChangePath,
   isWebsiteDocsPath,
   extractConcepts,
+  walkDir,
   DEFAULT_CRON_INTERVAL,
   DEFAULT_IGNORE_DIRS,
   DEFAULT_IGNORE_PATTERNS,
   STALE_DAYS,
 };
+
+function* walkDir(dir, isIgnored, relPrefix = '') {
+  let entries;
+  try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+  for (const entry of entries) {
+    const relPath = relPrefix ? `${relPrefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      if (DEFAULT_IGNORE_DIRS.has(entry.name)) continue;
+      if (isIgnored(relPath, true)) continue;
+      yield* walkDir(join(dir, entry.name), isIgnored, relPath);
+    } else if (entry.isFile()) {
+      if (isIgnored(relPath, false)) continue;
+      yield relPath;
+    }
+  }
+}
