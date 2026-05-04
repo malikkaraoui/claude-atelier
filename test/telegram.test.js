@@ -168,6 +168,20 @@ test('src/templates/telegram.env.example contient les vars Phase B', () => {
   ok(content.includes('OLLAMA_POLISH_ENABLED'), 'OLLAMA_POLISH_ENABLED absent du template');
 });
 
+test('src/templates/telegram.env.example contient OLLAMA_CHAT_MODEL (Phase A bidirectionnel)', () => {
+  const path = resolve(ROOT, 'src', 'templates', 'telegram.env.example');
+  const content = readFileSync(path, 'utf8');
+  ok(content.includes('OLLAMA_CHAT_MODEL'), 'OLLAMA_CHAT_MODEL absent du template Phase A');
+});
+
+test('scripts/telegram-bridge.py définit OLLAMA_CHAT_MODEL et _run_ollama', () => {
+  const path = resolve(ROOT, 'scripts', 'telegram-bridge.py');
+  const content = readFileSync(path, 'utf8');
+  ok(content.includes('OLLAMA_CHAT_MODEL'), 'OLLAMA_CHAT_MODEL absent du bridge');
+  ok(content.includes('_run_ollama'), 'méthode _run_ollama absente');
+  ok(content.includes('/api/generate'), 'endpoint /api/generate absent');
+});
+
 // ─────────────────────────────────────────────────────────────
 // Phase C — FIFO hooks (telegram-notify.sh + settings)
 // ─────────────────────────────────────────────────────────────

@@ -59,6 +59,7 @@ OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_POLISH_MODEL = os.getenv("OLLAMA_POLISH_MODEL", "qwen2.5:3b")
 OLLAMA_POLISH_TIMEOUT = _parse_int_env("OLLAMA_POLISH_TIMEOUT", 10)
 OLLAMA_POLISH_ENABLED = os.getenv("OLLAMA_POLISH_ENABLED", "true").lower() == "true"
+OLLAMA_CHAT_MODEL = os.getenv("OLLAMA_CHAT_MODEL", "")  # si défini, remplace claude CLI
 
 VAULT_INBOX = os.getenv("VAULT_INBOX", "vault/.peter/inbox/telegram")
 VAULT_WRITE_ENABLED = os.getenv("VAULT_WRITE_ENABLED", "true").lower() == "true"
@@ -189,7 +190,7 @@ class RateLimiter:
 
 
 # ============================================================================
-# Claude Runner
+# Claude / Ollama Runner
 # ============================================================================
 
 class ClaudeRunner:
@@ -199,11 +200,36 @@ class ClaudeRunner:
         self.turn_count = 0
 
     async def run_command(self, user_message: str) -> Tuple[str, float]:
-        """Run claude CLI via stdin pipe. No shell — no injection risk."""
+        """Run via Ollama (si OLLAMA_CHAT_MODEL défini) ou claude CLI."""
         if self.turn_count >= CLAUDE_MAX_TURNS:
             return f"Max turns ({CLAUDE_MAX_TURNS}) reached", 0.0
 
         self.turn_count += 1
+
+        if OLLAMA_CHAT_MODEL:
+            return await self._run_ollama(user_message)
+        return await self._run_claude_cli(user_message)
+
+    async def _run_ollama(self, user_message: str) -> Tuple[str, float]:
+        try:
+            async with httpx.AsyncClient(timeout=CLAUDE_TIMEOUT_SECONDS) as client:
+                resp = await client.post(
+                    f"{OLLAMA_HOST}/api/generate",
+                    json={
+                        "model": OLLAMA_CHAT_MODEL,
+                        "prompt": user_message,
+                        "stream": False
+                    }
+                )
+                resp.raise_for_status()
+                content = resp.json().get("response", "")
+                return content[:2000] or "Réponse vide.", 0.0
+        except Exception as e:
+            logger.error(f"Ollama chat error: {e}")
+            return f"Erreur Ollama: {e}", 0.0
+
+    async def _run_claude_cli(self, user_message: str) -> Tuple[str, float]:
+        """Run claude CLI via stdin pipe. No shell — no injection risk."""
         estimated_cost = 0.01  # placeholder; real cost requires --output-format json parsing
 
         proc = await asyncio.create_subprocess_exec(
@@ -428,7 +454,6 @@ class TelegramBot:
             return
 
         runner = self._get_claude_runner(user_id, project_dir)
-        uptime = datetime.utcnow().isoformat()
         status = (
             f"*Session Status*\n"
             f"Session ID: `{session['session_id']}`\n"
@@ -436,6 +461,7 @@ class TelegramBot:
             f"Cost: ${session['total_cost_usd']:.2f}\n"
             f"Turns: {runner.turn_count}/{CLAUDE_MAX_TURNS}\n"
             f"Created: {session['created_at']}\n"
+            f"Backend: {'Ollama (' + OLLAMA_CHAT_MODEL + ')' if OLLAMA_CHAT_MODEL else 'Claude CLI'}\n"
         )
         await update.message.reply_text(status, parse_mode="Markdown")
 
