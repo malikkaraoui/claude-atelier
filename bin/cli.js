@@ -24,7 +24,7 @@ const pkg = JSON.parse(
 // ⚠️  BLOC GÉNÉRÉ — ne pas éditer manuellement.
 // Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
-claude-atelier v0.24.0
+claude-atelier v0.26.0
 Framework complet Claude Code: 31 agents, 18 skills, MCP GitHub intégré, vault Peter (graphe + query + MCP), bridge Telegram bidirectionnel (voix + alertes FIFO temps réel), loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.
 
 Usage:
@@ -40,7 +40,6 @@ Commands:
   pulse             Gestion du pouls multi-agents (statut, init, mise à jour)
   vault             Initialise et inspecte le vault dynamique projet maintenu par Peter
   apply             Injecte un profil de config dans un worktree cible (API Paperclip)
-  master            Daemon maître : écoute Telegram, orchestre les projets (start|stop|restart|status)
 
 Options:
   --version, -v       Affiche la version et quitte

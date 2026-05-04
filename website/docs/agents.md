@@ -135,7 +135,7 @@ npx claude-atelier vault mcp           # serveur MCP stdio (tools query_vault / 
 
 **Phases livrées :** A (init + hook) · B (index + watch + cron) · C (graphe + query + export + MCP — PR #50) · Closure (storytelling vault/00-brief.md + roadmap + website/docs/ — PR #51)
 
-**Statut v0.24.0 :** Peter tourne en autonomie complète — vault à jour, graphe navigable, MCP stdio actif, rapport hebdomadaire automatique.
+**Statut v0.26.0 :** Peter tourne en autonomie complète — vault à jour, graphe navigable, MCP stdio actif, rapport hebdomadaire automatique. Master daemon actif (Telegram long-poll, routing projets, contexte Obsidian par message).
 
 ---
 

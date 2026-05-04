@@ -3,7 +3,9 @@ id: telegram
 title: Bridge Telegram
 ---
 
-Bridge bidirectionnel Telegram ↔ Claude Code. **Production-ready v0.24.0** — reçoit des commandes depuis votre mobile, envoie des alertes de session en temps réel. Zéro dépendance cloud — transcription vocale et polish par Ollama en local. Les alertes FIFO sont non-bloquantes (O_NONBLOCK) : le bridge peut être arrêté sans bloquer Claude.
+Bridge bidirectionnel Telegram ↔ Claude Code. **Production-ready v0.26.0** — reçoit des commandes depuis votre mobile, envoie des alertes de session en temps réel. Zéro dépendance cloud — transcription vocale et polish par Ollama en local. Les alertes FIFO sont non-bloquantes (O_NONBLOCK) : le bridge peut être arrêté sans bloquer Claude.
+
+> **v0.26.0 — Master daemon** : `claude-atelier master start` lance un daemon autonome (KeepAlive LaunchAgent) qui écoute Telegram en long-poll, route les messages vers le bon projet, injecte le contexte Obsidian vault et maintient un historique glissant par session.
 
 ---
 
