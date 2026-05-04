@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "subject": "Master daemon Phase E (E1→E5) + Telegram bidirectionnel Phases A→D",
+    "date": "2026-05-04",
+    "type": "review",
+    "priority": "haute",
+    "reviewedRange": "f82afc64cbd88373a2d171a831d98b8ae1ba7775..e15c3622f6dbfa1e9d5bb8baa0531527248b8138"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "5 commits depuis le dernier handoff : (1) fix Copilot #52 portabilité timeout FIFO macOS, (2) Telegram Phase A bidirectionnel via Ollama local /api/generate, (3) InboxWriter Peter — écrit vault/10-mailbox.md à chaque échange Telegram, (4) Phase D — signal file pour notifier Claude Code en temps réel, (5) Phase E Master daemon complet : bin/master.js (long-poll Telegram, lockfile anti-doublon, routing projets), src/master/{session-manager,vault-loader,context-monitor,index}.js, LaunchAgent com.claude-atelier.master (KeepAlive=true, TCC-safe via ~/.local/bin/launcher), commande CLI `claude-atelier master start|stop|restart|status`. Total : 980 lignes ajoutées / 26 fichiers.",
+    "question": "Le lockfile /tmp/claude-atelier-master.lock protège contre les instances dupliquées, mais si le processus crashe sans passer par process.on('exit') (SIGKILL, panic Node, reboot machine), le lockfile persiste et bloque le redémarrage automatique du LaunchAgent — est-ce que la logique de détection de PID mort (process.kill(pid, 0) catch) est suffisante pour récupérer ce cas, ou y a-t-il un scénario où le lockfile contient un PID recyclé par le noyau qui correspond à un autre processus vivant ?",
+    "filesToRead": [
+      "bin/master.js",
+      "src/master/session-manager.js",
+      "src/master/vault-loader.js",
+      "src/master/context-monitor.js",
+      "src/master/index.js",
+      "scripts/install-daemon.sh",
+      "scripts/claude-notify.sh"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+  },
+  "integration": null
+}
