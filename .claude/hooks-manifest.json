@@ -330,10 +330,29 @@
         "0": "always (suggestion only, never blocks)"
       },
       "sha256": "77e942754b683f14"
+    },
+    {
+      "name": "peter-inbox-check",
+      "file": "hooks/peter-inbox-check.sh",
+      "type": "UserPromptSubmit",
+      "trigger": "every user prompt",
+      "purpose": "Phase D — détecte /tmp/peter-notify et injecte le dernier message Telegram de Peter dans le contexte Claude Code en temps réel.",
+      "inputs": [
+        "signal file /tmp/peter-notify"
+      ],
+      "outputs": [
+        "allow (exit 0) + injection message Peter si signal présent"
+      ],
+      "rule": "Phase D — Peter → Claude Code real-time notification",
+      "test": "test/hooks.js → peter-inbox-check.sh",
+      "exitCodes": {
+        "0": "always (notification only, never blocks)"
+      },
+      "sha256": "a37841fc11af05b7"
     }
   ],
   "stats": {
-    "total": 16,
+    "total": 17,
     "byType": {
       "helper": 1,
       "SessionStart": 3,
