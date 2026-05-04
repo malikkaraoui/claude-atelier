@@ -28,7 +28,7 @@ _bridge_running() {
 
 _start_bridge() {
     _log "Démarrage du telegram bridge..."
-    cd "$ROOT"
+    cd "$ROOT" || return 1
     node bin/telegram.js start
     sleep 1
     if _bridge_running; then
