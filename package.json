@@ -1,6 +1,6 @@
 {
   "name": "claude-atelier",
-  "version": "0.23.9",
+  "version": "0.23.10",
   "description": "Framework complet Claude Code: 31 agents, 18 skills, MCP GitHub intégré, vault Peter (graphe + query), loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.",
   "keywords": [
     "claude",
