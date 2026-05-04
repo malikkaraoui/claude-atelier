@@ -873,125 +873,6 @@ test('vault watch status sans daemon actif retourne { active: false }', () => {
   }
 });
 
-<<<<<<< HEAD
-test('vault docs scan détecte marqueurs BMAD et marque protected', () => {
-  const dir = initTestVault();
-  try {
-    writeFileSync(join(dir, 'vault', '20-decisions.md'),
-      '# Décisions\n\n.bmad-method\n\nContent',
-      'utf8');
-
-    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
-    const catalog = JSON.parse(readFileSync(join(dir, 'vault', 'library', 'catalog.json'), 'utf8'));
-    const decisionDoc = catalog.documents.find(d => d.filename === '20-decisions.md');
-    ok(decisionDoc && decisionDoc.protected === true, 'BMAD files should be protected');
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test('vault watch status --json retourne { active: false, pid: null }', () => {
-  const dir = initTestVault();
-  try {
-    const r = cli(['vault', 'watch', 'status', '--cwd', dir, '--json'], dir);
-    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
-    const result = JSON.parse(r.stdout);
-    ok(result.active === false, 'active:false attendu');
-    ok(result.pid === null, 'pid:null attendu');
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-<<<<<<< HEAD
-test('vault docs classify affiche rapport avec regroupement par kind', () => {
-  const dir = initTestVault();
-  try {
-    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
-    const r = cli(['vault', 'docs', 'classify', '--cwd', dir], dir);
-    ok(r.status === 0, `vault docs classify doit passer: ${r.stderr}`);
-    ok(r.stdout.includes('Classification') || r.stdout.includes('kind'), 'report doit inclure classification');
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test('vault watch once exécute un cycle unique synchrone', () => {
-  const dir = initTestVault();
-  try {
-    // Initialiser vault
-    cli(['vault', 'update', '--cwd', dir], dir);
-
-    // Exécuter watch once
-    const r = cli(['vault', 'watch', 'once', '--cwd', dir], dir);
-    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
-    ok(r.stdout.includes('watch'), 'output doit mentiionner watch');
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-<<<<<<< HEAD
-test('vault docs organize --plan affiche plan sans le modifier', () => {
-  const dir = initTestVault();
-  try {
-    mkdirSync(join(dir, 'docs', 'random'), { recursive: true });
-    writeFileSync(join(dir, 'docs', 'random', 'unknown.md'), '# Unknown\n\nContent', 'utf8');
-
-    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
-    const r = cli(['vault', 'docs', 'organize', '--plan', '--cwd', dir], dir);
-    ok(r.status === 0, `organize --plan doit passer: ${r.stderr}`);
-    ok(r.stdout.includes('migrations') || r.stdout.includes('plan'), 'should mention plan');
-    ok(existsSync(join(dir, 'docs', 'random', 'unknown.md')), 'file should not move in plan mode');
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test('vault watch once --json retourne { ok, elapsed, changedFiles }', () => {
-  const dir = initTestVault();
-  try {
-    cli(['vault', 'update', '--cwd', dir], dir);
-
-    const r = cli(['vault', 'watch', 'once', '--cwd', dir, '--json'], dir);
-    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
-    const result = JSON.parse(r.stdout);
-    ok(result.ok === true, 'ok:true attendu');
-    ok(typeof result.elapsed === 'number', 'elapsed doit être un nombre');
-    ok(Array.isArray(result.changedFiles), 'changedFiles doit être un tableau');
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-<<<<<<< HEAD
-test('vault docs organize --apply requires --confirm flag', () => {
-  const dir = initTestVault();
-  try {
-    mkdirSync(join(dir, 'docs', 'other'), { recursive: true });
-    writeFileSync(join(dir, 'docs', 'other', 'orphan.md'), '# Orphan\n\nContent', 'utf8');
-
-    cli(['vault', 'docs', 'scan', '--cwd', dir], dir);
-    const r = cli(['vault', 'docs', 'organize', '--apply', '--cwd', dir], dir);
-    ok(r.status === 1, 'sans --confirm doit exit 1');
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test('vault watch stop sans daemon actif retourne erreur', () => {
-  const dir = initTestVault();
-  try {
-    const r = cli(['vault', 'watch', 'stop', '--cwd', dir], dir);
-    // Peut sortir avec erreur ou avec message d'info
-    ok(r.stdout.includes('Aucun') || r.stdout.includes('actif') || r.stderr.includes('Aucun'),
-      'message attendant aucun daemon');
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-<<<<<<< HEAD
 test('graph v2 crée doc_category nodes depuis catalog', () => {
   const dir = initTestVault();
   try {
@@ -1247,6 +1128,42 @@ test('vault export --wiki génère vault/index/wiki/index.md et répertoires par
     ok(existsSync(join(dir, 'vault', 'index', 'wiki', 'concept')), 'wiki/concept/ doit exister');
     const index = readFileSync(join(dir, 'vault', 'index', 'wiki', 'index.md'), 'utf8');
     ok(index.includes('Par type'), 'section "Par type" attendue');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ─── Lot 10 — MCP ─────────────────────────────────────────────────────
+
+console.log('\n── Lot 10 — MCP vault ──');
+
+test('vault mcp --dry-run démarre sans crash et exit 0', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'mcp', '--cwd', dir, '--dry-run'], dir);
+    ok(r.status === 0, `exit 0 attendu, reçu ${r.status}: ${r.stderr}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault mcp --dry-run affiche sur stderr le message prêt', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'mcp', '--cwd', dir, '--dry-run'], dir);
+    ok(r.stderr.includes('query_vault'), 'query_vault doit figurer dans stderr');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault mcp --dry-run affiche tous les tools sur stderr', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'mcp', '--cwd', dir, '--dry-run'], dir);
+    ok(r.stderr.includes('get_node'), 'get_node doit figurer dans stderr');
+    ok(r.stderr.includes('neighbors'), 'neighbors doit figurer dans stderr');
+    ok(r.stderr.includes('stale_status'), 'stale_status doit figurer dans stderr');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -16,6 +16,7 @@
  *   claude-atelier vault watch   once|start|stop|status [--cwd <path>] [--interval <sec>] [--json]
  *   claude-atelier vault maintain [--cwd <path>] [--json]
  *   claude-atelier vault cron    start|stop|status [--cwd <path>] [--interval <15m|6h|1d>] [--json]
+ *   claude-atelier vault mcp     [--cwd <path>] [--dry-run]
  */
 
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, unlinkSync } from 'node:fs';
@@ -3291,6 +3292,12 @@ export async function runVault(argv) {
 
     process.stderr.write(`${RED}error${NC}: action watch inconnue "${action}"\n`);
     return 1;
+  }
+
+  if (sub === 'mcp') {
+    const { startMcpServer } = await import('../src/vault/mcp/server.js');
+    await startMcpServer(cwd, dryRun);
+    return 0;
   }
 
   process.stderr.write(`${RED}error${NC}: sous-commande vault inconnue "${sub}"\n`);
