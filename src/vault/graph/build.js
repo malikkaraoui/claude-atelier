@@ -1,14 +1,17 @@
 // src/vault/graph/build.js — graph construction from vault
 
-import { join, relative } from 'node:path';
-import { existsSync, readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { loadManifest } from '../core/manifest.js';
-import { 
-  getStateLine, slugify, extractConcepts, buildIgnoreMatcher, parseIgnoreFile, 
+import {
+  getStateLine, slugify, extractConcepts, buildIgnoreMatcher, parseIgnoreFile,
   computeFileSHA256, DEFAULT_IGNORE_DIRS, DEFAULT_IGNORE_PATTERNS,
-  extractBulletItems, extractSubsectionItems, extractMailboxPending, extractDecisions 
+  extractBulletItems, extractSubsectionItems, extractMailboxPending, extractDecisions,
 } from '../core/utils.js';
 import { readFirstHeading, readExcerpt, getFileMtime, extractBmadSignals } from '../docs/scan.js';
+import { computeCommunities } from './explain.js';
+
+const BMAD_MARKERS = ['.bmad', '.bmad-method', 'bmad-core'];
 
 function buildGraph(cwd) {
   const vaultDir = join(cwd, 'vault');
@@ -22,10 +25,6 @@ function buildGraph(cwd) {
 
   function addNode(n) {
     if (!nodes.has(n.id)) {
-      // Auto-add community field based on node type
-      if (typeof n.community === 'undefined') {
-        n.community = 0; // Default community
-      }
       nodes.set(n.id, n);
       byType[n.type] = (byType[n.type] || 0) + 1;
     }
@@ -41,7 +40,6 @@ function buildGraph(cwd) {
     id: 'project:root', type: 'project', label: projectName, path: '',
     tags: ['project'], excerpt: getStateLine(briefContent, 'Phase') || '',
     mtime: now, sha256: '', confidence: 'INFERRED',
-    community: 0,
   });
 
   // Fichiers vault connus
@@ -58,9 +56,7 @@ function buildGraph(cwd) {
       label: readFirstHeading(fp) || name, path: relPath,
       tags: ['vault'], excerpt: readExcerpt(fp),
       mtime: getFileMtime(fp), sha256: '', confidence: 'EXTRACTED',
-      community: 0,
     });
-    // Edge from project:root to vault file
     addEdge({ from: 'project:root', to: `vault_file:${relPath}`, relation: 'document' });
   }
 
@@ -70,20 +66,13 @@ function buildGraph(cwd) {
     const decisionsContent = readFileSync(decisionsPath, 'utf8');
     const decisions = extractDecisions(decisionsContent);
     for (const d of decisions) {
-      // Extract clean label from full title (e.g., "2026-05-01 — Node.js" → "Node.js")
-      let cleanLabel = d.title;
-      const dashIdx = d.title.indexOf(' — ');
-      if (dashIdx >= 0) {
-        cleanLabel = d.title.slice(dashIdx + 3);
-      }
-      const decisionId = `decision:${slugify(cleanLabel)}`;
+      const decisionId = `decision:${slugify(d.title)}`;
       addNode({
-        id: decisionId, type: 'decision', label: cleanLabel, path: 'vault/20-decisions.md',
+        id: decisionId, type: 'decision', label: d.title, path: 'vault/20-decisions.md',
         tags: ['decision'], excerpt: d.decision || '',
         mtime: now, sha256: '', confidence: 'EXTRACTED',
-        community: 0,
       });
-      addEdge({ from: `vault_file:vault/20-decisions.md`, to: decisionId, relation: 'contains' });
+      addEdge({ from: 'vault_file:vault/20-decisions.md', to: decisionId, relation: 'contains' });
     }
   }
 
@@ -98,27 +87,39 @@ function buildGraph(cwd) {
         id: itemId, type: 'roadmap_item', label: feuItems[i], path: 'vault/40-roadmap.md',
         tags: ['roadmap', 'sur_le_feu'], excerpt: feuItems[i],
         mtime: now, sha256: '', confidence: 'EXTRACTED',
-        community: 0,
       });
-      addEdge({ from: `vault_file:vault/40-roadmap.md`, to: itemId, relation: 'contains' });
+      addEdge({ from: 'vault_file:vault/40-roadmap.md', to: itemId, relation: 'contains' });
     }
   }
 
-  // BMAD artifacts - scan vault for protected markdown
+  // BMAD artifacts depuis manifest.files
+  if (manifest && Array.isArray(manifest.files)) {
+    for (const f of manifest.files) {
+      if (!BMAD_MARKERS.some(m => f.path.includes(m))) continue;
+      const bmadId = `protected_artifact:${slugify(f.path)}`;
+      addNode({
+        id: bmadId, type: 'protected_artifact', label: f.path, path: f.path,
+        tags: ['protected'], excerpt: 'Protected Business-Model-Analysis Document',
+        mtime: f.mtime || now, sha256: f.sha256 || '', confidence: 'PROTECTED',
+      });
+      addEdge({ from: bmadId, to: 'project:root', type: 'protected_by_method' });
+    }
+  }
+
+  // Fallback BMAD depuis brief textuel
   const bmadSignals = extractBmadSignals(briefPath);
-  if (bmadSignals && bmadSignals.length > 0) {
-    for (const signal of bmadSignals) {
-      const bmadId = `protected_artifact:${slugify(signal)}`;
+  for (const signal of bmadSignals) {
+    const bmadId = `protected_artifact:${slugify(signal)}`;
+    if (!nodes.has(bmadId)) {
       addNode({
         id: bmadId, type: 'protected_artifact', label: signal, path: 'vault/BMAD',
         tags: ['protected'], excerpt: 'Protected Business-Model-Analysis Document',
         mtime: now, sha256: '', confidence: 'PROTECTED',
-        community: 0,
       });
     }
   }
 
-  // Nœuds concepts
+  // Nœuds concepts depuis manifest
   if (manifest && manifest.concepts && Array.isArray(manifest.concepts)) {
     for (const concept of manifest.concepts) {
       addNode({
@@ -127,12 +128,59 @@ function buildGraph(cwd) {
         tags: ['concept'], excerpt: concept.description || '',
         mtime: now, sha256: '', confidence: 'MANIFEST',
         frequency: concept.frequency || 0,
-        community: 0,
       });
     }
   }
 
-  // Retourner le graph
+  // Communautés (composantes connexes)
+  const { nodeIdToCommunityId, byId: commById, count: commCount } = computeCommunities(Array.from(nodes.values()), edges);
+  for (const node of nodes.values()) {
+    node.community = nodeIdToCommunityId.get(node.id) ?? 0;
+  }
+
+  // Nœuds centraux par degré
+  const degree = {};
+  for (const e of edges) {
+    degree[e.from] = (degree[e.from] || 0) + 1;
+    degree[e.to] = (degree[e.to] || 0) + 1;
+  }
+  const centralNodes = Array.from(nodes.keys()).sort((a, b) => (degree[b] || 0) - (degree[a] || 0)).slice(0, 8);
+
+  // doc_category nodes + classified_as edges depuis catalog
+  const catalogPath = join(vaultDir, 'library', 'catalog.json');
+  if (existsSync(catalogPath)) {
+    let catalog;
+    try { catalog = JSON.parse(readFileSync(catalogPath, 'utf8')); } catch { catalog = null; }
+    if (catalog && Array.isArray(catalog.documents)) {
+      for (const doc of catalog.documents) {
+        const catId = `doc_category:${doc.kind}`;
+        addNode({ id: catId, type: 'doc_category', label: doc.kind, path: '', tags: ['doc_category'], excerpt: '', mtime: now, sha256: '', confidence: 'EXTRACTED' });
+        const docId = doc.graphNodeId || `markdown_document:${doc.path}`;
+        addEdge({ from: docId, to: catId, type: 'classified_as', confidence: 'EXTRACTED' });
+      }
+    }
+  }
+
+  // Nodes risk (⚠️) et question (? / Question:) depuis vault files
+  const vaultMdFiles = ['20-decisions.md', '30-discoveries.md', '40-roadmap.md'];
+  for (const name of vaultMdFiles) {
+    const fp = join(vaultDir, name);
+    if (!existsSync(fp)) continue;
+    const content = readFileSync(fp, 'utf8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.replace(/^[-*]\s+/, '').trim();
+      if (trimmed.startsWith('⚠️') || trimmed.startsWith('⚠ ')) {
+        const label = trimmed.replace(/^⚠️\s*|^⚠\s*/, '').trim();
+        if (label) addNode({ id: `risk:${slugify(label)}`, type: 'risk', label, path: `vault/${name}`, tags: ['risk'], excerpt: label, mtime: now, sha256: '', confidence: 'EXTRACTED' });
+      } else if (trimmed.startsWith('? ') || trimmed.startsWith('Question:')) {
+        const label = trimmed.replace(/^\?\s+|^Question:\s*/i, '').trim();
+        if (label) addNode({ id: `question:${slugify(label)}`, type: 'question', label, path: `vault/${name}`, tags: ['question'], excerpt: label, mtime: now, sha256: '', confidence: 'EXTRACTED' });
+      }
+    }
+  }
+
+  const byKind = byType;
+
   return {
     version: 1,
     generatedAt: now,
@@ -140,12 +188,31 @@ function buildGraph(cwd) {
     edges,
     stats: {
       byType,
-      byKind: {},
-      centralNodes: Array.from(nodes.keys()).slice(0, 8),
+      byKind,
+      centralNodes,
       nodeCount: nodes.size,
       edgeCount: edges.length,
+      communities: { count: commCount, byId: commById },
     },
   };
 }
 
-export { buildGraph };
+function graphVault(cwd) {
+  const vaultDir = join(cwd, 'vault');
+  if (!existsSync(vaultDir)) {
+    return { ok: false, error: 'Aucun vault projet. Lancez : claude-atelier vault init' };
+  }
+  const graph = buildGraph(cwd);
+  const graphPath = join(vaultDir, 'index', 'graph.json');
+  mkdirSync(dirname(graphPath), { recursive: true });
+  writeFileSync(graphPath, JSON.stringify(graph, null, 2) + '\n', 'utf8');
+  return {
+    ok: true,
+    graphPath,
+    nodeCount: graph.stats.nodeCount,
+    edgeCount: graph.stats.edgeCount,
+    centralNodes: graph.stats.centralNodes.slice(0, 5).map(id => id.split(':').pop()),
+  };
+}
+
+export { buildGraph, graphVault };
