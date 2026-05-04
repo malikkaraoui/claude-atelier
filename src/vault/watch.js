@@ -5,8 +5,8 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { createHash } from 'node:crypto';
+import { join, resolve } from 'node:path';;
+import { createHash } from 'node:crypto';;
 
 const WATCH_CONFIG_FILE = '.peter/watch.json';
 const EVENTS_FILE = '.peter/events.jsonl';
