@@ -106,17 +106,34 @@ Activée via `/design-senior` ou automatiquement dès qu'un besoin UI/UX est dé
 
 Activé au `SessionStart` dès qu'un `vault/` projet existe.
 
-> Peter injecte un seul `PETER_REPORT.md` au démarrage — décisions actives, prochaine action, nœuds centraux — et maintient la mémoire projet sans brûler les tokens.
+> Peter injecte un seul `PETER_REPORT.md` au démarrage — décisions actives, prochaine action, nœuds centraux — et maintient la mémoire projet sans brûler les tokens. Il tourne en autonome : watch daemon + cron, aucune intervention requise.
 
-**Workflow :**
+**Workflow complet :**
 ```bash
-npx claude-atelier vault init    # crée le vault + hook SessionStart
-npx claude-atelier vault update  # index incrémental SHA256
-npx claude-atelier vault graph   # graphe navigable (graph.json)
-npx claude-atelier vault query "concept"  # recherche par concept
+npx claude-atelier vault init          # crée le vault + hook SessionStart
+npx claude-atelier vault update        # index incrémental SHA256
+npx claude-atelier vault report        # regénère PETER_REPORT.md
+npx claude-atelier vault stale         # détecte fichiers obsolètes / manquants
+npx claude-atelier vault graph         # construit graph.json (nœuds + arêtes)
+npx claude-atelier vault query "auth"  # recherche dans le graphe
+npx claude-atelier vault path A B      # chemin entre deux nœuds
+npx claude-atelier vault explain node  # détails + voisins d'un nœud
+npx claude-atelier vault export --html # export graphe (HTML / GraphML / Obsidian / Neo4j / SVG / Wiki)
+npx claude-atelier vault watch         # daemon surveillance temps réel
+npx claude-atelier vault cron start    # planification automatique
+npx claude-atelier vault maintain      # maintenance autonome (heartbeat + alertes)
+npx claude-atelier vault mcp           # serveur MCP stdio (tools query_vault / get_node / neighbors)
 ```
 
-**Ce qu'il apporte :** index SHA256 (`manifest.json`), graphe minimal (nœuds fichiers/décisions/concepts + relations), centralité pondérée — top 8 nœuds remontés dans `PETER_REPORT.md` (section `## Nœuds centraux`). Local-first, aucun LLM externe.
+**Ce qu'il apporte :**
+- Index SHA256 (`manifest.json`) — détection incrémentale sans faux positifs
+- Graphe navigable (`graph.json`) — nœuds fichiers / décisions / concepts / BMAD / risques + relations extraites Markdown
+- Centralité pondérée — top 8 nœuds remontés dans `PETER_REPORT.md` (section `## Nœuds centraux`)
+- Export multi-formats — intégration Obsidian, Neo4j, visualisation D3/SVG
+- MCP stdio natif — `query_vault`, `get_node`, `neighbors`, `stale_status` accessibles par tout client MCP
+- Local-first, aucun LLM externe, aucun cloud requis
+
+**Phases livrées :** A (init + hook) · B (index + watch + cron) · C (graphe + query + export + MCP — Lots 0+4+10, PR #50)
 
 ---
 
