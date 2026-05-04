@@ -8,20 +8,21 @@
 
 - ✅ Telegram bridge Phase A — service Python, sessions SQLite, CLI npx (PR #47)
 - ✅ Telegram bridge Phase B — voix faster-whisper + Ollama polish + 6 fixes robustesse (PR #49)
+- ✅ Peter Phase A — `vault init`, hook SessionStart, 00-brief/20-decisions/40-roadmap
+- ✅ Peter Phase B — index SHA256 `manifest.json`, `vault update` incrémental, PETER_REPORT, watch daemon, cron
+- ✅ Peter Phase C — graphe navigable `graph.json`, `vault query/path/explain`, export multi-formats (HTML/GraphML/Obsidian/Neo4j/SVG/Wiki), MCP stdio, `vault maintain` autonome — Lots 0+4+10 (PR #50)
 
 ### Sur le feu
 
-- **Bump version** (post-Phase B)
+- **Bump version v0.23.12**
 - **Telegram Phase C** — FIFO hardening : hook PostToolUse → alertes commit/push/gate en temps réel
-- Peter Phase C — graphe minimal : graph.json + `vault query` + nœuds centraux PETER_REPORT
 - proxy tool_use mapping Go (ollama-proxy bidirectionnel)
 
 ### Ensuite
 
 - Telegram Phase D — vault inbox + lifecycle CLI
-- Peter Phase C — graphe minimal : graph.json + `vault query` + `vault path` + `vault explain`
-- Enrichissement PETER_REPORT.md avec nœuds centraux (god nodes)
-- Peter Phase D — `vault add` + `vault route` + inbox intelligente
+- Peter Phase D — `vault add` (inbox intelligente) + `vault route` (classification automatique)
+- Enrichissement storytelling Peter dans website/docs/agents.md
 
 ### Idées à challenger
 
