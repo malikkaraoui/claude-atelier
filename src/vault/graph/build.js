@@ -57,7 +57,7 @@ function buildGraph(cwd, opts = {}) {
       tags: ['vault'], excerpt: readExcerpt(fp),
       mtime: getFileMtime(fp), sha256: '', confidence: 'EXTRACTED',
     });
-    addEdge({ from: 'project:root', to: `vault_file:${relPath}`, relation: 'document' });
+    addEdge({ from: 'project:root', to: `vault_file:${relPath}`, type: 'document' });
   }
 
   // Décisions depuis 20-decisions.md
@@ -72,7 +72,7 @@ function buildGraph(cwd, opts = {}) {
         tags: ['decision'], excerpt: d.decision || '',
         mtime: now, sha256: '', confidence: 'EXTRACTED',
       });
-      addEdge({ from: 'vault_file:vault/20-decisions.md', to: decisionId, relation: 'contains' });
+      addEdge({ from: 'vault_file:vault/20-decisions.md', to: decisionId, type: 'contains' });
     }
   }
 
@@ -88,7 +88,7 @@ function buildGraph(cwd, opts = {}) {
         tags: ['roadmap', 'sur_le_feu'], excerpt: feuItems[i],
         mtime: now, sha256: '', confidence: 'EXTRACTED',
       });
-      addEdge({ from: 'vault_file:vault/40-roadmap.md', to: itemId, relation: 'contains' });
+      addEdge({ from: 'vault_file:vault/40-roadmap.md', to: itemId, type: 'contains' });
     }
   }
 
@@ -132,13 +132,7 @@ function buildGraph(cwd, opts = {}) {
     }
   }
 
-  // Communautés (composantes connexes)
-  const { nodeIdToCommunityId, byId: commById, count: commCount } = computeCommunities(Array.from(nodes.values()), edges);
-  for (const node of nodes.values()) {
-    node.community = nodeIdToCommunityId.get(node.id) ?? 0;
-  }
-
-  // Nœuds centraux par degré
+  // Nœuds centraux par degré (calculé avant community — ne dépend pas des communautés)
   const degree = {};
   for (const e of edges) {
     degree[e.from] = (degree[e.from] || 0) + 1;
@@ -156,6 +150,9 @@ function buildGraph(cwd, opts = {}) {
         const catId = `doc_category:${doc.kind}`;
         addNode({ id: catId, type: 'doc_category', label: doc.kind, path: '', tags: ['doc_category'], excerpt: '', mtime: now, sha256: '', confidence: 'EXTRACTED' });
         const docId = doc.graphNodeId || `markdown_document:${doc.path}`;
+        if (!nodes.has(docId)) {
+          addNode({ id: docId, type: 'markdown_document', label: doc.title || doc.path, path: doc.path, tags: ['document'], excerpt: '', mtime: now, sha256: '', confidence: 'CATALOG' });
+        }
         addEdge({ from: docId, to: catId, type: 'classified_as', confidence: 'EXTRACTED' });
       }
     }
@@ -177,6 +174,12 @@ function buildGraph(cwd, opts = {}) {
         if (label) addNode({ id: `question:${slugify(label)}`, type: 'question', label, path: `vault/${name}`, tags: ['question'], excerpt: label, mtime: now, sha256: '', confidence: 'EXTRACTED' });
       }
     }
+  }
+
+  // Communautés calculées après tous les nœuds pour couvrir risk/question/doc_category
+  const { nodeIdToCommunityId, byId: commById, count: commCount } = computeCommunities(Array.from(nodes.values()), edges);
+  for (const node of nodes.values()) {
+    node.community = nodeIdToCommunityId.get(node.id) ?? 0;
   }
 
   const byKind = byType;

@@ -1,7 +1,7 @@
 // src/vault/docs/classify.js — document classification and organization
 
 import { dirname, join } from 'node:path';;
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { readJsonIfExists, extractConcepts } from '../core/utils.js';
 
 function classifyMarkdownKind(filename, relPath, content) {

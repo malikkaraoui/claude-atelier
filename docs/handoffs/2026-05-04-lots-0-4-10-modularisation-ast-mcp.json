@@ -28,9 +28,24 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
-    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+    "model": "github-copilot-pr-reviewer",
+    "content": "15 commentaires inline sur PR #50. Bugs critiques identifiés : (1) build.js — edges utilisent `relation:` au lieu de `type:` (3 occurrences : vault_file, decision, roadmap), cassant explain/MCP/exports GraphML/Neo4j. (2) classify.js:149 — `renameSync` appelé sans être importé depuis node:fs → ReferenceError au premier `vault docs organize --apply`. (3) build.js:139 — computeCommunities appelé avant l'ajout des nœuds doc_category/risk/question → ces nœuds n'ont jamais de champ `community`. (4) build.js:158 — edges classified_as créés vers des IDs de nœuds absents → graphe incohérent. (5) export.js:117 — après D3 forceLink, `l.source`/`l.target` sont des objets, pas des strings ; comparaison `=== d.id` ne matche jamais → surlignage voisins cassé. (6) daemon.js:83 — `watchOnce(vaultPath)` sans callbacks → vault watch once ne reconstruit ni manifest ni graph.json. Signalements hors scope Lots 0+4+10 : mcp/server.js framing stdio (Phase G), telegram-bridge.py gestion erreurs (Phase A séparé), test coverage vault maintain."
   },
-  "integration": null
+  "integration": {
+    "retained_implement": [
+      "build.js : relation → type dans 3 edges (vault_file, decision, roadmap)",
+      "classify.js : ajouter renameSync dans import node:fs",
+      "build.js : déplacer computeCommunities après tous les nœuds (doc_category/risk/question)",
+      "build.js : créer nœud markdown_document minimal si absent avant edge classified_as",
+      "export.js : fix D3 source/target — utiliser typeof pour déréférencer .id",
+      "daemon.js : passer updateVault et graphVault comme callbacks à watchOnce"
+    ],
+    "deferred": [
+      "mcp/server.js framing stdio Content-Length (Phase G)",
+      "mcp/server.js rechargement graph (enhancement)",
+      "telegram-bridge.py gestion erreurs vocaux (Phase A séparé)",
+      "test/vault.js : ajouter test vault maintain sans symbolCount"
+    ],
+    "verdict": "6 bugs réels corrigés sur les fichiers Lots 0+4+10 ; 74/74 tests passent après fix. Les issues telegram-bridge et MCP-framing sont hors périmètre de ce handoff et seront traités dans leurs lots respectifs. Le threading symbolCount original est robuste — graphVault(cwd, symbolCount=0) avec default correct, buildGraph utilise opts.symbolCount ?? 0."
+  }
 }

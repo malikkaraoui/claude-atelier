@@ -110,10 +110,16 @@ function exportHtmlGraph(cwd, graph) {
     .on('click', function(event, d) {
       const neighbors = new Set();
       graphData.links.forEach(l => {
-        if (l.source === d.id) neighbors.add(l.target);
-        if (l.target === d.id) neighbors.add(l.source);
+        const s = typeof l.source === 'object' ? l.source.id : l.source;
+        const t = typeof l.target === 'object' ? l.target.id : l.target;
+        if (s === d.id) neighbors.add(t);
+        if (t === d.id) neighbors.add(s);
       });
-      link.classed('highlight', l => l.source === d.id || l.target === d.id);
+      link.classed('highlight', l => {
+        const s = typeof l.source === 'object' ? l.source.id : l.source;
+        const t = typeof l.target === 'object' ? l.target.id : l.target;
+        return s === d.id || t === d.id;
+      });
       node.style('opacity', n => neighbors.has(n.id) || n.id === d.id ? 1 : 0.1);
     });
 

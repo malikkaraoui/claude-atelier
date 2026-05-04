@@ -1,6 +1,8 @@
 // src/vault/watch/daemon.js — vault watch daemon management
 
 import { watchOnce, watchStatus } from '../watch.js';
+import { updateVault } from '../core/manifest.js';
+import { graphVault } from '../graph/build.js';
 import { join, dirname } from 'node:path';
 import { existsSync, readFileSync, unlinkSync } from 'node:fs';
 import { spawn } from 'node:child_process';
@@ -78,9 +80,11 @@ function onceVaultWatch(cwd) {
     return { ok: false, error: 'vault n\'existe pas' };
   }
 
-  // Run a single watch cycle — don't call external functions
-  // watchOnce handles calling update and graph internally
-  const result = watchOnce(vaultPath);
+  const result = watchOnce(
+    vaultPath,
+    () => updateVault(cwd),
+    () => graphVault(cwd),
+  );
   return result;
 }
 
