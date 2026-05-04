@@ -5,7 +5,7 @@
  * Tests structuraux : fichiers présents, dépendances, aucun secret hardcodé.
  * Pas de test d'exécution du bot (nécessiterait un vrai token Telegram).
  *
- * Usage: node test/telegram.test.js (ou: npm run test:telegram)
+ * Usage: node test/telegram.test.js
  */
 
 import { existsSync, readFileSync } from 'node:fs';
