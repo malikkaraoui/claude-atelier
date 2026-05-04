@@ -79,3 +79,6 @@ watchdog-report-*.txt
 # Peter vault — sorties générées (rebuil local via vault update)
 vault/index/
 vault/.peter/
+
+# Git worktrees isolés
+.worktrees/
