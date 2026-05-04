@@ -1263,6 +1263,20 @@ test('vault graph sans --with-symbols ignore les symboles (symbolCount = 0)', ()
   }
 });
 
+// ─── Lot 10 — MCP ─────────────────────────────────────────────────────
+
+console.log('\n── Lot 10 — MCP vault ──');
+
+test('vault mcp --dry-run démarre sans crash et exit 0', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'mcp', '--cwd', dir, '--dry-run'], dir);
+    ok(r.status === 0, `exit 0 attendu, reçu ${r.status}: ${r.stderr}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('vault graph --with-symbols compte les symboles JS/TS (symbolCount > 0)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'graph-with-symbols-'));
   try {
@@ -1272,6 +1286,16 @@ test('vault graph --with-symbols compte les symboles JS/TS (symbolCount > 0)', (
     ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
     const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
     ok(graph.stats.symbolCount > 0, `symbolCount > 0 attendu, trouvé ${graph.stats.symbolCount}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault mcp --dry-run affiche sur stderr le message prêt', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'mcp', '--cwd', dir, '--dry-run'], dir);
+    ok(r.stderr.includes('query_vault'), 'query_vault doit figurer dans stderr');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -1302,6 +1326,18 @@ test('vault graph --with-symbols compte jusqu\'à 100 symboles max', () => {
     ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
     const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
     ok(graph.stats.symbolCount <= 100, `symbolCount ≤ 100 (cap), trouvé ${graph.stats.symbolCount}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault mcp --dry-run affiche tous les tools sur stderr', () => {
+  const dir = initTestVault();
+  try {
+    const r = cli(['vault', 'mcp', '--cwd', dir, '--dry-run'], dir);
+    ok(r.stderr.includes('get_node'), 'get_node doit figurer dans stderr');
+    ok(r.stderr.includes('neighbors'), 'neighbors doit figurer dans stderr');
+    ok(r.stderr.includes('stale_status'), 'stale_status doit figurer dans stderr');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
