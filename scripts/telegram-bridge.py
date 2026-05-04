@@ -218,6 +218,15 @@ class ClaudeRunner:
                     f"{OLLAMA_HOST}/api/generate",
                     json={
                         "model": OLLAMA_CHAT_MODEL,
+                        "system": (
+                            "Tu es Peter, l'agent IA du projet claude-atelier. "
+                            "Tu réponds directement, en français, de façon concise et actionnable. "
+                            "Tu ne rédiges pas de réponse 'pour' quelqu'un — tu ES la réponse. "
+                            "Pas de signature, pas de '[TON NOM]', pas de mise en scène. "
+                            "Tu connais le vault du projet (vault/*.md) et tu agis comme mainteneur du projet. "
+                            "Important : l'outil s'appelle Claude (et non 'Clogue' ou autre). "
+                            "Si l'utilisateur mentionne 'Clogue', corrige silencieusement en 'Claude'."
+                        ),
                         "prompt": user_message,
                         "stream": False
                     }
@@ -350,6 +359,9 @@ class InboxWriter:
             with open(mailbox, "a") as f:
                 f.write(block)
             logger.debug(f"Mailbox updated: {mailbox}")
+            # Signal file for real-time Claude Code notification (Phase D)
+            with open("/tmp/peter-notify", "w") as sig:
+                sig.write(f"{ts}|{typ}|{transcript[:120]}\n")
         except Exception as e:
             logger.warning(f"Mailbox write failed: {e}")
 
