@@ -24,6 +24,10 @@ import { dirname, resolve, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { watchOnce, watchStatus } from '../src/vault/watch.js';
+import { extractJsSymbols } from '../src/vault/extractors/js.js';
+import { extractJsonSymbols } from '../src/vault/extractors/json.js';
+import { extractShellSymbols } from '../src/vault/extractors/shell.js';
+import { extractGoSymbols } from '../src/vault/extractors/go.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
@@ -1439,7 +1443,12 @@ function organizeDocs(cwd, apply = false, confirm = false) {
 function countCodeSymbols(cwd) {
   let count = 0;
   const IGNORE_DIRS = new Set(['node_modules', '.git', 'vault', 'dist', 'build', '.next']);
-  const CODE_EXTS = new Set(['.js', '.ts', '.mjs', '.cjs']);
+  const EXT_EXTRACTORS = {
+    '.js': extractJsSymbols, '.ts': extractJsSymbols, '.mjs': extractJsSymbols, '.cjs': extractJsSymbols,
+    '.json': extractJsonSymbols,
+    '.sh': extractShellSymbols, '.bash': extractShellSymbols, '.zsh': extractShellSymbols,
+    '.go': extractGoSymbols,
+  };
 
   function walkDir(dir) {
     if (count >= 100) return;
@@ -1453,10 +1462,12 @@ function countCodeSymbols(cwd) {
           walkDir(fullPath);
         } else if (stat.isFile()) {
           const ext = fullPath.includes('.') ? '.' + fullPath.split('.').pop() : '';
-          if (CODE_EXTS.has(ext)) {
-            const content = readFileSync(fullPath, 'utf8');
-            const funcs = (content.match(/(?:export\s+)?(?:async\s+)?function\s+\w+|(?:export\s+)?class\s+\w+/g) || []).length;
-            count += Math.min(funcs, 100 - count);
+          const extractor = EXT_EXTRACTORS[ext];
+          if (extractor) {
+            try {
+              const content = readFileSync(fullPath, 'utf8');
+              count += Math.min(extractor(content), 100 - count);
+            } catch { /* skip */ }
           }
         }
       }
