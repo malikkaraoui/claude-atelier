@@ -41,7 +41,7 @@ import { sanitizeFilename, getNodeColor, exportHtmlGraph, exportObsidianVault, e
 import { explainVaultNode, computeCommunities } from '../src/vault/graph/explain.js';
 import { findNodeByIdOrLabel, bfsPath } from '../src/vault/graph/path.js';
 import { scoreNode, queryGraph } from '../src/vault/graph/query.js';
-import { buildGraph } from '../src/vault/graph/build.js';
+import { buildGraph, graphVault } from '../src/vault/graph/build.js';
 import { startVaultWatch, stopVaultWatch, onceVaultWatch } from '../src/vault/watch/daemon.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -495,21 +495,6 @@ function printStale(result) {
 const MANIFEST_VERSION = 1;
 const STATE_VERSION = 1;
 const CRON_VERSION = 1;
-function* walkDir(dir, isIgnored, relPrefix = '') {
-  let entries;
-  try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
-  for (const entry of entries) {
-    const relPath = relPrefix ? `${relPrefix}/${entry.name}` : entry.name;
-    if (entry.isDirectory()) {
-      if (DEFAULT_IGNORE_DIRS.has(entry.name)) continue;
-      if (isIgnored(relPath, true)) continue;
-      yield* walkDir(join(dir, entry.name), isIgnored, relPath);
-    } else if (entry.isFile()) {
-      if (isIgnored(relPath, false)) continue;
-      yield relPath;
-    }
-  }
-}
 
 function printUpdate(result, cwd) {
   if (!result.ok) {
@@ -557,24 +542,6 @@ const ROADMAP_SECTION_TAGS = {
 };
 
 // ── Lot 1+2: docs scan, classify, organize + graph v2 enrichi ──
-
-function graphVault(cwd) {
-  const vaultDir = join(cwd, 'vault');
-  if (!existsSync(vaultDir)) {
-    return { ok: false, error: 'Aucun vault projet. Lancez : claude-atelier vault init' };
-  }
-  const graph = buildGraph(cwd);
-  const graphPath = join(vaultDir, 'index', 'graph.json');
-  mkdirSync(dirname(graphPath), { recursive: true });
-  writeFileSync(graphPath, JSON.stringify(graph, null, 2) + '\n', 'utf8');
-  return {
-    ok: true,
-    graphPath,
-    nodeCount: graph.stats.nodeCount,
-    edgeCount: graph.stats.edgeCount,
-    centralNodes: graph.stats.centralNodes.slice(0, 5).map(id => id.split(':').pop()),
-  };
-}
 
 function printGraph(result, cwd) {
   if (!result.ok) {
