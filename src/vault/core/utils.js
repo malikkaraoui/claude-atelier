@@ -421,6 +421,14 @@ function isWebsiteDocsPath(filePath) {
   return filePath.startsWith('website/docs/');
 }
 
+const GENERIC_CONCEPTS_EXTRACT = new Set([
+  'avec', 'pour', 'dans', 'vers', 'plus', 'cette', 'comme', 'sans',
+  'aussi', 'meme', 'sont', 'sera', 'etre', 'avoir', 'faire', 'tout',
+  'quoi', 'dont', 'mais', 'donc', 'bien', 'tres', 'entre', 'tous',
+  'lors', 'apres', 'avant', 'depuis', 'selon', 'ainsi', 'alors',
+  'enfin', 'cela', 'ceci', 'celui', 'celle', 'type', 'null', 'vrai',
+]);
+
 function extractConcepts(text) {
   const normalized = text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   const words = normalized

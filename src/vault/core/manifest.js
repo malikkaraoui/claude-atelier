@@ -27,15 +27,15 @@ function saveManifest(manifestPath, manifest) {
 }
 
 
+const MAILBOX_TEMPLATE = `# Mailbox projet\n\n> Géré par Peter via claude-atelier vault. Markdown vivant, pas document gravé.\n\n## Courrier entrant\n\nNotes, vocaux, captures, liens ou idées routés vers ce projet.\n\nFormat recommandé :\n\n### YYYY-MM-DD — Titre court\n\n- Source : note | vocal | capture | URL | YouTube | autre\n- Statut : nouveau | à challenger | à planifier | intégré | rejeté\n- Résumé :\n- Pourquoi ici :\n- Action proposée :\n`;
+
 function ensureMailboxFile(vaultDir) {
 
   const mailboxPath = join(vaultDir, '10-mailbox.md');
 
   if (!existsSync(mailboxPath)) {
 
-    const mailboxTemplate = VAULT_FILES.find(file => file.name === '10-mailbox.md');
-
-    if (mailboxTemplate) writeFileSync(mailboxPath, renderFile(mailboxTemplate), 'utf8');
+    writeFileSync(mailboxPath, MAILBOX_TEMPLATE, 'utf8');
 
   }
 
