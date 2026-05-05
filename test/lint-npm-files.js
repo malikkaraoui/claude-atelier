@@ -45,8 +45,9 @@ for (const { dir, command, reason } of REQUIRED) {
   }
 
   // (b) Est-il couvert par le tableau files[] ?
+  // Couvert si : dir listé entier, dir sous un root listé, ou ≥1 fichier explicite dans dir
   const covered = declaredRoots.some(
-    (root) => root === dir || dir.startsWith(root + '/')
+    (root) => root === dir || dir.startsWith(root + '/') || root.startsWith(dir + '/')
   );
   if (!covered) {
     errors.push(

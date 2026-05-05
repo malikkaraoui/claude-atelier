@@ -39,6 +39,16 @@
 - Conséquence : Peter doit scanner `website/docs/` et signaler quand des features sont commitées sans MAJ doc correspondante. La doc Vercel = source de vérité publique du npm ; elle doit refléter l'état réel du package
 - À revalider si : le site Docusaurus migre vers un repo séparé
 
+### 2026-05-05 — Séparation claude-atelier / MasterClaude
+
+- **Contexte** : master daemon + Telegram ont fait dériver claude-atelier de sa cible core (harnais Claude Code npm)
+- **Décision** :
+  - `claude-atelier` (npm) = harnais Claude Code pur : hooks, Peter vault, skills, gate, Ollama. **Sans** master, **sans** Telegram
+  - `MasterClaude` = nouveau projet forké depuis claude-atelier, contenant master daemon + Telegram + routing multi-projets
+- **Actions immédiates** : exclure `bin/master.js`, `bin/telegram.js`, `src/master/`, scripts Telegram du package npm via `.npmignore`
+- **Conséquence** : claude-atelier reste publiable npm, focalisé. MasterClaude = usage personnel avancé, pas sur npm
+- **À revalider si** : MasterClaude prend de l'ampleur et mérite sa propre publication
+
 ---
 
 ### 2026-05-04 — Master daemon : architecture Claude Atelier comme sous-couche universelle

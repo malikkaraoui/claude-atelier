@@ -103,7 +103,7 @@ async function main(argv) {
   }
 
   const command = args[0];
-  const knownCommands = ['init', 'update', 'doctor', 'lint', 'features', 'review-local', 'apply', 'pulse', 'vault', 'master'];
+  const knownCommands = ['init', 'update', 'doctor', 'lint', 'features', 'review-local', 'apply', 'pulse', 'vault'];
 
   if (!knownCommands.includes(command)) {
     process.stderr.write(`error: unknown command "${command}"\n`);
@@ -152,11 +152,6 @@ async function main(argv) {
   if (command === 'vault') {
     const { runVault } = await import('./vault.js');
     return runVault(process.argv);
-  }
-
-  if (command === 'master') {
-    const { runMaster } = await import('../src/master/index.js');
-    return runMaster(process.argv);
   }
 
   process.stderr.write(
