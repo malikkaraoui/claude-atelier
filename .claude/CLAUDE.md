@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — v0.26.0 · Master daemon complet + tests 69/69 + 2 reviews Copilot intégrées (PR #55 PID/boot, PR #56 MAX_TURNS/EACCES/HOME) · next: npm publish |
+| Phase | Phase 2 — v0.26.0 · package npm nettoyé (master/telegram exclus) · next: fork MasterClaude + npm publish claude-atelier |
 | Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
