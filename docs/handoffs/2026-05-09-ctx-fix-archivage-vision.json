@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "subject": "Fix CTX% cache hit + inventaire features hors-vision claude-atelier",
+    "date": "2026-05-09",
+    "type": "review",
+    "priority": "haute",
+    "reviewedRange": "98b86d7efa121dbad5669c5d9cce8f56b1d2180e..77e19ac4df8cb4dda12e849731bef389de1eef8d"
+  },
+  "from": {
+    "model": "claude-sonnet-4-6",
+    "context": "Range 98b86d7..77e19ac — 9 fichiers, 274 insertions, 51 suppressions. Commits couverts : (1) fix: CTX% — additionner input + cache_read + cache_creation pour fenêtre contexte réelle [77e19ac] ; (2) chore: MAJ §0 v0.26.0 npm nettoyé, next fork MasterClaude [0a9acf0] ; (3) chore: séparer MasterClaude de claude-atelier npm — couper master + telegram du package [fe09c50] ; (4) chore: MAJ §0 v0.26.0 livré, master complet 69/69 tests [752c8e3] ; (5) fix: appliquer review Copilot #56 — tests master renforcés [348d351]. Fichiers clés : hooks/model-metrics.sh (+50 lignes : nouveau bloc CTX% Python + injection §1 header), package.json (+92 lignes : nettoyage npm — master/telegram exclus des files), test/hooks.js (+114 lignes : tests renforcés rotation MAX_TURNS/EACCES/HOME), .npmignore (nouveau, 9 lignes). Contexte session parallèle : inventaire complet des features claude-atelier — 20 features hors-vision identifiées (memory system, marketplace, pulse, design-detection, freebox, iOS, BMAD, la-bise, MIRROR, stacks EN, integrate-review, handoff-debt, angle-mort, audit-safe, night-launch, token-routing, QMD guard, apply-profile) avec verdicts archiver/supprimer/garder.",
+    "question": "Le fix CTX% dans hooks/model-metrics.sh est-il robuste face aux structures JSONL variantes du transcript (type='assistant' vs role='assistant', usage au niveau message vs racine) ? Y a-t-il un risque de double-comptage entre les deux branches de détection ? Et pour le nettoyage npm (package.json + .npmignore) : les exclusions master/telegram/ollama-proxy sont-elles cohérentes entre files[] et .npmignore, sans risque de publier des modules incomplets ?",
+    "filesToRead": [
+      "hooks/model-metrics.sh",
+      "package.json",
+      ".npmignore",
+      "test/hooks.js",
+      "test/lint-npm-files.js"
+    ],
+    "constraints": [
+      "Ne pas proposer de réécrire ce qui fonctionne",
+      "Se concentrer sur ce qui manque ou est fragile",
+      "INTERDIT de modifier du code source — tu es reviewer, pas développeur",
+      "INTERDIT de modifier meta ou from — ces champs sont ancrés par Claude"
+    ]
+  },
+  "response": {
+    "model": null,
+    "content": null,
+    "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
+  },
+  "integration": null
+}
