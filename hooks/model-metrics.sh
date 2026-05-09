@@ -158,6 +158,53 @@ if [ -n "$METRICS" ]; then
     echo "$METRICS"
 fi
 
+# Fenêtre contexte — somme input + cache_read + cache_creation du dernier tour assistant
+_CTX_INDICATOR=""
+_CTX_RAW=$(python3 - "$TRANSCRIPT" <<'PYEOF'
+import sys, json
+
+path = sys.argv[1]
+last_total = 0
+try:
+    with open(path, 'r', encoding='utf-8', errors='replace') as f:
+        for line in f:
+            line = line.strip()
+            if not line: continue
+            try:
+                obj = json.loads(line)
+            except Exception: continue
+            usage = None
+            if obj.get('type') == 'assistant':
+                usage = obj.get('message', {}).get('usage')
+            elif obj.get('role') == 'assistant':
+                usage = obj.get('usage')
+            if usage:
+                total = (usage.get('input_tokens') or 0) + \
+                        (usage.get('cache_read_input_tokens') or 0) + \
+                        (usage.get('cache_creation_input_tokens') or 0)
+                if total > 0:
+                    last_total = total
+except Exception:
+    sys.exit(0)
+
+if last_total == 0:
+    sys.exit(0)
+
+CONTEXT_WINDOW = 200000
+pct = round(last_total / CONTEXT_WINDOW * 100)
+indicator = f"{pct}%{'🔥' if pct >= 50 else '✅'}"
+print(f"[CTX] fenêtre: {indicator}")
+if pct >= 60:
+    print("CTX-ALERT")
+elif pct >= 35:
+    print("CTX-COMPACT")
+PYEOF
+)
+if [ -n "$_CTX_RAW" ]; then
+    echo "$_CTX_RAW" | grep '^\[CTX\]'
+    _CTX_INDICATOR=$(echo "$_CTX_RAW" | grep '^\[CTX\]' | grep -oE '[0-9]+%[✅🔥]')
+fi
+
 # §1 ENTÊTE — émis toujours si model connu (indépendant du nombre de tours dans le transcript).
 # Garantit que 🦙 et 🔌 apparaissent même en session compactée / début de session.
 _FF="$(cd "$(dirname "$0")/.." && pwd)/.claude/features.json"
@@ -219,7 +266,8 @@ fi
       _PULSE_CONTENT=$(cat "$PULSE_STATUS_FILE")
       _PULSE_INDICATOR=" | ${_PULSE_CONTENT}"
     fi
-    echo "\`[$(date '+%Y-%m-%d %H:%M:%S') | $MODEL] $_PASTILLE $_MMODE${_S1_OLLAMA} | $_MPROXY${_PULSE_INDICATOR}\`"
+    _CTX_SUFFIX="${_CTX_INDICATOR:+ | $_CTX_INDICATOR}"
+    echo "\`[$(date '+%Y-%m-%d %H:%M:%S') | $MODEL] $_PASTILLE $_MMODE${_S1_OLLAMA} | $_MPROXY${_PULSE_INDICATOR}${_CTX_SUFFIX}\`"
 }
 
 exit 0
