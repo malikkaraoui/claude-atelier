@@ -159,12 +159,37 @@ if [ -n "$METRICS" ]; then
 fi
 
 # Fenêtre contexte — somme input + cache_read + cache_creation du dernier tour assistant
+# Détection assistant_like alignée sur routing-check.sh (type assistant/assistant.message + rôles imbriqués)
 _CTX_INDICATOR=""
 _CTX_RAW=$(python3 - "$TRANSCRIPT" <<'PYEOF'
 import sys, json
 
 path = sys.argv[1]
 last_total = 0
+
+def assistant_like(node):
+    if not isinstance(node, dict):
+        return False
+    if node.get('type') in ('assistant', 'assistant.message'):
+        return True
+    data = node.get('data', {}) if isinstance(node.get('data', {}), dict) else {}
+    message = node.get('message', {}) if isinstance(node.get('message', {}), dict) else {}
+    data_message = data.get('message', {}) if isinstance(data.get('message', {}), dict) else {}
+    roles = [node.get('role', ''), data.get('role', ''), message.get('role', ''), data_message.get('role', '')]
+    return any(r == 'assistant' for r in roles)
+
+def extract_usage(node):
+    """Cherche usage dans les 4 emplacements possibles du JSONL transcript."""
+    if not isinstance(node, dict):
+        return None
+    data = node.get('data', {}) if isinstance(node.get('data', {}), dict) else {}
+    message = node.get('message', {}) if isinstance(node.get('message', {}), dict) else {}
+    data_message = data.get('message', {}) if isinstance(data.get('message', {}), dict) else {}
+    for candidate in (message.get('usage'), data_message.get('usage'), node.get('usage'), data.get('usage')):
+        if isinstance(candidate, dict):
+            return candidate
+    return None
+
 try:
     with open(path, 'r', encoding='utf-8', errors='replace') as f:
         for line in f:
@@ -173,11 +198,9 @@ try:
             try:
                 obj = json.loads(line)
             except Exception: continue
-            usage = None
-            if obj.get('type') == 'assistant':
-                usage = obj.get('message', {}).get('usage')
-            elif obj.get('role') == 'assistant':
-                usage = obj.get('usage')
+            if not assistant_like(obj):
+                continue
+            usage = extract_usage(obj)
             if usage:
                 total = (usage.get('input_tokens') or 0) + \
                         (usage.get('cache_read_input_tokens') or 0) + \

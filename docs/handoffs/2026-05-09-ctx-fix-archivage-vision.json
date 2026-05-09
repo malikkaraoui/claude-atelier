@@ -25,9 +25,12 @@
     ]
   },
   "response": {
-    "model": null,
-    "content": null,
+    "model": "github-copilot-pr-reviewer",
+    "content": "Trois points identifiés. (1) CTX parser fragile : seuls type='assistant'+message.usage et role='assistant'+usage racine sont détectés ; les schémas type='assistant.message' et usage dans data.message sont ignorés, rendant [CTX] silencieux sur ces formats. Aligner sur la fonction assistant_like de routing-check.sh et chercher usage dans (message.usage, data.message.usage, usage racine, data.usage). (2) Absence de tests CTX% : test/hooks.js ne couvre pas le nouveau bloc Python — ajouter au moins deux cas (schéma type=assistant/message.usage et schéma role=assistant/usage racine) avec assertion sur [CTX] et le suffixe §1. (3) Handoff invalide pour validate-handoff.js : response.content et integration sont null, ce qui fera échouer npm run validate:handoffs ; renseigner ces champs ou renommer en _template.",
     "_instruction": "Écrire la réponse dans le champ 'content'. Ne pas modifier 'meta' ni 'from'. Utiliser l'outil d'édition de fichier. Quand terminé, dire : \"J'ai répondu dans [chemin du fichier].\""
   },
-  "integration": null
+  "integration": {
+    "retained_implement": "Fix CTX parser appliqué : assistant_like aligné sur routing-check.sh, extract_usage couvre les 4 emplacements (message.usage, data.message.usage, usage racine, data.usage). Deux tests CTX% ajoutés dans test/hooks.js couvrant schéma type=assistant et schéma role=assistant. Handoff JSON complété avec response.content et integration non-null.",
+    "verdict": "Review Copilot #57 intégrée complètement : 3/3 points traités. Parser robuste, tests ajoutés, handoff valide. Aucun point bloquant restant."
+  }
 }
