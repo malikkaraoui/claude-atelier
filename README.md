@@ -1,3 +1,11 @@
+> **English** | [Français](#french)
+>
+> **claude-atelier** — Claude Code enforcement framework: hooks, named agents, stack-specific rules, night mode, proactive permissions. Zero dependency. Node.js only.
+>
+> Install: `npm install -g claude-atelier` · [Documentation](https://claude-atelier.vercel.app)
+
+---
+
 # claude-atelier
 
 <div align="center">

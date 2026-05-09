@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "version": "1.0.0",
   "description": "Manifeste typé de tous les hooks claude-atelier. Source de vérité — toute modif d'un hook doit synchroniser cette entrée. Vérifié par test/lint-hooks-manifest.js.",
-  "lastUpdated": "2026-05-04",
+  "lastUpdated": "2026-05-09",
   "hooks": [
     {
       "name": "_parse-input",
@@ -90,7 +90,7 @@
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       },
-      "sha256": "56e63378013a6a7f"
+      "sha256": "e0dac5f2feb3a4e2"
     },
     {
       "name": "guard-no-sign",
@@ -250,7 +250,7 @@
       "exitCodes": {
         "0": "always (warning only, never blocks)"
       },
-      "sha256": "7f3540175236229a"
+      "sha256": "75d7597cd2e82896"
     },
     {
       "name": "guard-hooks-reload",

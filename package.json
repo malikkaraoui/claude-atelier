@@ -1,7 +1,7 @@
 {
   "name": "claude-atelier",
   "version": "0.26.1",
-  "description": "Framework complet Claude Code: agents, skills, MCP GitHub intégré, vault Peter (graphe + query + MCP), loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.",
+  "description": "Claude Code enforcement framework — hooks, named agents, stack rules, night mode. Zero dependency. | Framework Claude Code : hooks d'enforcement, agents nommés, satellites par stack, mode nuit.",
   "keywords": [
     "claude",
     "claude-code",
