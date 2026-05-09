@@ -184,6 +184,18 @@
         ]
       }
     ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/hooks/notify-master-done.sh\"",
+            "_comment": "notifie MasterClaude via /tmp/masterclaude-atelier-done"
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "matcher": "",

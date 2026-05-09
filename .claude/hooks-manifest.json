@@ -250,7 +250,7 @@
       "exitCodes": {
         "0": "always (warning only, never blocks)"
       },
-      "sha256": "f58d9b4a49f2c40f"
+      "sha256": "7f3540175236229a"
     },
     {
       "name": "guard-hooks-reload",
@@ -349,14 +349,31 @@
         "0": "always (notification only, never blocks)"
       },
       "sha256": "a37841fc11af05b7"
+    },
+    {
+      "name": "notify-master-done",
+      "file": "hooks/notify-master-done.sh",
+      "type": "Stop",
+      "trigger": "session.stop",
+      "purpose": "Notifie MasterClaude qu'une session Claude Code s'est terminée — écrit un signal timestamp:done:PID dans /tmp/masterclaude-atelier-done.",
+      "inputs": [],
+      "outputs": [
+        "writes /tmp/masterclaude-atelier-done"
+      ],
+      "rule": "Phase E — MasterClaude stop notification",
+      "test": null,
+      "exitCodes": {
+        "0": "always (signal only, never blocks)"
+      },
+      "sha256": "456f90f0bc7a827c"
     }
   ],
   "stats": {
-    "total": 17,
+    "total": 18,
     "byType": {
       "helper": 1,
       "SessionStart": 3,
-      "Stop": 1,
+      "Stop": 2,
       "UserPromptSubmit": 3,
       "PreToolUse": 3,
       "PostToolUse": 4,

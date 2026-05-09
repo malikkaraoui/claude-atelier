@@ -462,6 +462,36 @@ test('format role/content (fallback) — sonnet + 5 tours Read → léger surplu
   rmSync(dir, { recursive: true, force: true });
 });
 
+// CTX% — fenêtre contexte (schémas JSONL variants)
+test('CTX% schéma type=assistant + message.usage → [CTX] dans sortie + suffixe §1', () => {
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-sonnet-4-6\n');
+  const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  // 40k tokens input + 20k cache_read = 60k / 200k = 30% → ✅
+  const usage = { input_tokens: 40000, cache_read_input_tokens: 20000, cache_creation_input_tokens: 0, output_tokens: 100 };
+  writeFileSync(transcript, JSON.stringify({ type: 'assistant', message: { usage, content: [] } }) + '\n');
+  const r = hook('model-metrics.sh', { transcript_path: transcript });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('[CTX]'), '[CTX] présent (schéma type=assistant/message.usage)');
+  ok(r.stdout.includes('30%✅'), 'indicateur 30%✅ correct');
+  ok(/\d+%[✅🔥]/.test(r.stdout.split('§1')[1] || r.stdout), 'suffixe CTX% présent dans §1 header');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('CTX% schéma role=assistant + usage racine → [CTX] dans sortie', () => {
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-sonnet-4-6\n');
+  const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  // 110k tokens input = 110k / 200k = 55% → 🔥
+  const usage = { input_tokens: 110000, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, output_tokens: 200 };
+  writeFileSync(transcript, JSON.stringify({ role: 'assistant', usage, content: [] }) + '\n');
+  const r = hook('model-metrics.sh', { transcript_path: transcript });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('[CTX]'), '[CTX] présent (schéma role=assistant/usage racine)');
+  ok(r.stdout.includes('55%🔥'), 'indicateur 55%🔥 correct (seuil ≥50%)');
+  rmSync(dir, { recursive: true, force: true });
+});
+
 // ─────────────────────────────────────────────────────────────
 // detect-design-need.sh — Séréna auto-proposition
 // ─────────────────────────────────────────────────────────────
