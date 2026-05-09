@@ -25,7 +25,7 @@ const pkg = JSON.parse(
 // Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
 claude-atelier v0.26.0
-Framework complet Claude Code: 31 agents, 18 skills, MCP GitHub intégré, vault Peter (graphe + query + MCP), bridge Telegram bidirectionnel (voix + alertes FIFO temps réel), loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.
+Framework complet Claude Code: agents, skills, MCP GitHub intégré, vault Peter (graphe + query + MCP), loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.
 
 Usage:
   claude-atelier <command> [options]

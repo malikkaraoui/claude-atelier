@@ -205,3 +205,35 @@ Claude : Le bridge Telegram reçoit bien tes messages (je lis celui-ci en temps 
 - Source : claude-code
 - Statut : envoyé
 - Résumé : Test de diagnostic Claude
+
+### 2026-05-09 09:31 — Telegram [text]
+
+- Source : telegram
+- Statut : nouveau
+- Résumé : Oui.
+- Réponse Ollama : Peter : Prêt à aider ! Quel est votre besoin ou votre question concernant le projet ?
+- Action proposée : à challenger / intégrer
+
+### 2026-05-09 10:44 — Telegram [text]
+
+- Source : telegram
+- Statut : nouveau
+- Résumé : On peut tester un vocal s’il te plaît
+- Réponse Ollama : Peter : Vérifie le fichier `vault/test_vocal.md` pour les étapes de test. Utilise la commande `claude test vocal` et assure-toi que le format de réponse est correct (ex: "Peter : [réponse]").
+- Action proposée : à challenger / intégrer
+
+### 2026-05-09 10:50 — Telegram [vocal]
+
+- Source : telegram
+- Statut : nouveau
+- Résumé : Primer test en vocale, si tu reçois mon message, fais-moi un pouce.
+- Réponse Ollama : Peter : ✌️
+- Action proposée : à challenger / intégrer
+
+### 2026-05-09 12:08 — Telegram [vocal]
+
+- Source : telegram
+- Statut : nouveau
+- Résumé : Vu que tu as réactiver la traduction des messages beaucoup, maintenant pousse tout sur  GitHub et mais à jour le Répo.
+- Réponse Ollama : Peter : Vérifie les fichiers du vault, ajoute les modifications non commitées avec `git add .`, commit avec `git commit -m "Mise à jour traductions et fichiers"`, puis pousses vers GitHub via `git pus
+- Action proposée : à challenger / intégrer
