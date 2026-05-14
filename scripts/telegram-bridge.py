@@ -61,6 +61,20 @@ OLLAMA_POLISH_TIMEOUT = _parse_int_env("OLLAMA_POLISH_TIMEOUT", 10)
 OLLAMA_POLISH_ENABLED = os.getenv("OLLAMA_POLISH_ENABLED", "true").lower() == "true"
 OLLAMA_CHAT_MODEL = os.getenv("OLLAMA_CHAT_MODEL", "")  # si défini, remplace claude CLI
 
+# OpenRouter — routing automatique par agent (OPENROUTER_API_KEY requis)
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+# "openrouter/auto" = OpenRouter choisit le modèle selon la complexité de la requête
+# Surcharge par agent via OPENROUTER_AGENT_MODELS (JSON) :
+#   {"peter": "anthropic/claude-sonnet-4-6", "serena": "openai/gpt-4o", "default": "openrouter/auto"}
+_or_agent_models_raw = os.getenv("OPENROUTER_AGENT_MODELS", "{}")
+try:
+    OPENROUTER_AGENT_MODELS: Dict[str, str] = json.loads(_or_agent_models_raw)
+except (json.JSONDecodeError, Exception):
+    OPENROUTER_AGENT_MODELS = {}
+OPENROUTER_DEFAULT_MODEL = os.getenv("OPENROUTER_DEFAULT_MODEL", "openrouter/auto")
+OPENROUTER_DEFAULT_AGENT = os.getenv("OPENROUTER_DEFAULT_AGENT", "default")
+
 VAULT_INBOX = os.getenv("VAULT_INBOX", "vault/.peter/inbox/telegram")
 VAULT_MAILBOX = os.getenv("VAULT_MAILBOX", "vault/10-mailbox.md")
 VAULT_WRITE_ENABLED = os.getenv("VAULT_WRITE_ENABLED", "true").lower() == "true"
@@ -199,17 +213,54 @@ class ClaudeRunner:
         self.cwd = cwd
         self.current_process: Optional[asyncio.subprocess.Process] = None
         self.turn_count = 0
+        self._claude_session_id: Optional[str] = None  # persist across turns
 
-    async def run_command(self, user_message: str) -> Tuple[str, float]:
-        """Run via Ollama (si OLLAMA_CHAT_MODEL défini) ou claude CLI."""
+    async def run_command(self, user_message: str, agent: str = "default") -> Tuple[str, float]:
+        """Route vers OpenRouter / Ollama / Claude CLI selon la config."""
         if self.turn_count >= CLAUDE_MAX_TURNS:
             return f"Max turns ({CLAUDE_MAX_TURNS}) reached", 0.0
 
         self.turn_count += 1
 
+        if OPENROUTER_API_KEY:
+            return await self._run_openrouter(user_message, agent)
         if OLLAMA_CHAT_MODEL:
             return await self._run_ollama(user_message)
         return await self._run_claude_cli(user_message)
+
+    async def _run_openrouter(self, user_message: str, agent: str = "default") -> Tuple[str, float]:
+        """OpenRouter avec routing automatique ou modèle fixe par agent."""
+        model = OPENROUTER_AGENT_MODELS.get(agent.lower()) or OPENROUTER_DEFAULT_MODEL
+        logger.info(f"OpenRouter: agent={agent} → model={model}")
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "HTTP-Referer": "https://github.com/malikkaraoui/claude-atelier",
+            "X-Title": "claude-atelier",
+        }
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": user_message}],
+        }
+        try:
+            async with httpx.AsyncClient(timeout=CLAUDE_TIMEOUT_SECONDS) as client:
+                resp = await client.post(
+                    f"{OPENROUTER_BASE_URL}/chat/completions",
+                    headers=headers,
+                    json=payload,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                content = data["choices"][0]["message"]["content"]
+                # coût réel si OpenRouter le fournit
+                usage = data.get("usage", {})
+                cost = usage.get("cost", 0.0)
+                served_model = data.get("model", model)
+                if served_model != model:
+                    logger.info(f"OpenRouter a servi: {served_model}")
+                return content[:2000] or "Réponse vide.", cost
+        except Exception as e:
+            logger.error(f"OpenRouter error: {e}")
+            return f"Erreur OpenRouter: {e}", 0.0
 
     async def _run_ollama(self, user_message: str) -> Tuple[str, float]:
         try:
@@ -239,37 +290,70 @@ class ClaudeRunner:
             return f"Erreur Ollama: {e}", 0.0
 
     async def _run_claude_cli(self, user_message: str) -> Tuple[str, float]:
-        """Run claude CLI via stdin pipe. No shell — no injection risk."""
-        estimated_cost = 0.01  # placeholder; real cost requires --output-format json parsing
+        """Run claude CLI en mode --print avec continuité de session via --resume."""
+        args = [
+            "claude", "--print",
+            "--output-format", "stream-json",
+            "--dangerously-skip-permissions",
+        ]
+        if self._claude_session_id:
+            args.extend(["--resume", self._claude_session_id])
+        args.append(user_message)
 
         proc = await asyncio.create_subprocess_exec(
-            "claude",
-            stdin=asyncio.subprocess.PIPE,
+            *args,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
             cwd=self.cwd
         )
         self.current_process = proc
+        text_parts: list[str] = []
+        cost_usd = 0.01
+
         try:
-            stdout, stderr = await asyncio.wait_for(
-                proc.communicate(input=user_message.encode()),
-                timeout=CLAUDE_TIMEOUT_SECONDS
-            )
-            output = stdout.decode() + (stderr.decode() if stderr else "")
-            return output[:2000], estimated_cost
+            async def _read_stream():
+                async for raw in proc.stdout:
+                    line = raw.decode().strip()
+                    if not line:
+                        continue
+                    try:
+                        ev = json.loads(line)
+                    except json.JSONDecodeError:
+                        text_parts.append(line)
+                        continue
+                    ev_type = ev.get("type", "")
+                    if ev_type == "system" and ev.get("subtype") == "init":
+                        sid = ev.get("session_id")
+                        if sid:
+                            self._claude_session_id = sid
+                    elif ev_type == "assistant":
+                        for block in ev.get("message", {}).get("content", []):
+                            if block.get("type") == "text":
+                                text_parts.append(block["text"])
+                    elif ev_type == "result":
+                        nonlocal cost_usd
+                        cost_usd = ev.get("cost_usd", cost_usd)
+                        sid = ev.get("session_id")
+                        if sid:
+                            self._claude_session_id = sid
+
+            await asyncio.wait_for(_read_stream(), timeout=CLAUDE_TIMEOUT_SECONDS)
+            await proc.wait()
+            return ("".join(text_parts))[:2000] or "Réponse vide.", cost_usd
         except asyncio.TimeoutError:
             proc.kill()
             await proc.wait()
             self.turn_count = 0
-            return f"Claude timeout after {CLAUDE_TIMEOUT_SECONDS}s", 0.0
+            return f"Claude timeout après {CLAUDE_TIMEOUT_SECONDS}s", 0.0
         except Exception as e:
             logger.error(f"ClaudeRunner error: {e}")
-            return f"Error running Claude: {str(e)}", 0.0
+            return f"Erreur Claude: {str(e)}", 0.0
         finally:
             self.current_process = None
 
     def reset(self):
         self.turn_count = 0
+        self._claude_session_id = None
         if self.current_process:
             self.current_process.kill()
             self.current_process = None
@@ -634,7 +718,7 @@ class TelegramBot:
 
         await update.message.reply_text("Processing...")
 
-        output, cost = await runner.run_command(user_message)
+        output, cost = await runner.run_command(user_message, agent=OPENROUTER_DEFAULT_AGENT)
 
         if cost > 0:
             new_total = self.session_mgr.update_cost(user_id, project_dir, cost)
@@ -701,7 +785,7 @@ class TelegramBot:
 
         session = self.session_mgr.get_or_create(user_id, project_dir)
         runner = self._get_claude_runner(user_id, project_dir)
-        output, cost = await runner.run_command(polished)
+        output, cost = await runner.run_command(polished, agent=OPENROUTER_DEFAULT_AGENT)
 
         if cost > 0:
             new_total = self.session_mgr.update_cost(user_id, project_dir, cost)
