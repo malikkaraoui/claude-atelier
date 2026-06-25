@@ -145,18 +145,19 @@ Plan Pro → `acceptEdits` + allow/deny, `maxBudgetUsd` défini. Push autonome a
 
 `bash scripts/pre-push-gate.sh` — 5 étapes : secrets → fichiers sensibles → lint → build → tests. Jamais de `--no-verify`.
 
-## §25 Inter-agents — Review Copilot auto
+## §25 Inter-agents — Review Oracle local (hook obligatoire)
 
-**Générer le handoff automatiquement, sans demander**, dès que : feature terminée, bug fix critique, 100+ lignes modifiées, PR créée (même docs only), ou avant tout commit/push/bump. **Séquence intégrale obligatoire** :
+**Mécanisme hook** : `guard-review-auto.sh` (PreToolUse) bloque `git push` si diff ≥ 50 lignes ET flag `/tmp/claude-atelier-review-done` absent. Claude ne décide pas — le hook décide.
 
-1. `/review-copilot` → handoff JSON dans `docs/handoffs/`
-2. commit handoff + push
-3. PR créée en **draft**
-4. **PR draft → ready_for_review** (sinon Copilot ne review pas)
-5. `/copilot-loop` (ou équivalent webhook) lancé immédiatement
-6. `subscribe_pr_activity` actif → webhook GitHub = réveil persistant (pas de polling manuel, pas de question utilisateur)
+**Séquence** :
+1. `git push` → hook calcule le diff → si ≥ 50 lignes sans flag → exit 2
+2. `/review-oracle` → 4 agents parallèles (DOCTRINE · CODE · SÉCURITÉ · TESTS) → verdict
+3. RATIFIÉ ou MAJEUR → `touch /tmp/claude-atelier-review-done` → push déverrouillé
+4. BLOQUANT → corriger, relancer `/review-oracle`
 
-Ne jamais demander confirmation entre deux étapes. Ne jamais attendre instruction utilisateur pour passer la PR en ready ou activer le loop. Le réveil et l'intégration des fixes Copilot suivent automatiquement via la subscription webhook. **Réflexe non négociable, pas un choix.**
+**Challenger commit** (non bloquant) : volume ≥ 300 lignes, `feat:`, 10+ commits sans review, fichiers architecturaux → rappel `/review-oracle` ou `/angle-mort`.
+
+GitHub MCP (§0) : outil de lecture PR/issues disponible. Aucune PR externe obligatoire.
 
 <!-- EXECUTOR -->
 | Superviseur | MasterClaude (http://localhost:4001) |

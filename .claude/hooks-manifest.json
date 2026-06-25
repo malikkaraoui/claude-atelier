@@ -194,22 +194,25 @@
     {
       "name": "guard-review-auto",
       "file": "hooks/guard-review-auto.sh",
-      "type": "PostToolUse",
-      "trigger": "Bash tool with `git commit` command",
-      "purpose": "Système Challenger — 5 triggers (volume lignes, feature, endurance, architecture, bug bloquant) qui proposent /review-copilot ou un handoff",
+      "type": "PreToolUse + PostToolUse",
+      "trigger": "Bash tool with `git push` (gate) OR `git commit` (challenger suggestions)",
+      "purpose": "Gate : bloque git push si diff ≥ 50 lignes et /tmp/claude-atelier-review-done absent (exit 2). Challenger : suggestions /review-oracle après commit (volume, feature, arch, fail).",
       "inputs": [
         "HOOK_COMMAND",
-        "git diff stats"
+        "HOOK_EXIT_CODE",
+        "git diff stats",
+        "REVIEW_ORACLE_TEST_LINES (env override for tests)"
       ],
       "outputs": [
-        "allow (exit 0) + injection suggestion review si trigger atteint"
+        "allow (exit 0) | block (exit 2 + message) si push sans review"
       ],
-      "rule": "§25 Inter-agents — Review Copilot auto",
-      "test": null,
+      "rule": "§25 Inter-agents — Review Oracle local",
+      "test": "test/hooks.js → guard-review-auto.sh (3 tests)",
       "exitCodes": {
-        "0": "always (suggestion only, never blocks)"
+        "0": "allow",
+        "2": "block — push sans review oracle sur diff ≥ 50 lignes"
       },
-      "sha256": "ab21957088aa7336"
+      "sha256": "c937a9b8d5204dac"
     },
     {
       "name": "model-metrics",
@@ -319,12 +322,12 @@
       "Stop": 1,
       "UserPromptSubmit": 4,
       "PreToolUse": 3,
-      "PostToolUse": 3,
-      "PreToolUse + PostToolUse": 1
+      "PostToolUse": 2,
+      "PreToolUse + PostToolUse": 2
     },
-    "blocking": 3,
-    "warningOnly": 11,
-    "withTests": 10
+    "blocking": 4,
+    "warningOnly": 10,
+    "withTests": 11
   },
   "conventions": {
     "sourcing": "Tous les hooks (sauf session-model et routing-check qui parsent eux-mêmes le stdin) sourcent _parse-input.sh pour l'extraction des variables.",

@@ -363,6 +363,41 @@ test('silencieux sur commande non liée (ls, cd)', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// guard-review-auto.sh — §25 : gate push + challenger commit
+// ─────────────────────────────────────────────────────────────
+console.log('\n── guard-review-auto.sh ──');
+
+test('bloque git push si diff ≥ seuil et review absente', () => {
+  try { rmSync('/tmp/claude-atelier-review-done', { force: true }); } catch {}
+  const r = hook('guard-review-auto.sh',
+    { tool_input: { command: 'git push origin main' } },
+    { REVIEW_ORACLE_TEST_LINES: '100' }
+  );
+  ok(r.status === 2, `exit 2 attendu (reçu ${r.status})`);
+  ok(r.stdout.includes('REVIEW-ORACLE'), 'message REVIEW-ORACLE présent');
+});
+
+test('autorise git push si flag review présent', () => {
+  writeFileSync('/tmp/claude-atelier-review-done', '');
+  const r = hook('guard-review-auto.sh',
+    { tool_input: { command: 'git push origin main' } },
+    { REVIEW_ORACLE_TEST_LINES: '100' }
+  );
+  ok(r.status === 0, 'exit 0 — review validée');
+});
+
+test('efface le flag après push autorisé', () => {
+  writeFileSync('/tmp/claude-atelier-review-done', '');
+  hook('guard-review-auto.sh',
+    { tool_input: { command: 'git push origin main' } },
+    { REVIEW_ORACLE_TEST_LINES: '100' }
+  );
+  let exists = true;
+  try { readFileSync('/tmp/claude-atelier-review-done'); } catch { exists = false; }
+  ok(!exists, 'flag effacé après push');
+});
+
+// ─────────────────────────────────────────────────────────────
 // model-metrics.sh — §1 pastille + §15 auto-métriques
 // ─────────────────────────────────────────────────────────────
 console.log('\n── model-metrics.sh ──');

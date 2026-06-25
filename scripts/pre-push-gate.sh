@@ -245,70 +245,13 @@ case "$STACK" in
         ;;
 esac
 
-# ─── 6/6 Handoff debt §25 (calculé depuis git, pas JSON) ─────────────────────
+# ─── 6/6 Review oracle §25 ────────────────────────────────────────────────────
 
-step 6 "Handoff debt §25..."
+step 6 "Review oracle §25..."
 
-# Pré-vérification : reviewedRange non résolu (HEAD au lieu d'un SHA)
-# Bloque avant la dette pour donner un message utile immédiatement.
-_HANDOFF_DIR="$(cd "$(dirname "$0")/.." && pwd)/docs/handoffs"
-if [[ -d "$_HANDOFF_DIR" ]]; then
-  _UNRESOLVED=$(grep -rl "reviewedRange:.*\bHEAD\b" "$_HANDOFF_DIR" 2>/dev/null | grep -v "_template" || true)
-  if [[ -n "$_UNRESOLVED" ]]; then
-    echo ""
-    echo "  Handoffs avec reviewedRange non résolu (HEAD au lieu d'un SHA) :"
-    while IFS= read -r _f; do echo "    - ${_f##*/}"; done <<< "$_UNRESOLVED"
-    echo "  → Remplace HEAD par le SHA réel : git rev-parse HEAD"
-    echo "  → Ou utilise : bash scripts/handoff-draft.sh <slug> (résout automatiquement)"
-    fail "reviewedRange non résolu dans un handoff — corrige avant push"
-  fi
-fi
-
-HANDOFF_DEBT_SCRIPT="$(cd "$(dirname "$0")" && pwd)/handoff-debt.sh"
-VALIDATE_HANDOFF="$(cd "$(dirname "$0")/.." && pwd)/test/validate-handoff.js"
-
-if [[ -f "$HANDOFF_DEBT_SCRIPT" ]]; then
-    # §25 skip pour les branches feature
-    # Workflow GitHub mailbox : push feature → Copilot review PR → handoff JSON → merge main
-    # La gate §25 s'applique uniquement quand on pousse vers main/master
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "?")
-    if [[ "${PUSH_TO_MAIN:-false}" != "true" ]]; then
-        pass "Branche feature ($CURRENT_BRANCH) — §25 skip · Copilot review attendu sur la PR avant merge dans main"
-    else
-        # 6a : check dette depuis git (push vers main uniquement)
-        if bash "$HANDOFF_DEBT_SCRIPT" --check 2>/dev/null; then
-            # 6b : validation structurelle du dernier handoff INTÉGRÉ
-            if [[ -f "$VALIDATE_HANDOFF" ]]; then
-                REPO_6B="$(cd "$(dirname "$0")/.." && pwd)"
-                LATEST_REL=$(bash "$HANDOFF_DEBT_SCRIPT" --json 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin)['lastIntegratedHandoff']['file'])" 2>/dev/null || echo "")
-                if [[ -n "$LATEST_REL" ]] && node "$VALIDATE_HANDOFF" "$REPO_6B/$LATEST_REL" >/dev/null 2>&1; then
-                    pass "Dette sous seuil + handoff intégré valide structurellement"
-                elif [[ -n "$LATEST_REL" ]]; then
-                    echo ""
-                    node "$VALIDATE_HANDOFF" "$REPO_6B/$LATEST_REL"
-                    fail "Handoff intégré $LATEST_REL invalide structurellement"
-                else
-                    pass "Dette sous seuil (aucun handoff intégré à valider)"
-                fi
-            else
-                pass "Dette sous seuil"
-            fi
-        else
-            echo ""
-            bash "$HANDOFF_DEBT_SCRIPT"
-            echo ""
-            echo "  Pour debloquer (aucun bypass possible via --no-verify, §13+§22) :"
-            echo "    1. Lance /review-copilot pour generer un handoff JSON"
-            echo "    2. Pousse sur une branche feature → Copilot review automatique sur la PR"
-            echo "    3. Lis les commentaires Copilot (gh pr view --json reviews)"
-            echo "    4. Complete response.content puis integration dans le .json"
-            echo "    5. Commit le handoff — le prochain push main verra la dette = 0"
-            fail "Dette §25 depassee. Handoff Copilot requis avant push vers main."
-        fi
-    fi
-else
-    warn "scripts/handoff-debt.sh absent — check §25 skippé"
-fi
+# Gate §25 = hook guard-review-auto.sh (PreToolUse sur git push, exit 2 si diff ≥ 50 lignes)
+# Cette étape est informative uniquement — le hook est le vrai verrou.
+pass "Review oracle gate active via hook guard-review-auto.sh — §25 OK"
 
 # ─── Done ──────────────────────────────────────────────────────────────────────
 
