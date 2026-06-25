@@ -631,6 +631,63 @@ test('injecte brief et mailbox si vault projet présent', () => {
 
 
 // ─────────────────────────────────────────────────────────────
+// guard-s1-header.sh — §1 : entête obligatoire
+// ─────────────────────────────────────────────────────────────
+console.log('\n── guard-s1-header.sh ──');
+
+function makeS1Transcript(dir, lastAssistantText) {
+  const transcript = resolve(dir, 'session.jsonl');
+  const line = JSON.stringify({
+    type: 'assistant',
+    message: { content: [{ type: 'text', text: lastAssistantText }] }
+  });
+  writeFileSync(transcript, line + '\n');
+  return transcript;
+}
+
+test('passe si header §1 correct', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  try {
+    const t = makeS1Transcript(dir, '[2026-06-25 18:00:00 | claude-sonnet-4-6] 🟢 M | réponse valide');
+    const r = hook('guard-s1-header.sh', { transcript_path: t, prompt: 'bonjour' });
+    ok(r.status === 0, 'exit 0 si header présent');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('bloque (exit 2) si header absent', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  try {
+    const t = makeS1Transcript(dir, 'Je commence à répondre sans header...');
+    const r = hook('guard-s1-header.sh', { transcript_path: t, prompt: 'question suivante' });
+    ok(r.status === 2, 'exit 2 si header manquant');
+    ok(r.stderr.includes('§1 VIOLATION'), 'message §1 VIOLATION dans stderr');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('bypass si §1-ack dans le prompt', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  try {
+    const t = makeS1Transcript(dir, 'réponse sans header du tout');
+    const r = hook('guard-s1-header.sh', { transcript_path: t, prompt: '§1-ack je corrige' });
+    ok(r.status === 0, 'exit 0 avec §1-ack');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('passe si pas de transcript (première réponse de session)', () => {
+  const r = hook('guard-s1-header.sh', { prompt: 'premier message' });
+  ok(r.status === 0, 'exit 0 sans transcript');
+});
+
+test('passe si GUARD_S1_TEST_SKIP=1', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  try {
+    const t = makeS1Transcript(dir, 'pas de header');
+    const r = hook('guard-s1-header.sh', { transcript_path: t, prompt: 'test' }, { GUARD_S1_TEST_SKIP: '1' });
+    ok(r.status === 0, 'exit 0 avec skip');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ─────────────────────────────────────────────────────────────
 // Bilan
 // ─────────────────────────────────────────────────────────────
 const total = pass + fail;

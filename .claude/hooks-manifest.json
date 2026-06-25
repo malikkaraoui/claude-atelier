@@ -274,6 +274,27 @@
       "sha256": "ddd1ef03ad479205"
     },
     {
+      "name": "guard-s1-header",
+      "file": "hooks/guard-s1-header.sh",
+      "type": "UserPromptSubmit",
+      "trigger": "every user prompt",
+      "purpose": "Bloque le message entrant si la dernière réponse assistant n'a pas commencé par l'entête §1 [date | modèle]. Bypass via §1-ack dans le prompt ou GUARD_S1_TEST_SKIP=1.",
+      "inputs": [
+        "transcript_path",
+        "prompt"
+      ],
+      "outputs": [
+        "allow (exit 0) | block (exit 2 + §1 VIOLATION) si header absent"
+      ],
+      "rule": "§1 Horodatage + Modèle — EXIGENCE non négociable",
+      "test": "test/hooks.js → guard-s1-header.sh (5 tests)",
+      "exitCodes": {
+        "0": "allow",
+        "2": "block — header §1 absent dans la dernière réponse"
+      },
+      "sha256": "24741c04796adbb9"
+    },
+    {
       "name": "detect-design-need",
       "file": "hooks/detect-design-need.sh",
       "type": "UserPromptSubmit",
@@ -315,19 +336,19 @@
     }
   ],
   "stats": {
-    "total": 15,
+    "total": 16,
     "byType": {
       "helper": 1,
       "SessionStart": 2,
       "Stop": 1,
-      "UserPromptSubmit": 4,
+      "UserPromptSubmit": 5,
       "PreToolUse": 3,
       "PostToolUse": 2,
       "PreToolUse + PostToolUse": 2
     },
-    "blocking": 4,
+    "blocking": 5,
     "warningOnly": 10,
-    "withTests": 11
+    "withTests": 12
   },
   "conventions": {
     "sourcing": "Tous les hooks (sauf session-model et routing-check qui parsent eux-mêmes le stdin) sourcent _parse-input.sh pour l'extraction des variables.",
