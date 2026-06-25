@@ -117,6 +117,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash \"/Users/malik/Documents/Claude Atelier/hooks/guard-loop-master.sh\"",
+            "if": "Bash(*git commit*)"
+          },
+          {
+            "type": "command",
             "command": "bash \"/Users/malik/Documents/Claude Atelier/hooks/guard-no-sign.sh\"",
             "if": "Bash(*git commit*)"
           },

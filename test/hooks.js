@@ -688,6 +688,58 @@ test('passe si GUARD_S1_TEST_SKIP=1', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// guard-loop-master.sh — §3 : pipeline obligatoire
+// ─────────────────────────────────────────────────────────────
+console.log('\n── guard-loop-master.sh ──');
+
+test('passe si GUARD_LOOP_TEST_SKIP=1', () => {
+  const r = hook('guard-loop-master.sh',
+    { tool_input: { command: 'git commit -m "test"' } },
+    { GUARD_LOOP_TEST_SKIP: '1' }
+  );
+  ok(r.status === 0, 'exit 0 avec skip env');
+});
+
+test('passe si commande n\'est pas git commit', () => {
+  const r = hook('guard-loop-master.sh',
+    { tool_input: { command: 'git status' } },
+    { GUARD_LOOP_TEST_SKIP: '0', GUARD_LOOP_TEST_STAGED: '5' }
+  );
+  ok(r.status === 0, 'exit 0 si pas git commit');
+});
+
+test('passe si moins de 2 fichiers stagés', () => {
+  const r = hook('guard-loop-master.sh',
+    { tool_input: { command: 'git commit -m "fix typo"' } },
+    { GUARD_LOOP_TEST_STAGED: '1' }
+  );
+  ok(r.status === 0, 'exit 0 si 1 seul fichier');
+});
+
+test('bloque (exit 2) si multi-fichiers et loop-done absent', () => {
+  const r = hook('guard-loop-master.sh',
+    { tool_input: { command: 'git commit -m "feat: nouveau skill"' } },
+    { GUARD_LOOP_TEST_STAGED: '3' }
+  );
+  ok(r.status === 2, 'exit 2 si pipeline non exécuté');
+  ok(r.stderr.includes('§3 VIOLATION'), '§3 VIOLATION dans stderr');
+});
+
+test('passe si flag /tmp/claude-atelier-loop-done présent', () => {
+  const flagPath = '/tmp/claude-atelier-loop-done';
+  try {
+    writeFileSync(flagPath, '');
+    const r = hook('guard-loop-master.sh',
+      { tool_input: { command: 'git commit -m "feat: livraison loop-master"' } },
+      { GUARD_LOOP_TEST_STAGED: '5' }
+    );
+    ok(r.status === 0, 'exit 0 si flag présent');
+  } finally {
+    try { rmSync(flagPath); } catch {}
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // Bilan
 // ─────────────────────────────────────────────────────────────
 const total = pass + fail;

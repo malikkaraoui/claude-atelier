@@ -295,6 +295,29 @@
       "sha256": "24741c04796adbb9"
     },
     {
+      "name": "guard-loop-master",
+      "file": "hooks/guard-loop-master.sh",
+      "type": "PreToolUse",
+      "trigger": "Bash tool with `git commit` command",
+      "purpose": "Bloque git commit si /loop-master n'a pas été exécuté (flag absent) sur une tâche touchant ≥ 2 fichiers. Enforce §3 obligation pipeline.",
+      "inputs": [
+        "HOOK_COMMAND",
+        "git diff --cached --name-only (count)",
+        "GUARD_LOOP_TEST_STAGED (env override tests)",
+        "/tmp/claude-atelier-loop-done (flag)"
+      ],
+      "outputs": [
+        "allow (exit 0) | block (exit 2 + §3 VIOLATION) si pipeline non exécuté"
+      ],
+      "rule": "§3 Flow de traitement — obligation /loop-master avant livraison",
+      "test": "test/hooks.js → guard-loop-master.sh (5 tests)",
+      "exitCodes": {
+        "0": "allow",
+        "2": "block — git commit sans /loop-master sur tâche multi-fichiers"
+      },
+      "sha256": "d43ee97ffd9bc880"
+    },
+    {
       "name": "detect-design-need",
       "file": "hooks/detect-design-need.sh",
       "type": "UserPromptSubmit",
@@ -336,19 +359,19 @@
     }
   ],
   "stats": {
-    "total": 16,
+    "total": 17,
     "byType": {
       "helper": 1,
       "SessionStart": 2,
       "Stop": 1,
       "UserPromptSubmit": 5,
-      "PreToolUse": 3,
+      "PreToolUse": 4,
       "PostToolUse": 2,
       "PreToolUse + PostToolUse": 2
     },
-    "blocking": 5,
+    "blocking": 6,
     "warningOnly": 10,
-    "withTests": 12
+    "withTests": 13
   },
   "conventions": {
     "sourcing": "Tous les hooks (sauf session-model et routing-check qui parsent eux-mêmes le stdin) sourcent _parse-input.sh pour l'extraction des variables.",

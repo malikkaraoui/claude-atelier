@@ -40,6 +40,8 @@ Français. Direct. Actionnable. Zéro pédagogie inutile. Pas de preamble, hedge
 - **Explore** : fichiers concernés uniquement (subagent Haiku si large) · **Plan** : impacts + dépendances avant d'écrire
 - **Implement** : minimal viable · Edit ciblé — jamais réécriture complète si > 20 lignes non modifiées · **Verify** : tests + gate
 
+**⚠️ OBLIGATION loop-master** : toute tâche feature · refactor · fix (> 1 fichier) → `/loop-master` AVANT de déclarer "j'ai fini". Hook `guard-loop-master.sh` bloque `git commit` si flag absent. Jamais de livraison solo sans pipeline Chef→Codeur→Relecteur→Documentaliste.
+
 ## §4 Format de réponse
 
 1. Solution/Plan · 2. Détails, variantes, pièges · 3. Next steps. Outils : checklists, tableaux, blocs copier-coller.
