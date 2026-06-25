@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 1 cleanup — Telegram/Ollama/Marketplace supprimés · manifest + package.json nettoyés · next: npm test vert → commit → Phase 2 nucleus (ROSTER/WAVE/MAILBOX) |
+| Phase | Phase 2 Lot 1 livré — guard-s1-header + guard-loop-master + /chef-projet + /loop-master + vault/50-token-history · next: Lot 2 (/relecteur + /documentaliste) |
 | Stack | Node.js (hooks/scripts) — Go retiré |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
