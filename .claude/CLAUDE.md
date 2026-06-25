@@ -7,13 +7,13 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 — v0.26.0 · package npm nettoyé (master/telegram exclus) · next: fork MasterClaude + npm publish claude-atelier |
-| Stack | Node.js (hooks/scripts) + Go (ollama-proxy) |
+| Phase | Phase 1 cleanup — Telegram/Ollama/Marketplace supprimés · manifest + package.json nettoyés · next: npm test vert → commit → Phase 2 nucleus (ROSTER/WAVE/MAILBOX) |
+| Stack | Node.js (hooks/scripts) — Go retiré |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
-| Endpoints actifs | proxy :4000 (Ollama), Ollama :11434 |
-| Contraintes métier | LLM local via Ollama, tool_use bidirectionnel |
-| MCPs actifs | qmd (moteur recherche .md hybride), github (PR reviews, polling), obsidian-vault (vault /Users/malik/Vault/Malik/) |
+| Endpoints actifs | aucun (LLM cloud uniquement) |
+| Contraintes métier | Opus/Sonnet/Haiku via API Anthropic · routing hard hook (exit 2) |
+| MCPs actifs | qmd (moteur recherche .md hybride), github (PR reviews), obsidian-vault (vault /Users/malik/Vault/Malik/) |
 | Gate pré-push | `bash scripts/pre-push-gate.sh` |
 
 Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + commit atomique.
@@ -157,3 +157,8 @@ Plan Pro → `acceptEdits` + allow/deny, `maxBudgetUsd` défini. Push autonome a
 6. `subscribe_pr_activity` actif → webhook GitHub = réveil persistant (pas de polling manuel, pas de question utilisateur)
 
 Ne jamais demander confirmation entre deux étapes. Ne jamais attendre instruction utilisateur pour passer la PR en ready ou activer le loop. Le réveil et l'intégration des fixes Copilot suivent automatiquement via la subscription webhook. **Réflexe non négociable, pas un choix.**
+
+<!-- EXECUTOR -->
+| Superviseur | MasterClaude (http://localhost:4001) |
+| Agent ID | claude-atelier |
+| Rôle | Exécutant — voir `.claude/EXECUTOR.md` |

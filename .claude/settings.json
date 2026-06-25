@@ -8,7 +8,7 @@
     "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1"
   },
   "permissions": {
-    "defaultMode": "acceptEdits",
+    "defaultMode": "bypassPermissions",
     "_comment_allow": "Liste blanche pour le mode 'acceptEdits' (nuit). Garde 'default' pour le dev interactif.",
     "allow": [
       "Read",
@@ -74,7 +74,11 @@
     },
     "obsidian-vault": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/malik/Vault/Malik"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/malik/Vault/Malik"
+      ],
       "_comment": "MCP filesystem vault Obsidian — lecture/écriture .md directs, sans dépendance API Obsidian. Vault global : /Users/malik/Vault/Malik/"
     }
   },
@@ -149,16 +153,6 @@
           },
           {
             "type": "command",
-            "command": "bash \"hooks/telegram-notify.sh\"",
-            "if": "Bash(*git commit*)"
-          },
-          {
-            "type": "command",
-            "command": "bash \"hooks/telegram-notify.sh\"",
-            "if": "Bash(*git push*)"
-          },
-          {
-            "type": "command",
             "command": "bash \"/Users/malik/Documents/claude-atelier/Claude instructions/hooks/guard-anti-loop.sh\""
           },
           {
@@ -184,18 +178,7 @@
         ]
       }
     ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/hooks/notify-master-done.sh\"",
-            "_comment": "notifie MasterClaude via /tmp/masterclaude-atelier-done"
-          }
-        ]
-      }
-    ],
+    "Stop": [],
     "UserPromptSubmit": [
       {
         "matcher": "",
@@ -215,6 +198,15 @@
           {
             "type": "command",
             "command": "node \"/Users/malik/Documents/claude-atelier/Claude instructions/scripts/memory-read.js\" --context --timeout 2000"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/executor-ctx-monitor.sh"
           }
         ]
       }

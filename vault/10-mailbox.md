@@ -237,3 +237,62 @@ Claude : Le bridge Telegram reçoit bien tes messages (je lis celui-ci en temps 
 - Résumé : Vu que tu as réactiver la traduction des messages beaucoup, maintenant pousse tout sur  GitHub et mais à jour le Répo.
 - Réponse Ollama : Peter : Vérifie les fichiers du vault, ajoute les modifications non commitées avec `git add .`, commit avec `git commit -m "Mise à jour traductions et fichiers"`, puis pousses vers GitHub via `git pus
 - Action proposée : à challenger / intégrer
+
+### 2026-05-09 15:33 — Telegram [text]
+
+- Source : telegram
+- Statut : nouveau
+- Résumé : Erreur sur telegram 
+Je viens de recevoir le message suivant
+
+⚠ ollama-proxy est down depuis 30s (HTTP error: Get "http://127.0.0.1:4000/health": dial tcp 127.0.0.1:4000: connect: connection refused)
+- Réponse Ollama : Peter : Vérifie que le service Ollama est lancé via `./start_ollama.sh` (dans le dossier vault). Si le proxy reste en erreur, redémarre-le avec `./restart_proxy.sh`. Si le problème persiste, vérifie l
+- Action proposée : à challenger / intégrer
+
+### 2026-05-09 18:12 — Telegram [text]
+
+- Source : telegram
+- Statut : nouveau
+- Résumé : @claude
+- Réponse Ollama : Peter : Bonjour ! Je suis Peter, l'agent IA du projet. Comment puis-je vous aider ?
+- Action proposée : à challenger / intégrer
+
+### 2026-05-09 23:04 — Telegram [text]
+
+- Source : telegram
+- Statut : nouveau
+- Résumé : Qu'est ce que le E2 explique moi
+- Réponse Ollama : Peter : L'E2 (Edge Engine 2) est un module expérimental du projet Claude, optimisé pour le traitement de données en temps réel et l'intégration avec des systèmes edge computing. Il permet d'améliorer 
+- Action proposée : à challenger / intégrer
+
+### 2026-05-10 06:49 — Telegram [text]
+
+- Source : telegram
+- Statut : nouveau
+- Résumé : Qu’est-ce qu’on a comme nouvelles fonctions ?
+- Réponse Ollama : Peter : De nouvelles fonctionnalités incluent : 1) une amélioration du traitement du langage naturel pour des réponses plus précises, 2) un outil de visualisation de données renforcé. Voulez-vous des 
+- Action proposée : à challenger / intégrer
+
+### 2026-05-10 06:56 — Telegram [text]
+
+- Source : telegram
+- Statut : nouveau
+- Résumé : Cela vient d’être merger… tu t’es donc encore endormie en plein milieu sans aller jusqu’à la toute fin
+- Réponse Ollama : Peter : J'ai vérifié le vault, aucun événement de merge n'est en attente. Si tu fais référence à un travail non terminé, précise le contexte (nom du fichier, tâche) pour que je puisse t'aider. "Clogue
+- Action proposée : à challenger / intégrer
+
+### 2026-05-10 07:38 — Telegram [text]
+
+- Source : telegram
+- Statut : nouveau
+- Résumé : d
+- Réponse Ollama : Peter : Veuillez préciser votre question ou demande pour que je puisse vous aider efficacement.
+- Action proposée : à challenger / intégrer
+
+### 2026-05-10 10:06 — Telegram [vocal]
+
+- Source : telegram
+- Statut : nouveau
+- Résumé : Il faudra penser à modifier le skill stive dans clodatelier pour y incorporer les bonnes pratiques.  Par exemple, plusieurs langues dans vos applications et également pour pouvoir régler le dark mode.  Pour pouvoir laisser des commentaires, laisser la possibilité de partager l'application de version
+- Réponse Ollama : Peter : Ajoutez des paramètres pour les langues (via un fichier de configuration ou un plugin i18n), un commutateur de dark mode (via CSS variables ou un thème dynamique), un système de commentaires (
+- Action proposée : à challenger / intégrer

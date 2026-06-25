@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "version": "1.0.0",
   "description": "Manifeste typé de tous les hooks claude-atelier. Source de vérité — toute modif d'un hook doit synchroniser cette entrée. Vérifié par test/lint-hooks-manifest.js.",
-  "lastUpdated": "2026-05-04",
+  "lastUpdated": "2026-06-25",
   "hooks": [
     {
       "name": "_parse-input",
@@ -74,7 +74,7 @@
       "file": "hooks/routing-check.sh",
       "type": "UserPromptSubmit",
       "trigger": "every user prompt",
-      "purpose": "Injecte [HORODATAGE] + [OLLAMA] + [ROUTING] dans le contexte. Détecte le modèle via live > transcript multi-schémas > cache scoppé session > cache legacy. Détecte la stack du projet. Diagnostic périodique (30 min throttle).",
+      "purpose": "Injecte [HORODATAGE] + [ROUTING] dans le contexte. Détecte le modèle via live > transcript multi-schémas > cache scoppé session > cache legacy. Détecte la stack du projet. Diagnostic périodique (30 min throttle).",
       "inputs": [
         "prompt",
         "model (if available in hook JSON)",
@@ -83,10 +83,10 @@
         "legacy current-model from /tmp/claude-atelier-current-model"
       ],
       "outputs": [
-        "additionalContext: [HORODATAGE] + [OLLAMA] + [ROUTING] + source modèle + warnings éventuels"
+        "additionalContext: [HORODATAGE] + [ROUTING] + source modèle + warnings éventuels"
       ],
       "rule": "§1 + §15 + §10",
-      "test": "test/hooks.js → routing-check.sh (live, transcript multi-schémas, cache scoppé, entête Ollama)",
+      "test": "test/hooks.js → routing-check.sh (live, transcript multi-schémas, cache scoppé session)",
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       },
@@ -192,26 +192,6 @@
       "sha256": "8bf890900e7c8fe9"
     },
     {
-      "name": "telegram-notify",
-      "file": "hooks/telegram-notify.sh",
-      "type": "PostToolUse",
-      "trigger": "Bash tool with `git commit` or `git push` command (exit 0 only)",
-      "purpose": "Phase C — envoie une alerte Telegram via FIFO nommé /tmp/claude-telegram-out si le bridge est actif : ✅ Commit ou 🚀 Push. No-op silencieux si FIFO absent.",
-      "inputs": [
-        "HOOK_COMMAND",
-        "HOOK_EXIT_CODE"
-      ],
-      "outputs": [
-        "writes one line to /tmp/claude-telegram-out (named pipe) if bridge active"
-      ],
-      "rule": ".claude/autonomy/telegram.md — Mode nuit alertes FIFO",
-      "test": "test/telegram.test.js → Phase C hooks",
-      "exitCodes": {
-        "0": "always (best-effort — skipped si FIFO absent ou aucun lecteur, écriture O_NONBLOCK non-bloquante)"
-      },
-      "sha256": "14ad6d8572425df2"
-    },
-    {
       "name": "guard-review-auto",
       "file": "hooks/guard-review-auto.sh",
       "type": "PostToolUse",
@@ -272,26 +252,6 @@
       "sha256": "fdc812990fe124ed"
     },
     {
-      "name": "start-maestro",
-      "file": "hooks/start-maestro.sh",
-      "type": "SessionStart",
-      "trigger": "session.start",
-      "purpose": "Maestro §0 watcher — met à jour pouls.md de tous les agents, détecte les changements de phase, émet [PULSE] indicator dans le contexte",
-      "inputs": [
-        "session.start event"
-      ],
-      "outputs": [
-        "additionalContext: [PULSE] 💓niveau·n/total si agents actifs",
-        "updates pouls.md for all agents via scripts/pulse-maestro.js"
-      ],
-      "rule": "§0 Phase watcher + présence multi-agents",
-      "test": null,
-      "exitCodes": {
-        "0": "always (silent update)"
-      },
-      "sha256": "a566c6a3b9cdbed5"
-    },
-    {
       "name": "stop-pulse",
       "file": "hooks/stop-pulse.sh",
       "type": "Stop",
@@ -336,7 +296,7 @@
       "file": "hooks/peter-inbox-check.sh",
       "type": "UserPromptSubmit",
       "trigger": "every user prompt",
-      "purpose": "Phase D — détecte /tmp/peter-notify et injecte le dernier message Telegram de Peter dans le contexte Claude Code en temps réel.",
+      "purpose": "Détecte /tmp/peter-notify et injecte un message de notification de Peter dans le contexte Claude Code en temps réel. Agnostique du canal d'émission.",
       "inputs": [
         "signal file /tmp/peter-notify"
       ],
@@ -349,39 +309,22 @@
         "0": "always (notification only, never blocks)"
       },
       "sha256": "a37841fc11af05b7"
-    },
-    {
-      "name": "notify-master-done",
-      "file": "hooks/notify-master-done.sh",
-      "type": "Stop",
-      "trigger": "session.stop",
-      "purpose": "Notifie MasterClaude qu'une session Claude Code s'est terminée — écrit un signal timestamp:done:PID dans /tmp/masterclaude-atelier-done.",
-      "inputs": [],
-      "outputs": [
-        "writes /tmp/masterclaude-atelier-done"
-      ],
-      "rule": "Phase E — MasterClaude stop notification",
-      "test": null,
-      "exitCodes": {
-        "0": "always (signal only, never blocks)"
-      },
-      "sha256": "456f90f0bc7a827c"
     }
   ],
   "stats": {
-    "total": 18,
+    "total": 15,
     "byType": {
       "helper": 1,
-      "SessionStart": 3,
-      "Stop": 2,
-      "UserPromptSubmit": 3,
+      "SessionStart": 2,
+      "Stop": 1,
+      "UserPromptSubmit": 4,
       "PreToolUse": 3,
-      "PostToolUse": 4,
+      "PostToolUse": 3,
       "PreToolUse + PostToolUse": 1
     },
     "blocking": 3,
-    "warningOnly": 12,
-    "withTests": 5
+    "warningOnly": 11,
+    "withTests": 10
   },
   "conventions": {
     "sourcing": "Tous les hooks (sauf session-model et routing-check qui parsent eux-mêmes le stdin) sourcent _parse-input.sh pour l'extraction des variables.",
