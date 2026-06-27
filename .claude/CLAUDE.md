@@ -25,9 +25,9 @@ Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + comm
 ## §1 Horodatage + Modèle — EXIGENCE non négociable
 
 Extraire MODEL-ID de `[ROUTING] modèle actif: MODEL-ID` (jamais du system prompt). Source : `live > transcript > cache scoppé session > cache legacy` — si `transcript`, signaler fragilité.
-**Réponse DOIT commencer par** : `` `[YYYY-MM-DD HH:MM:SS | MODEL-ID] PASTILLE MODE` ``. Pastille de `[METRICS]` (`⬆️`/`⬇️`/`🟢`). Mode de `[SWITCH-MODE]` (`A`=auto, `M`=manuel, défaut `M`). Si `[PULSE]` présent → appendre `| 💓<niveau>·<n>/<total>` à l'entête.
-**Mode A** : flèche `⬆️`/`⬇️` → `python3 scripts/switch_model.py <model>` immédiat. **Mode M** : annoncer reco, attendre validation. Toggle : "passe en auto" → `echo A > /tmp/claude-atelier-switch-mode`.
-Horodatage hook = contexte, **pas** ta sortie. Modèle indispo → `[date | modèle inconnu]`.
+**Réponse DOIT commencer par** (strict, rien d'autre) : `` `[MM-DD HH:MM:SS | MODEL-ID | ctx N%] PASTILLE` `` — pas d'année. `ctx N%` = conso contexte (ligne `[CTX]`, omise si inconnue). Fenêtre du **modèle actif** : env `CLAUDE_ATELIER_CTX_WINDOW` > `features.json contextWindow` (pin optionnel, absent par défaut → fallback table) > table modèle (`opus-4-8`/`[1m]` → 1M, sinon 200k). PASTILLE de `[METRICS]` : `⬆️` sous-dimensionné (monter) · `⬇️` surdimensionné (descendre) · `🟢` ok.
+Switch **toujours manuel** : si `⬆️`/`⬇️`, annoncer la reco (`/model <x>`) et attendre validation — jamais de switch automatique. Plus de mode A/M, plus de 🦙 (Ollama retiré), plus de 🔌 (proxy retiré).
+Enforcement : hook `Stop` `guard-s1-header.sh` (contrôle ma sortie, jamais ton entrée). Horodatage hook = contexte, **pas** ta sortie. Modèle indispo → `[date | modèle inconnu]`.
 
 ## §2 Langue & Ton
 

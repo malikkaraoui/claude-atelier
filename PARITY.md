@@ -33,7 +33,7 @@ claude-atelier **ne remplace pas** Claude Code. Il configure le client officiel 
 | `SessionStart` hooks | ✅ | Natif |
 | `routing-check.sh` (modèle actif + cockpit) | ➕ | Injecte `[ROUTING]`, `[OLLAMA]`, `[SWITCH-MODE]` et l'instruction §1 à chaque message. Mode `A`/`M` basé sur healthcheck `:4000/health` réel — proxy off = `M` de fait, quelle que soit la config `ANTHROPIC_BASE_URL`. |
 | `model-metrics.sh` (métriques de complexité) | ➕ | Analyse les 5 derniers tours assistant → verdict `optimal`/`limite`/`léger surplus` → pastille `🟢/⬆️/⬇️`. Construit le §1 ENTÊTE FINAL avec la vraie pastille + mode dérivé de son propre healthcheck (pas de race condition avec `routing-check.sh`). |
-| **Cockpit §1 — heads-up display** | ➕ | Chaque réponse commence par `` `[timestamp \| model] PASTILLE MODE \| 🦙state \| 🔌proxy` ``. Pastille = fit modèle (METRICS). Mode = `M` (Anthropic direct) / `A` (proxy actif). Ollama = `🦙✅ model` (intercept tout), `🦙⚡ model` (triage dynamique), `🦙❌` (off). Proxy = `🔌✅`/`🔌❌`. |
+| **Cockpit §1 — heads-up display** | ➕ | Chaque réponse commence par `` `[MM-DD HH:MM:SS \| model] PASTILLE` ``. Pastille = fit modèle/complexité (METRICS : `🟢 optimal`, `⬆️ sous-dimensionné`, `⬇️ surdimensionné`). Enforcement hook `guard-s1-header.sh`. |
 | `guard-no-sign.sh` (anti-signature) | ➕ | Bloque tout `Co-Authored-By` ou `--signoff` dans les commits |
 | `guard-commit-french.sh` | ➕ | Bloque les commits messages purement anglais (≥ 2 mots EN, 0 FR) |
 | Test suite des hooks | ➕ | `test/hooks.js` — 58 tests, exécutés à chaque `npm test` |

@@ -37,7 +37,6 @@ Commands:
   lint              Valide les références markdown et la longueur du core CLAUDE.md
   features          Tableau de contrôle des features (on/off par feature)
   review-local      Review automatique d'un handoff via Ollama local (anti-bypass auto-review Claude)
-  pulse             Gestion du pouls multi-agents (statut, init, mise à jour)
   vault             Initialise et inspecte le vault dynamique projet maintenu par Peter
   apply             Injecte un profil de config dans un worktree cible (API Paperclip)
 
@@ -53,7 +52,6 @@ Highlights:
   • Routing automatique Haiku/Sonnet/Opus selon la tâche
   • Skills slash commands (/handoff, /angle-mort, /token-routing…)
   • Hooks : horodatage, métriques, garde-fous commits
-  • Système de présence multi-agents (pouls.md) avec Maestro §0 watcher
   • Bridge Telegram bidirectionnel : commandes mobile + alertes FIFO temps réel (O_NONBLOCK)
 
 Repo: https://github.com/malikkaraoui/claude-atelier#readme
@@ -103,7 +101,7 @@ async function main(argv) {
   }
 
   const command = args[0];
-  const knownCommands = ['init', 'update', 'doctor', 'lint', 'features', 'review-local', 'apply', 'pulse', 'vault'];
+  const knownCommands = ['init', 'update', 'doctor', 'lint', 'features', 'review-local', 'apply', 'vault'];
 
   if (!knownCommands.includes(command)) {
     process.stderr.write(`error: unknown command "${command}"\n`);
@@ -142,11 +140,6 @@ async function main(argv) {
   if (command === 'apply') {
     const { runApply } = await import('./apply.js');
     return runApply(process.argv);
-  }
-
-  if (command === 'pulse') {
-    const { runPulse } = await import('./pulse.js');
-    return runPulse(process.argv);
   }
 
   if (command === 'vault') {

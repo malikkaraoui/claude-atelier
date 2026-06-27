@@ -18,7 +18,6 @@ Si le fichier est absent ou vide `{}`, créer avec ces defaults avant de continu
 ```json
 {
   "header": true,
-  "pulse": false,
   "askUserQuestion": {
     "enabled": true,
     "triggers": ["vault-ingest", "review-copilot", "model-switch"]
@@ -33,7 +32,6 @@ Extraire et afficher le tableau suivant (valeurs réelles depuis features.json, 
 | Feature | Valeur | Défaut |
 |---|---|---|
 | `header` | ✅ ON / ❌ OFF | `true` |
-| `pulse` | ✅ ON / ❌ OFF | `false` |
 | `askUserQuestion` | ✅ ON / ❌ OFF | `true` |
 
 ### 3. Poser la question via AskUserQuestion
@@ -44,19 +42,17 @@ Appeler l'outil **AskUserQuestion** (natif Claude Code — ne pas créer de wrap
 - **options** :
   1. `"Toggle askUserQuestion — activer/désactiver les questions interactives"`
   2. `"Toggle header — activer/désactiver l'en-tête §1"`
-  3. `"Toggle pulse — activer/désactiver le pouls Maestro"`
-  4. `"Quitter sans modification"`
+  3. `"Quitter sans modification"`
 
 ### 4. Appliquer la modification
 
-**Option 4 — Quitter** : répondre `"Aucune modification."` et s'arrêter.
+**Option 3 — Quitter** : répondre `"Aucune modification."` et s'arrêter.
 
-**Options 1–3 — Toggle** :
+**Options 1–2 — Toggle** :
 - Lire la valeur actuelle dans features.json (défaut si clé absente)
 - Inverser la valeur :
   - `askUserQuestion` → inverser `askUserQuestion.enabled` (bool)
   - `header` → inverser la valeur bool de `header`
-  - `pulse` → inverser la valeur bool de `pulse`
 - Écrire avec **Edit** (jamais réécriture complète si d'autres clés existent)
 - Confirmer en une ligne : `` ✅ `<feature>` → `<nouvelle valeur>` ``
 

@@ -183,15 +183,21 @@
         ]
       }
     ],
-    "Stop": [],
-    "UserPromptSubmit": [
+    "Stop": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
             "command": "bash \"/Users/malik/Documents/Claude Atelier/hooks/guard-s1-header.sh\""
-          },
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
           {
             "type": "command",
             "command": "bash \"/Users/malik/Documents/Claude Atelier/hooks/routing-check.sh\""

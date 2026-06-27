@@ -316,26 +316,18 @@ test("garde-fou #2 : routing-check transcript lit message.model (fix /model)", (
   rmSync(dir, { recursive: true, force: true });
 });
 
-test('routing-check mode M quand proxy off (pas de dépendance ANTHROPIC_BASE_URL)', () => {
+test('routing-check N\'émet PLUS de pollution Ollama / mode A-M / proxy', () => {
   resetRoutingEnv();
-  // proxy ne répond pas → SWITCH_MODE doit être M, quelle que soit ANTHROPIC_BASE_URL
+  // Ollama, proxy et switch automatique ont été retirés : aucune de ces lignes ne doit sortir.
   const r = hook('routing-check.sh', { prompt: 'bonjour', model: 'claude-sonnet-4-6' }, {
-    ANTHROPIC_BASE_URL: 'http://localhost:4000'  // config pointant sur proxy éteint
+    ANTHROPIC_BASE_URL: 'http://localhost:4000'  // ancien proxy : doit être totalement ignoré
   });
   ok(r.status === 0, 'exit 0');
-  ok(r.stdout.includes('[SWITCH-MODE] M'), 'proxy off → mode M même si ANTHROPIC_BASE_URL pointe sur :4000');
-});
-
-test('routing-check rappelle la commande de retour full Anthropic sur demande explicite', () => {
-  resetRoutingEnv();
-  const r = hook('routing-check.sh', {
-    prompt: 'je veux repasser en full anthropic et désactiver le proxy',
-    model: 'claude-sonnet-4-6'
-  });
-  ok(r.status === 0, 'exit 0');
-  ok(r.stdout.includes('unset ANTHROPIC_BASE_URL && rm -f .env.local && claude'), 'commande full Anthropic attendue');
-  ok(r.stdout.includes('Quitter la session Claude en cours'), 'marche à suivre attendue');
-  ok(r.stdout.includes('Vérifier ensuite : [SWITCH-MODE] M'), 'vérification mode M attendue');
+  ok(!r.stdout.includes('[OLLAMA]'), 'plus de ligne [OLLAMA]');
+  ok(!r.stdout.includes('[SWITCH-MODE]'), 'plus de ligne [SWITCH-MODE]');
+  ok(!/🦙|🔌/.test(r.stdout), 'plus de pastille ollama/proxy');
+  ok(!r.stdout.includes('ANTHROPIC_BASE_URL'), 'plus de suggestion proxy');
+  ok(r.stdout.includes('[ROUTING] modèle actif: claude-sonnet-4-6'), 'le modèle reste détecté (source du header)');
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -473,19 +465,81 @@ test('format role/content (fallback) — sonnet + 5 tours Read → léger surplu
   rmSync(dir, { recursive: true, force: true });
 });
 
-// CTX% — fenêtre contexte (schémas JSONL variants)
-test('CTX% schéma type=assistant + message.usage → [CTX] dans sortie + suffixe §1', () => {
+// CTX% — fenêtre contexte (schémas JSONL variants) — ligne [CTX] séparée, plus dans l'entête §1
+test('CTX% schéma type=assistant + message.usage → [CTX] dans sortie', () => {
   writeFileSync(ROUTING_LEGACY_MODEL, 'claude-sonnet-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));
   const transcript = resolve(dir, 'session.jsonl');
-  // 40k tokens input + 20k cache_read = 60k / 200k = 30% → ✅
+  // 40k input + 20k cache_read = 60k / 200k = 30% → ✅ (fenêtre épinglée à 200k via env)
   const usage = { input_tokens: 40000, cache_read_input_tokens: 20000, cache_creation_input_tokens: 0, output_tokens: 100 };
   writeFileSync(transcript, JSON.stringify({ type: 'assistant', message: { usage, content: [] } }) + '\n');
-  const r = hook('model-metrics.sh', { transcript_path: transcript });
+  const r = hook('model-metrics.sh', { transcript_path: transcript }, { CLAUDE_ATELIER_CTX_WINDOW: '200000' });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[CTX]'), '[CTX] présent (schéma type=assistant/message.usage)');
   ok(r.stdout.includes('30%✅'), 'indicateur 30%✅ correct');
-  ok(/\d+%[✅🔥]/.test(r.stdout.split('§1')[1] || r.stdout), 'suffixe CTX% présent dans §1 header');
+  // L'entête §1 porte désormais la conso contexte : [date | model | ctx N%] PASTILLE
+  ok(r.stdout.includes('ctx 30%'), 'entête §1 porte la conso contexte (ctx 30%)');
+  ok(!r.stdout.includes('[CTX-WARN]'), 'pas d\'alerte sous le seuil 40% (ici 30%)');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('[CTX-WARN] s\'affiche dès que le contexte dépasse 40%', () => {
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-sonnet-4-6\n');
+  const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  // 90k tokens = 90k / 200k = 45% → > 40% → alerte (fenêtre épinglée à 200k via env)
+  const usage = { input_tokens: 90000, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, output_tokens: 100 };
+  writeFileSync(transcript, JSON.stringify({ type: 'assistant', message: { usage, content: [] } }) + '\n');
+  const r = hook('model-metrics.sh', { transcript_path: transcript }, { CLAUDE_ATELIER_CTX_WINDOW: '200000' });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('45%'), 'indicateur 45% calculé');
+  ok(r.stdout.includes('[CTX-WARN]'), 'alerte [CTX-WARN] présente au-dessus de 40%');
+  ok(r.stdout.includes('seuil 40%'), 'message mentionne le seuil 40%');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('fenêtre 1M dérivée du modèle actif (opus-4-8, sans config) → 5% (fix faux 95%)', () => {
+  // Table modèle : claude-opus-4-8 → 1M. Aucun features.json contextWindow, aucun env.
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-opus-4-8\n');
+  const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  // 50k tokens : sur 1M = 5% ; sur 200k ce serait 25% (le faux d'avant).
+  const usage = { input_tokens: 50000, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, output_tokens: 100 };
+  writeFileSync(transcript, JSON.stringify({ type: 'assistant', message: { usage, content: [] } }) + '\n');
+  const r = hook('model-metrics.sh', { transcript_path: transcript, model: 'claude-opus-4-8' });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes(' 5%✅'), '[CTX] = 5% (fenêtre 1M via table modèle)');
+  ok(!r.stdout.includes('25%'), 'PAS 25% — opus-4-8 mappé sur 1M');
+  ok(!r.stdout.includes('[CTX-WARN]'), 'pas d\'alerte (5% < 40%)');
+  ok(r.stdout.includes('ctx 5%'), 'entête §1 porte ctx 5%');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('anti-régression : bascule sur sonnet (200k) → 25%, pas 5% (fenêtre suit le modèle)', () => {
+  // Le bug miroir signalé par le challenger : une fenêtre figée donnerait 5%.
+  // La table modèle mappe sonnet sur 200k → 50k/200k = 25% (correct).
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-opus-4-8\n');
+  const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  const usage = { input_tokens: 50000, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, output_tokens: 100 };
+  writeFileSync(transcript, JSON.stringify({ type: 'assistant', message: { usage, content: [] } }) + '\n');
+  const r = hook('model-metrics.sh', { transcript_path: transcript, model: 'claude-sonnet-4-6' });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('ctx 25%'), 'entête §1 = ctx 25% (sonnet → 200k)');
+  ok(!r.stdout.includes('ctx 5%'), 'PAS 5% — pas de sous-estimation figée');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('override env CLAUDE_ATELIER_CTX_WINDOW=200k prime sur la table modèle → 25%', () => {
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-opus-4-8\n');
+  const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  // Même 50k sur opus : forcés sur 200k via env → 25% (priorité env > table).
+  const usage = { input_tokens: 50000, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, output_tokens: 100 };
+  writeFileSync(transcript, JSON.stringify({ type: 'assistant', message: { usage, content: [] } }) + '\n');
+  const r = hook('model-metrics.sh', { transcript_path: transcript, model: 'claude-opus-4-8' }, { CLAUDE_ATELIER_CTX_WINDOW: '200000' });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('ctx 25%'), 'entête §1 = ctx 25% (env override 200k > table 1M)');
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -493,10 +547,10 @@ test('CTX% schéma role=assistant + usage racine → [CTX] dans sortie', () => {
   writeFileSync(ROUTING_LEGACY_MODEL, 'claude-sonnet-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));
   const transcript = resolve(dir, 'session.jsonl');
-  // 110k tokens input = 110k / 200k = 55% → 🔥
+  // 110k tokens input = 110k / 200k = 55% → 🔥 (fenêtre épinglée à 200k via env)
   const usage = { input_tokens: 110000, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, output_tokens: 200 };
   writeFileSync(transcript, JSON.stringify({ role: 'assistant', usage, content: [] }) + '\n');
-  const r = hook('model-metrics.sh', { transcript_path: transcript });
+  const r = hook('model-metrics.sh', { transcript_path: transcript }, { CLAUDE_ATELIER_CTX_WINDOW: '200000' });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('[CTX]'), '[CTX] présent (schéma role=assistant/usage racine)');
   ok(r.stdout.includes('55%🔥'), 'indicateur 55%🔥 correct (seuil ≥50%)');
@@ -631,7 +685,7 @@ test('injecte brief et mailbox si vault projet présent', () => {
 
 
 // ─────────────────────────────────────────────────────────────
-// guard-s1-header.sh — §1 : entête obligatoire
+// guard-s1-header.sh — §1 : entête obligatoire (hook Stop, contrôle de la sortie)
 // ─────────────────────────────────────────────────────────────
 console.log('\n── guard-s1-header.sh ──');
 
@@ -649,32 +703,148 @@ test('passe si header §1 correct', () => {
   const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
   try {
     const t = makeS1Transcript(dir, '[2026-06-25 18:00:00 | claude-sonnet-4-6] 🟢 M | réponse valide');
-    const r = hook('guard-s1-header.sh', { transcript_path: t, prompt: 'bonjour' });
+    const r = hook('guard-s1-header.sh', { transcript_path: t });
     ok(r.status === 0, 'exit 0 si header présent');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('bloque (exit 2) si header absent', () => {
+test('bloque (exit 2) si header absent, stop_hook_active=false → relance', () => {
   const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  const marker = '/tmp/claude-atelier-s1-relance-s1-block';
   try {
-    const t = makeS1Transcript(dir, 'Je commence à répondre sans header...');
-    const r = hook('guard-s1-header.sh', { transcript_path: t, prompt: 'question suivante' });
-    ok(r.status === 2, 'exit 2 si header manquant');
+    try { rmSync(marker); } catch {}
+    const t = makeS1Transcript(dir, 'Je termine ma réponse sans header...');
+    const r = hook('guard-s1-header.sh', { transcript_path: t, session_id: 's1-block', stop_hook_active: false });
+    ok(r.status === 2, 'exit 2 si header manquant (stop_hook_active explicitement false)');
     ok(r.stderr.includes('§1 VIOLATION'), 'message §1 VIOLATION dans stderr');
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmSync(dir, { recursive: true, force: true }); try { rmSync(marker); } catch {} }
 });
 
-test('bypass si §1-ack dans le prompt', () => {
+test('escape si stop_hook_active=true (anti-boucle primaire)', () => {
   const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
   try {
     const t = makeS1Transcript(dir, 'réponse sans header du tout');
-    const r = hook('guard-s1-header.sh', { transcript_path: t, prompt: '§1-ack je corrige' });
-    ok(r.status === 0, 'exit 0 avec §1-ack');
+    const r = hook('guard-s1-header.sh', { transcript_path: t, stop_hook_active: true, session_id: 's1-active' });
+    ok(r.status === 0, 'exit 0 si déjà relancé une fois');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('passe si pas de transcript (première réponse de session)', () => {
-  const r = hook('guard-s1-header.sh', { prompt: 'premier message' });
+test('coupe-circuit fail-safe : 2e blocage consécutif passe (jamais de verrou)', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  const marker = '/tmp/claude-atelier-s1-relance-s1-cb';
+  try {
+    try { rmSync(marker); } catch {}
+    const t = makeS1Transcript(dir, 'toujours pas de header');
+    // 1er Stop sans header et sans stop_hook_active → bloque (arme le marqueur)
+    const r1 = hook('guard-s1-header.sh', { transcript_path: t, session_id: 's1-cb', stop_hook_active: false });
+    ok(r1.status === 2, '1er passage bloque');
+    // 2e Stop identique, runtime ne fournit PAS stop_hook_active → coupe-circuit force le passage
+    const r2 = hook('guard-s1-header.sh', { transcript_path: t, session_id: 's1-cb', stop_hook_active: false });
+    ok(r2.status === 0, '2e passage consécutif laisse passer (pas de boucle)');
+  } finally { rmSync(dir, { recursive: true, force: true }); try { rmSync(marker); } catch {} }
+});
+
+test('vérifie la PREMIÈRE réponse du tour, pas la dernière', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  try {
+    const t = resolve(dir, 'session.jsonl');
+    const lines = [
+      JSON.stringify({ type: 'user', message: { content: [{ type: 'text', text: 'fais X' }] } }),
+      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: '[2026-06-25 18:00:00 | claude-opus-4-8] 🟢 M | je commence' }] } }),
+      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'voilà, terminé sans header' }] } })
+    ];
+    writeFileSync(t, lines.join('\n') + '\n');
+    const r = hook('guard-s1-header.sh', { transcript_path: t });
+    ok(r.status === 0, 'exit 0 — header sur la 1ère réponse du tour suffit');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('passe si entête entouré de backticks (markdown) — sans année', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  try {
+    const t = makeS1Transcript(dir, '`[06-25 18:55:16 | claude-opus-4-8] ⬇️`');
+    const r = hook('guard-s1-header.sh', { transcript_path: t });
+    ok(r.status === 0, 'exit 0 — backticks tolérés + format MM-DD sans année');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('passe si entête 3-segments avec conso contexte [MM-DD HH:MM:SS | model | ctx N%] PASTILLE', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  try {
+    const t = makeS1Transcript(dir, '`[06-25 18:55:16 | claude-opus-4-8 | ctx 5%] 🟢`');
+    const r = hook('guard-s1-header.sh', { transcript_path: t });
+    ok(r.status === 0, 'exit 0 — nouveau format 3-segments (segment ctx) accepté');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('NE bloque PAS quand un feedback Stop isMeta suit ma réponse à header (anti-boucle)', () => {
+  // Bug réel : le feedback du hook Stop, injecté comme tour user isMeta:true APRÈS
+  // ma réponse, devenait le "dernier prompt" → header hors fenêtre → faux blocage.
+  const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  try {
+    const lines = [
+      { type: 'user', message: { role: 'user', content: 'vrai prompt utilisateur' } },
+      { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: '`[06-25 21:17:10 | claude-opus-4-8 | ctx 15%] ⬇️`' }] } },
+      { type: 'user', isMeta: true, message: { role: 'user', content: 'Stop hook feedback:\n§1 VIOLATION ...' } }
+    ];
+    writeFileSync(transcript, lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
+    const r = hook('guard-s1-header.sh', { transcript_path: transcript, session_id: 's1-meta', stop_hook_active: false });
+    ok(r.status === 0, 'exit 0 — le feedback isMeta est ignoré, mon header reste détecté');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('bloque quand même si AUCUN header, même feedback isMeta présent (vraie violation)', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  const marker = '/tmp/claude-atelier-s1-relance-s1-meta-real';
+  try {
+    try { rmSync(marker); } catch {}
+    const lines = [
+      { type: 'user', message: { role: 'user', content: 'vrai prompt' } },
+      { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'réponse sans header du tout' }] } },
+      { type: 'user', isMeta: true, message: { role: 'user', content: 'Stop hook feedback:\n§1 VIOLATION ...' } }
+    ];
+    writeFileSync(transcript, lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
+    const r = hook('guard-s1-header.sh', { transcript_path: transcript, session_id: 's1-meta-real', stop_hook_active: false });
+    ok(r.status === 2, 'exit 2 — le skip isMeta ne masque pas une vraie absence de header');
+  } finally { try { rmSync(marker); } catch {} rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('passe si tour 100% tool_use (aucun texte assistant) — pas de faux-positif', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 's1-'));
+  try {
+    const t = resolve(dir, 'session.jsonl');
+    const lines = [
+      JSON.stringify({ type: 'user', message: { content: [{ type: 'text', text: 'lance un outil' }] } }),
+      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: {} }] } })
+    ];
+    writeFileSync(t, lines.join('\n') + '\n');
+    const r = hook('guard-s1-header.sh', { transcript_path: t, session_id: 's1-tooluse' });
+    ok(r.status === 0, 'exit 0 — pas de blocage quand le tour n\'a aucun texte');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('isolation multi-session : deux transcripts distincts → marqueurs distincts', () => {
+  const dirA = mkdtempSync(resolve(tmpdir(), 's1A-'));
+  const dirB = mkdtempSync(resolve(tmpdir(), 's1B-'));
+  try {
+    const tA = makeS1Transcript(dirA, 'session A sans header');
+    const tB = makeS1Transcript(dirB, 'session B sans header');
+    // Pas de session_id → clé dérivée du transcript_path (unique par session)
+    const rA = hook('guard-s1-header.sh', { transcript_path: tA, stop_hook_active: false });
+    ok(rA.status === 2, 'session A bloque (arme son propre marqueur)');
+    // Session B < 30s après : NE DOIT PAS être suppressée par le marqueur de A
+    const rB = hook('guard-s1-header.sh', { transcript_path: tB, stop_hook_active: false });
+    ok(rB.status === 2, 'session B bloque aussi — pas de collision via marqueur global');
+  } finally {
+    rmSync(dirA, { recursive: true, force: true });
+    rmSync(dirB, { recursive: true, force: true });
+  }
+});
+
+test('passe si pas de transcript (rien à vérifier)', () => {
+  const r = hook('guard-s1-header.sh', {});
   ok(r.status === 0, 'exit 0 sans transcript');
 });
 

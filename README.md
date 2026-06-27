@@ -44,9 +44,8 @@ npx claude-atelier init
 | **Loop Copilot autonome** | MCP GitHub intégré → polling auto des reviews Copilot, merge auto après validation, handoff structuré, zéro intervention |
 | **La Bise 🌬️** | Échanges inter-LLM : prépare le brief pour GPT/Mistral et intègre leurs réponses — vent léger, pas d'embrassade |
 | **Verrou review avant push/release** | `git push` et `npm version` bloqués tant qu'un handoff §25 externe n'a pas été intégré |
-| **Cockpit §1 — heads-up display** | Chaque réponse s'ouvre sur `` `[2026-04-20 15:12 \| claude-sonnet-4-6] 🟢 M \| 🦙❌ \| 🔌❌` ``. En un coup d'œil : horodatage, modèle actif, pastille fit (`🟢 optimal` / `⬆️ upgrade` / `⬇️ downgrade`), mode (`M`=Anthropic direct / `A`=proxy actif — basé sur healthcheck réel, pas la config), état Ollama (`🦙✅ qwen3.5` si actif, `🦙⚡` si triage dynamique, `🦙❌` si off), état proxy port 4000 (`🔌✅`/`🔌❌`). Un vrai tableau de bord pilote, pas un log. |
+| **Cockpit §1 — heads-up display** | Chaque réponse s'ouvre sur `` `[06-25 18:55:13 \| claude-opus-4-6] ⬇️` ``. En un coup d'œil : horodatage (MM-DD HH:MM:SS), modèle actif, pastille fit (`🟢 optimal` / `⬆️ sous-dimensionné` / `⬇️ surdimensionné`). Enforcement via hook `guard-s1-header.sh`. |
 | **PaperClip natif** | `applyProfile()` injecte hooks, skills et settings dans tout worktree agent — intégration profonde avec [PaperClip](https://github.com/paperclipai/paperclip) via `@paperclipai/plugin-atelier` |
-| **Présence multi-agents (Pulse)** | `claude-atelier pulse` — `pouls.md` par agent (YAML frontmatter), Maestro §0 watcher, indicateur `💓` dans l'entête §1 · rôles : secretary/dev/marketing/cyber/ops |
 | **Arsenal tout-en-un** | Hooks, skills, scripts, sécurité, satellites par stack, onboarding : un seul package npm |
 
 Un vrai arsenal de qualité supérieure : coût, contexte, mémoire, review, sécurité et agents — sans bricolage éparpillé.
@@ -237,7 +236,7 @@ Les règles critiques ne sont pas dans un README. Elles sont dans des hooks qui 
 | Longueur de session (300KB/600KB) | `routing-check.sh` UserPromptSubmit | Chaque message |
 | Suggestion Haiku (prompt court + mots d'exploration) | `routing-check.sh` UserPromptSubmit | Chaque message |
 | Détection besoin design → propose Séréna | `detect-design-need.sh` UserPromptSubmit | Chaque message |
-| **Cockpit §1** — en-tête heads-up display : `[timestamp \| model] PASTILLE MODE \| 🦙state \| 🔌proxy`. Mode `A`/`M` basé sur healthcheck `:4000/health` (proxy off → `M` de fait). Pastille `⬆️/🟢/⬇️` issue de `model-metrics.sh`. Ollama : `🦙✅ model` (intercept), `🦙⚡ model` (triage dynamique), `🦙❌` (off). | `routing-check.sh` + `model-metrics.sh` UserPromptSubmit | Chaque message |
+| **Cockpit §1** — en-tête heads-up display : `[MM-DD HH:MM:SS \| model] PASTILLE`. Pastille `⬆️/🟢/⬇️` issue de `model-metrics.sh`. Format strict, enforcement hook `guard-s1-header.sh`. | `routing-check.sh` + `model-metrics.sh` UserPromptSubmit | Chaque message |
 
 **Bilan : 17 rails actifs.** Les règles purement de jugement (anti-hallucination, qualité code) restent du ressort du modèle.
 

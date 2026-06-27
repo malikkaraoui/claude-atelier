@@ -46,7 +46,6 @@
     "bin/hooks-gen.js",
     "bin/init.js",
     "bin/post-install-checks.js",
-    "bin/pulse.js",
     "bin/review-local.js",
     "bin/setup-s0.js",
     "bin/update.js",
@@ -60,7 +59,6 @@
     "src/fr/",
     "src/merge.js",
     "src/profiles/",
-    "src/pulse/",
     "src/skills/",
     "src/stacks/",
     "src/templates/AGENTS.md",
@@ -84,7 +82,6 @@
     "scripts/memory-reembed.js",
     "scripts/memory-write.js",
     "scripts/pre-push-gate.sh",
-    "scripts/pulse-update.js",
     "scripts/switch_model.py",
     "scripts/update-security.js",
     "scripts/version-gate.js",
@@ -101,7 +98,6 @@
     "hooks/peter-inbox-check.sh",
     "hooks/routing-check.sh",
     "hooks/session-model.sh",
-    "hooks/stop-pulse.sh",
     "hooks/vault-context.sh",
     "test/apply-profile.js",
     "test/doctor.js",
@@ -114,7 +110,6 @@
     "test/manifest-validator.js",
     "test/memory.js",
     "test/merge.js",
-    "test/pulse.js",
     "test/validate-handoff.js",
     "test/vault-update.js",
     "test/vault.js",
@@ -142,10 +137,9 @@
     "test:hooks": "node test/hooks.js",
     "test:merge": "node test/merge.js",
     "test:apply-profile": "node test/apply-profile.js",
-    "test:pulse": "node test/pulse.js",
     "test:vault": "node test/vault.js",
     "test:vault-update": "node test/vault-update.js",
-    "test": "npm run lint && npm run doctor && npm run test:hooks && npm run test:merge && npm run test:apply-profile && npm run test:pulse && npm run test:vault && npm run test:vault-update"
+    "test": "npm run lint && npm run doctor && npm run test:hooks && npm run test:merge && npm run test:apply-profile && npm run test:vault && npm run test:vault-update"
   },
   "publishConfig": {
     "access": "public"

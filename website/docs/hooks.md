@@ -14,17 +14,14 @@ Les hooks sont des scripts shell exécutés automatiquement par le harness Claud
 Chaque réponse Claude s'ouvre sur une ligne d'en-tête générée par les hooks :
 
 ```
-`[2026-04-20 15:12 | claude-sonnet-4-6] 🟢 M | 🦙❌ | 🔌❌`
+`[06-25 18:55:13 | claude-opus-4-6] ⬇️`
 ```
 
 | Champ | Valeurs | Signification |
 |---|---|---|
-| `timestamp` | `YYYY-MM-DD HH:MM:SS` | Horodatage machine |
-| `model` | `claude-sonnet-4-6` | Modèle actif (extrait du transcript live) |
-| Pastille | `🟢` optimal · `⬆️` upgrade · `⬇️` downgrade | Fit modèle/complexité (METRICS) |
-| Mode | `M` Anthropic direct · `A` proxy actif | Basé sur healthcheck `:4000/health` réel |
-| Ollama | `🦙✅ qwen3.5` · `🦙⚡ qwen3.5` · `🦙❌` | Intercept total · triage dynamique · off |
-| Proxy | `🔌✅` · `🔌❌` | Port 4000 répond ou non |
+| `timestamp` | `MM-DD HH:MM:SS` | Horodatage (mois-jour heure:minute:seconde) |
+| `model` | `claude-opus-4-6` | Modèle actif (extrait du transcript live) |
+| Pastille | `🟢` optimal · `⬆️` sous-dimensionné · `⬇️` surdimensionné | Fit modèle/complexité (METRICS) |
 
 Un vrai tableau de bord pilote : modèle, coût, routage, infrastructure — en un coup d'œil.
 
@@ -35,7 +32,7 @@ Un vrai tableau de bord pilote : modèle, coût, routage, infrastructure — en 
 | # | Hook | Événement | Ce qu'il fait |
 |---|---|---|---|
 | 1 | `routing-check.sh` | `UserPromptSubmit` | Routing modèle (live > transcript > cache), détection stack, diagnostic throttled 30 min, longueur session, §1 instruction cockpit |
-| 2 | `model-metrics.sh` | `UserPromptSubmit` | Analyse 5 derniers tours assistant → pastille `🟢/⬆️/⬇️` → §1 ENTÊTE FINAL avec vraie pastille + mode/Ollama/proxy |
+| 2 | `model-metrics.sh` | `UserPromptSubmit` | Analyse 5 derniers tours assistant → pastille `🟢/⬆️/⬇️` → §1 ENTÊTE FINAL avec vraie pastille |
 | 3 | `detect-design-need.sh` | `UserPromptSubmit` | Détecte besoin UI/UX/design → propose Séréna 🎨 |
 | 4 | `guard-no-sign.sh` | `PreToolUse` (commit) | Bloque `Co-Authored-By`, `--signoff` |
 | 5 | `guard-commit-french.sh` | `PreToolUse` (commit) | Bloque messages purement anglais |
@@ -67,19 +64,6 @@ PreToolUse hooks s'exécutent
          ↓
 PostToolUse hooks s'exécutent
 ```
-
----
-
-## Mode A/M — logique de routage
-
-Le mode est déterminé par un **healthcheck réel**, pas par la variable d'environnement `ANTHROPIC_BASE_URL` :
-
-| État proxy | Mode | En-tête |
-|---|---|---|
-| `curl :4000/health` répond | `A` — Auto (proxy actif) | `🦙✅/🦙⚡ \| 🔌✅` |
-| `curl :4000/health` timeout | `M` — Manuel (Anthropic direct) | `🦙❌ \| 🔌❌` |
-
-`ANTHROPIC_BASE_URL=localhost:4000` + proxy éteint → affiche `M` de fait. La config ne ment pas.
 
 ---
 

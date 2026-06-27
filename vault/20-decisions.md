@@ -4,6 +4,13 @@
 
 ## Décisions durables
 
+### 2026-06-27 — Suppression de la feature Pulse / Maestro
+
+- Contexte : simplification du framework (LLM cloud uniquement). Pulse (présence multi-agents, `pouls.md`, Maestro watcher) ajoutait du code et des sorties hook sans usage actif — le hook `stop-pulse.sh` n'était même pas câblé dans `settings.json`.
+- Décision : retirer entièrement Pulse — `hooks/stop-pulse.sh`, `bin/pulse.js`, `src/pulse/`, `scripts/pulse-update.js`, `test/pulse.js` + toutes les références (package.json, cli.js, features.json, features-registry.json, hooks-manifest.json, skills, docs).
+- **Révoque** la décision « 2026-03-15 — Pulse & Maestro multi-agents » (condition « trop de friction pour projets solo » remplie ; directive Peter).
+- Conséquence : framework allégé. Le champ `pulse` du `vault maintain` (battement lastBeatAt/mode) reste — indépendant de la feature supprimée.
+
 ### 2026-04-17 — Peter = agent mainteneur, pas dossier Markdown
 
 - Contexte : risque de réduire Peter à un README enrichi sans valeur propre
@@ -18,12 +25,13 @@
 - Conséquence : extraction via AST/regex local, cache SHA256 fichier, pas d'API IA obligatoire
 - À revalider si : besoin de sémantique profonde sans GPU local
 
-### 2026-03-15 — Pulse & Maestro multi-agents (v0.23.0)
+### 2026-03-15 — Pulse & Maestro multi-agents (v0.23.0) · ❌ RÉVOQUÉE 2026-06-27
 
 - Contexte : orchestration multi-agents nécessite coordination et état partagé
 - Décision : pouls.md comme registre de présence, Maestro §0 watcher pour supervision
 - Conséquence : hooks Pulse + skill Maestro dans le framework, state visible en session
 - À revalider si : trop de friction pour projets solo
+- ❌ **Révoquée le 2026-06-27** — Pulse retirée du framework (voir décision 2026-06-27 en tête).
 
 ### 2026-02-01 — Node.js pour hooks/scripts, Go pour proxy Ollama seulement
 

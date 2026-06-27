@@ -1,10 +1,13 @@
 #!/bin/bash
 # Hook UserPromptSubmit — Model Routing + Détection stack + Diagnostic périodique
 #
-# HYPOTHÈSE V1 — mono-session : tous les fichiers /tmp/claude-atelier-* sont des
-# singletons globaux non scoppés par session_id. Avec plusieurs sessions ouvertes,
-# last-writer-wins s'applique (modèle, session_id, switch-mode). À adresser avant
-# V2 socket via cache nommé par session_id ou passage explicite de l'id à l'actionneur.
+# Ollama, proxy et mode A/M (switch automatique) ont été RETIRÉS : LLM cloud
+# uniquement, switch toujours manuel. Le hook ne fait plus que : détecter le
+# modèle actif (source du header §1), détecter la stack (agents nommés), le
+# diagnostic throttlé, et émettre le rappel d'entête §1.
+#
+# HYPOTHÈSE V1 — mono-session : les fichiers /tmp/claude-atelier-* sont des
+# singletons globaux non scoppés par session_id. Multi-session : last-writer-wins.
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -18,7 +21,6 @@ sys.exit(0 if d.get(sys.argv[2], True) else 1)
 " "$_FEATS_FILE" "$1" 2>/dev/null && echo 1 || echo ""
 }
 _F_HEADER=$(_feat header)
-_F_OLLAMA=$(_feat ollama_status)
 _F_ROUTING=$(_feat model_routing_hints)
 _F_REVIEW=$(_feat review_copilot)
 _F_STACK=$(_feat stack_detection)
@@ -44,7 +46,7 @@ try:
 except: pass
 " 2>/dev/null)
 
-# Persister session_id courant (P1 — pré-requis V2 socket actionneur)
+# Persister session_id courant
 if [ -n "$SESSION_ID" ]; then
   printf '%s\n' "$SESSION_ID" > "$BASE_TMP/claude-atelier-current-session-id"
 fi
@@ -71,25 +73,6 @@ MODEL_CACHE_KIND=""
 
 normalize_model() {
   printf '%s' "$1" | sed 's/\[.*$//' | tr -d '\r\n'
-}
-
-wants_full_anthropic_help() {
-  printf '%s' "$PROMPT" | grep -qiE "(full[[:space:]]+anthropic|anthropic[[:space:]]+direct|direct[[:space:]]+anthropic|mode[[:space:]]+anthropic|repasser([^[:alnum:]]|.*)anthropic|passer([^[:alnum:]]|.*)anthropic|retour([^[:alnum:]]|.*)anthropic|désactiver[[:space:]]+le[[:space:]]+proxy|desactiver[[:space:]]+le[[:space:]]+proxy|arrêter[[:space:]]+le[[:space:]]+proxy|arreter[[:space:]]+le[[:space:]]+proxy|stop[[:space:]]+proxy|sans[[:space:]]+proxy)"
-}
-
-is_ollama_proxy_healthy() {
-  local health=""
-  health=$(curl -s --max-time 1 http://localhost:4000/health 2>/dev/null || true)
-  [ -n "$health" ] || return 1
-
-  printf '%s' "$health" | python3 -c "
-import json, sys
-try:
-    d = json.load(sys.stdin)
-except Exception:
-    sys.exit(1)
-sys.exit(0 if d.get('status') == 'ok' and d.get('proxy') == 'ollama' else 1)
-" >/dev/null 2>&1
 }
 
 cache_scope_key() {
@@ -219,103 +202,8 @@ if [ -z "$MODEL" ]; then
   MODEL="inconnu"
 fi
 
-# ===== MODE SWITCH A/M (Auto ou Manuel) =====
-# A = proxy réellement actif (health check), M = Anthropic direct (proxy off ou absent)
-# ANTHROPIC_BASE_URL est une config, pas un état — un proxy éteint = mode M de fait.
-SWITCH_MODE_FILE="$BASE_TMP/claude-atelier-switch-mode"
-
-if is_ollama_proxy_healthy; then
-  SWITCH_MODE="A"
-  echo "A" > "$SWITCH_MODE_FILE"
-else
-  SWITCH_MODE="M"
-  echo "M" > "$SWITCH_MODE_FILE"
-fi
-
-# ===== OLLAMA STATUS (chaque message) =====
-OLLAMA_STATUS=""
-PROXY_CONFIG="$REPO_ROOT/scripts/ollama-proxy/config.json"
-ACTIVE_LLM=""
-if [ -n "$_F_OLLAMA" ] && command -v ollama &>/dev/null; then
-  OLLAMA_HEALTH=$(curl -s --max-time 1 http://localhost:11434/api/tags 2>/dev/null || echo "")
-  if [ -n "$OLLAMA_HEALTH" ]; then
-    PROXY_RUNNING=$(is_ollama_proxy_healthy && echo "ok" || echo "")
-    if [ -n "$PROXY_RUNNING" ]; then
-      if [ -f "$PROXY_CONFIG" ]; then
-        ACTIVE_LLM=$(python3 -c "
-import json
-try:
-    d = json.load(open('$PROXY_CONFIG'))
-    print(d.get('model', d.get('defaultModel', '')))
-except: print('')
-" 2>/dev/null)
-      fi
-      OLLAMA_STATUS="🦙✅ proxy:4000 → $ACTIVE_LLM (v0.3.0 streaming+tool_use)"
-    else
-      OLLAMA_MODELS=$(echo "$OLLAMA_HEALTH" | python3 -c "
-import sys, json
-try:
-    d = json.load(sys.stdin)
-    models = [m['name'].split(':')[0] for m in d.get('models', []) if 'embed' not in m['name']]
-    print(','.join(dict.fromkeys(models).keys())[:60])
-except: print('')
-" 2>/dev/null)
-      HAS_EMBED=$(echo "$OLLAMA_HEALTH" | python3 -c "
-import sys, json
-try:
-    d = json.load(sys.stdin)
-    has = any('nomic-embed' in m['name'] for m in d.get('models', []))
-    print('yes' if has else 'no')
-except: print('no')
-" 2>/dev/null)
-      EMBED_TAG=""
-      [ "$HAS_EMBED" = "yes" ] && EMBED_TAG=" +embed"
-      if [ -n "$OLLAMA_MODELS" ]; then
-        OLLAMA_STATUS="🦙⚡ ollama ready ($OLLAMA_MODELS)$EMBED_TAG — proxy off → /ollama-router"
-      else
-        OLLAMA_STATUS="🦙⚠️ ollama (aucun modele LLM) → /ollama-router"
-      fi
-    fi
-  else
-    OLLAMA_STATUS="🦙❌ ollama eteint → ollama serve"
-  fi
-else
-  OLLAMA_STATUS="🦙❌ non installe → /ollama-router"
-fi
-
-# Indicateur Ollama condensé → §1 (lu par model-metrics.sh pour la pastille réelle)
-if [ -n "$_F_OLLAMA" ]; then
-  if echo "$OLLAMA_STATUS" | grep -q "✅"; then
-    _OLLAMA_IND="🦙✅${ACTIVE_LLM:+ $ACTIVE_LLM}"
-  elif echo "$OLLAMA_STATUS" | grep -q "⚡"; then
-    _OLLAMA_IND="🦙⚡"
-  elif echo "$OLLAMA_STATUS" | grep -q "⚠️"; then
-    _OLLAMA_IND="🦙⚠️"
-  else
-    _OLLAMA_IND="🦙❌"
-  fi
-  printf '%s\n' "$_OLLAMA_IND" > /tmp/claude-atelier-ollama-indicator 2>/dev/null
-else
-  printf '' > /tmp/claude-atelier-ollama-indicator 2>/dev/null
-fi
-
-# ===== HORODATAGE + MODÈLE + OLLAMA (toujours en tête — machine time) =====
+# ===== HORODATAGE + MODÈLE (machine time, contexte — pas l'entête de sortie) =====
 echo "[HORODATAGE] $(date '+%Y-%m-%d %H:%M:%S') | $MODEL"
-[ -n "$_F_OLLAMA" ] && echo "[OLLAMA] $OLLAMA_STATUS"
-echo "[SWITCH-MODE] $SWITCH_MODE"
-
-# Suggestion proxy si mode M + CLI (pas VS Code)
-if [ "$SWITCH_MODE" = "M" ] && [ -z "${VSCODE_PID:-}" ] && [ "${TERM_PROGRAM:-}" != "vscode" ]; then
-  echo "  💡 CLI sans proxy → ANTHROPIC_BASE_URL=http://localhost:4000 claude (mode A : triage Ollama actif)"
-fi
-
-if wants_full_anthropic_help; then
-  echo ""
-  echo "  💡 Full Anthropic → unset ANTHROPIC_BASE_URL && rm -f .env.local && claude"
-  echo "     1. Quitter la session Claude en cours"
-  echo "     2. Lancer la commande depuis la racine du repo"
-  echo "     3. Vérifier ensuite : [SWITCH-MODE] M"
-fi
 
 # ===== HANDOFF DEBT BANNER §25 (calculé depuis git, jamais JSON) =====
 DEBT_SCRIPT="$REPO_ROOT/scripts/handoff-debt.sh"
@@ -328,8 +216,8 @@ if [ -n "$_F_REVIEW" ] && [ -f "$DEBT_SCRIPT" ] && [ -d "$REPO_ROOT/.git" ]; the
       COMMITS=$(echo "$DEBT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['currentDebt']['commitsSince'])" 2>/dev/null)
       DAYS=$(echo "$DEBT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['currentDebt']['daysSince'])" 2>/dev/null)
       echo ""
-      echo "🔴 [HANDOFF DEBT §25] ${COMMITS} commits · +${LINES} lignes · ${DAYS}j — handoff Copilot DÛ"
-      echo "   → /review-copilot pour générer · push bloqué tant que dette > seuil"
+      echo "🔴 [HANDOFF DEBT §25] ${COMMITS} commits · +${LINES} lignes · ${DAYS}j — review DÛE"
+      echo "   → /review-oracle pour générer · push bloqué tant que dette > seuil"
     fi
   fi
 fi
@@ -435,7 +323,7 @@ if [ ! -f "$SESSION_REVIEW_FLAG" ] && [ -d "$REPO_ROOT/.git" ]; then
       echo "📋 [MOHAMED] Commits non reviewés depuis la dernière session :"
       git -C "$REPO_ROOT" log $REVIEW_RANGE --oneline 2>/dev/null | head -5 | sed 's/^/   /'
       echo "   → ${REVIEW_TOTAL} lignes · ${FEAT_COUNT} feat/refactor"
-      echo "   → Mohamed instruit le dossier : /review-copilot"
+      echo "   → Mohamed instruit le dossier : /review-oracle"
       echo ""
       # §25 anti-triche : AUCUN reset. Dette = git, reset = /integrate-review seul.
     fi
@@ -582,7 +470,7 @@ if [ "$RUN_DIAGNOSTIC" = true ]; then
       FILE_MTIME=$(stat -f %m "$LATEST_HANDOFF" 2>/dev/null || stat -c %Y "$LATEST_HANDOFF" 2>/dev/null || date +%s)
       DAYS_SINCE=$(( ($(date +%s) - FILE_MTIME) / 86400 ))
       if [ "$DAYS_SINCE" -ge 7 ]; then
-        ISSUES="${ISSUES}\n⚠️  Dernier handoff il y a $DAYS_SINCE jours → /review-copilot"
+        ISSUES="${ISSUES}\n⚠️  Dernier handoff il y a $DAYS_SINCE jours → /review-oracle"
       fi
     fi
   fi
@@ -612,14 +500,12 @@ fi
 # ===== §1 ENTÊTE OBLIGATOIRE — béton armé =====
 if [ -z "$_F_HEADER" ]; then exit 0; fi
 # Injecté en dernier pour être le plus proche de la réponse.
-_HDR_TS="$(date '+%Y-%m-%d %H:%M:%S')"
+# Entête strict : [date heure | model | ctx N%] PASTILLE. Plus de mode, ollama ni proxy.
+# La conso contexte (ctx N%) provient de [CTX] dans model-metrics.sh — reprends sa valeur.
+_HDR_TS="$(date '+%m-%d %H:%M:%S')"
 _HDR_MODEL="$MODEL"
-_HDR_MODE="$SWITCH_MODE"
-_HDR_OLLAMA=$(cat /tmp/claude-atelier-ollama-indicator 2>/dev/null | tr -d '\r\n')
-_HDR_OLLAMA_PART="${_HDR_OLLAMA:+ | $_HDR_OLLAMA}"
-_HDR_PROXY=$(is_ollama_proxy_healthy && echo "🔌✅" || echo "🔌❌")
 echo ""
 echo "⚡⚡⚡ §1 ENTÊTE OBLIGATOIRE ⚡⚡⚡"
 echo "Ta réponse DOIT commencer par (1ère ligne, exactement) :"
-echo "\`[$_HDR_TS | $_HDR_MODEL] PASTILLE $_HDR_MODE${_HDR_OLLAMA_PART} | $_HDR_PROXY\`"
-echo "PASTILLE = pastille issue de [METRICS] (⬆️ / ⬇️ / 🟢) — 🟢 si [METRICS] absent"
+echo "\`[$_HDR_TS | $_HDR_MODEL | ctx N%] PASTILLE\`"
+echo "ctx N% = conso contexte (ligne [CTX]) · PASTILLE = ⬆️ sous-dimensionné · ⬇️ surdimensionné · 🟢 ok (issue de [METRICS], 🟢 si absent)"

@@ -31,17 +31,6 @@
       "flags": ["--model <nom>", "--handoff <path>", "--auto-integrate", "--list-models"]
     },
     {
-      "name": "pulse",
-      "description": "Gestion du pouls multi-agents (statut, init, mise à jour)",
-      "flags": [
-        "--role <secretary|dev|marketing|cyber|ops>",
-        "--json",
-        "--expired",
-        "--lang <fr|en>",
-        "--global"
-      ]
-    },
-    {
       "name": "vault",
       "description": "Initialise et inspecte le vault dynamique projet maintenu par Peter",
       "flags": ["init", "status", "report", "stale", "update", "graph", "query \"<texte>\"", "--cwd <path>", "--dry-run", "--json"]
@@ -64,7 +53,6 @@
     "Routing automatique Haiku/Sonnet/Opus selon la tâche",
     "Skills slash commands (/handoff, /angle-mort, /token-routing…)",
     "Hooks : horodatage, métriques, garde-fous commits",
-    "Système de présence multi-agents (pouls.md) avec Maestro §0 watcher",
     "Bridge Telegram bidirectionnel : commandes mobile + alertes FIFO temps réel (O_NONBLOCK)"
   ]
 }

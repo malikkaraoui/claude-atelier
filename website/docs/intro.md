@@ -33,7 +33,7 @@ C'est tout. Claude Code est configuré avec 15 rails d'enforcement et un cockpit
 `claude-atelier` installe dans `.claude/` :
 
 - **15 hooks bash** — s'exécutent automatiquement (message, commit, push, session)
-- **Cockpit §1** — chaque réponse s'ouvre sur `` `[timestamp | model] 🟢 M | 🦙❌ | 🔌❌` `` : horodatage, modèle, pastille fit, mode M/A, état Ollama, état proxy — en un coup d'œil
+- **Cockpit §1** — chaque réponse s'ouvre sur `` `[MM-DD HH:MM:SS | model] 🟢` `` : horodatage, modèle, pastille fit — en un coup d'œil
 - **20 slash commands** — `/review-copilot`, `/night-launch`, `/angle-mort`…
 - **Satellites de stack** — JS, Python, iOS, Docker… chargés selon le projet
 - **Mode nuit** — Claude travaille seul, le pouls surveille, vous dormez

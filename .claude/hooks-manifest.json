@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "version": "1.0.0",
   "description": "Manifeste typé de tous les hooks claude-atelier. Source de vérité — toute modif d'un hook doit synchroniser cette entrée. Vérifié par test/lint-hooks-manifest.js.",
-  "lastUpdated": "2026-06-25",
+  "lastUpdated": "2026-06-26",
   "hooks": [
     {
       "name": "_parse-input",
@@ -90,7 +90,7 @@
       "exitCodes": {
         "0": "always (injection only, never blocks)"
       },
-      "sha256": "56e63378013a6a7f"
+      "sha256": "9803c171acc16f15"
     },
     {
       "name": "guard-no-sign",
@@ -233,7 +233,7 @@
       "exitCodes": {
         "0": "always (warning only, never blocks)"
       },
-      "sha256": "7f3540175236229a"
+      "sha256": "cd6147e67ae0d2be"
     },
     {
       "name": "guard-hooks-reload",
@@ -255,44 +255,27 @@
       "sha256": "fdc812990fe124ed"
     },
     {
-      "name": "stop-pulse",
-      "file": "hooks/stop-pulse.sh",
-      "type": "Stop",
-      "trigger": "session.stop",
-      "purpose": "Met à jour pouls.md de l'agent Claude Code courant à la fin de session (lastPulse + statut recalculé)",
-      "inputs": [
-        "session.stop event"
-      ],
-      "outputs": [
-        "updates pouls.md via scripts/pulse-update.js"
-      ],
-      "rule": "§0 Logbook de clôture + présence multi-agents",
-      "test": null,
-      "exitCodes": {
-        "0": "always (silent update)"
-      },
-      "sha256": "ddd1ef03ad479205"
-    },
-    {
       "name": "guard-s1-header",
       "file": "hooks/guard-s1-header.sh",
-      "type": "UserPromptSubmit",
-      "trigger": "every user prompt",
-      "purpose": "Bloque le message entrant si la dernière réponse assistant n'a pas commencé par l'entête §1 [date | modèle]. Bypass via §1-ack dans le prompt ou GUARD_S1_TEST_SKIP=1.",
+      "type": "Stop",
+      "trigger": "fin de réponse assistant (Stop)",
+      "purpose": "Contrôle MA sortie : si la réponse qui vient de se terminer n'a pas commencé par l'entête §1 [date | modèle], relance l'assistant pour émettre un correctif. L'utilisateur n'est jamais bloqué. Double escape anti-boucle : stop_hook_active (natif) + coupe-circuit fichier scoppé session (fail-safe < 30s, garantit aucun verrou même si stop_hook_active absent). Skip tests via GUARD_S1_TEST_SKIP=1.",
       "inputs": [
         "transcript_path",
-        "prompt"
+        "stop_hook_active",
+        "session_id",
+        "/tmp/claude-atelier-s1-relance-<session> (marqueur coupe-circuit)"
       ],
       "outputs": [
-        "allow (exit 0) | block (exit 2 + §1 VIOLATION) si header absent"
+        "allow (exit 0) | block (exit 2 + §1 VIOLATION) → relance assistant si header absent"
       ],
       "rule": "§1 Horodatage + Modèle — EXIGENCE non négociable",
       "test": "test/hooks.js → guard-s1-header.sh (5 tests)",
       "exitCodes": {
         "0": "allow",
-        "2": "block — header §1 absent dans la dernière réponse"
+        "2": "block — header §1 absent → relance assistant pour correctif"
       },
-      "sha256": "24741c04796adbb9"
+      "sha256": "bc93f8ea9a20cc7e"
     },
     {
       "name": "guard-loop-master",
@@ -359,12 +342,12 @@
     }
   ],
   "stats": {
-    "total": 17,
+    "total": 16,
     "byType": {
       "helper": 1,
       "SessionStart": 2,
       "Stop": 1,
-      "UserPromptSubmit": 5,
+      "UserPromptSubmit": 4,
       "PreToolUse": 4,
       "PostToolUse": 2,
       "PreToolUse + PostToolUse": 2

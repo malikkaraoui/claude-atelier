@@ -45,6 +45,39 @@ if [ -z "$MODEL" ]; then
 fi
 [ -z "$MODEL" ] && exit 0
 
+# Fenêtre de contexte du MODÈLE ACTIF (pas du projet). Avant : 200k en dur → faux
+# 95% sur une session 1M (vraie conso ~5%). La dériver du projet (valeur figée)
+# recrée le bug en miroir si on bascule sur un 200k → on la dérive du modèle.
+# Le champ `model` du transcript ne porte PAS toujours [1m] → on déduit par id.
+# Priorité : env (override/tests) > features.json "contextWindow" (pin explicite,
+# optionnel, NON posé par défaut) > table modèle→fenêtre > 200k.
+# Hypothèse env-spécifique (vérifiée ici via /context) : claude-opus-4-8 tourne en
+# 1M ; sonnet/haiku = 200k. Un `[1m]` explicite force 1M quel que soit le modèle.
+CONTEXT_WINDOW=""
+case "${CLAUDE_ATELIER_CTX_WINDOW:-}" in
+    ''|*[!0-9]*) ;;
+    *) CONTEXT_WINDOW="$CLAUDE_ATELIER_CTX_WINDOW" ;;
+esac
+if [ -z "$CONTEXT_WINDOW" ]; then
+    _FF_WIN="$(cd "$(dirname "$0")/.." && pwd)/.claude/features.json"
+    CONTEXT_WINDOW=$(python3 -c "
+import json, sys, os
+p = sys.argv[1]
+try:
+    d = json.load(open(p)) if os.path.exists(p) else {}
+    v = int(d.get('contextWindow', 0) or 0)
+    print(v if v > 0 else '')
+except Exception:
+    print('')
+" "$_FF_WIN" 2>/dev/null)
+fi
+if [ -z "$CONTEXT_WINDOW" ]; then
+    case "$LIVE_MODEL$MODEL" in
+        *'[1m]'*|*'[1M]'*|*opus-4-8*) CONTEXT_WINDOW=1000000 ;;
+        *) CONTEXT_WINDOW=200000 ;;
+    esac
+fi
+
 # Analyse Python — 5 derniers tours assistant → classification → verdict
 METRICS=$(python3 - "$TRANSCRIPT" "$MODEL" <<'PYEOF'
 import sys, json
@@ -161,7 +194,7 @@ fi
 # Fenêtre contexte — somme input + cache_read + cache_creation du dernier tour assistant
 # Détection assistant_like alignée sur routing-check.sh (type assistant/assistant.message + rôles imbriqués)
 _CTX_INDICATOR=""
-_CTX_RAW=$(python3 - "$TRANSCRIPT" <<'PYEOF'
+_CTX_RAW=$(python3 - "$TRANSCRIPT" "$CONTEXT_WINDOW" <<'PYEOF'
 import sys, json
 
 path = sys.argv[1]
@@ -213,84 +246,45 @@ except Exception:
 if last_total == 0:
     sys.exit(0)
 
-CONTEXT_WINDOW = 200000
+try:
+    CONTEXT_WINDOW = int(sys.argv[2])
+except (IndexError, ValueError):
+    CONTEXT_WINDOW = 200000
+if CONTEXT_WINDOW <= 0:
+    CONTEXT_WINDOW = 200000
 pct = round(last_total / CONTEXT_WINDOW * 100)
 indicator = f"{pct}%{'🔥' if pct >= 50 else '✅'}"
 print(f"[CTX] fenêtre: {indicator}")
+if pct >= 40:
+    print(f"[CTX-WARN] ⚠️ CONTEXTE {pct}% — seuil 40% dépassé → /compact")
 if pct >= 60:
     print("CTX-ALERT")
 elif pct >= 35:
     print("CTX-COMPACT")
 PYEOF
 )
+_CTX_PCT=""
 if [ -n "$_CTX_RAW" ]; then
     echo "$_CTX_RAW" | grep '^\[CTX\]'
+    echo "$_CTX_RAW" | grep '^\[CTX-WARN\]' || true
     _CTX_INDICATOR=$(echo "$_CTX_RAW" | grep '^\[CTX\]' | grep -oE '[0-9]+%[✅🔥]')
+    _CTX_PCT=$(echo "$_CTX_RAW" | grep '^\[CTX\]' | grep -oE '[0-9]+%' | head -1)
 fi
 
 # §1 ENTÊTE — émis toujours si model connu (indépendant du nombre de tours dans le transcript).
-# Garantit que 🦙 et 🔌 apparaissent même en session compactée / début de session.
+# Garantit la pastille même en session compactée / début de session.
 _FF="$(cd "$(dirname "$0")/.." && pwd)/.claude/features.json"
 python3 -c "import json,sys,os; d=json.load(open(sys.argv[1])) if os.path.exists(sys.argv[1]) else {}; sys.exit(0 if d.get('header',True) else 1)" "$_FF" 2>/dev/null || exit 0
 # Pastille : extraire depuis METRICS si disponible, 🟢 par défaut (session courte / compactée)
 _PASTILLE=$(printf '%s' "$METRICS" | grep -oE '(⬆️|⬇️|🟢)' | tail -1)
 [ -z "$_PASTILLE" ] && _PASTILLE="🟢"
-# Mode proxy : A si proxy actif, M sinon
-# Validation stricte JSON {"status":"ok"} — évite les faux positifs (Vite, autres serveurs sur :4000)
-_PROXY_HEALTH=$(curl -s --max-time 1 http://localhost:4000/health 2>/dev/null)
-_PROXY_OK=$(echo "$_PROXY_HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); print('ok' if d.get('status')=='ok' and d.get('proxy')=='ollama' else '')" 2>/dev/null)
-if [ -n "$_PROXY_OK" ]; then
-  _MMODE="A"
-else
-  _MMODE="M"
-fi
-# Détection Ollama inline (hooks parallèles — pas de dépendance fichier routing-check.sh)
-_MOLLAMA=""
-_MPROXY="🔌❌"
-if command -v ollama &>/dev/null; then
-  if [ -n "$_PROXY_OK" ]; then
-    _MPROXY="🔌✅"
-    _PROXY_CFG="$(cd "$(dirname "$0")/.." && pwd)/scripts/ollama-proxy/config.json"
-    _OLLAMA_LLM=$(python3 -c "
-import json
-try:
-    d = json.load(open('$_PROXY_CFG'))
-    print(d.get('model', ''))
-except: print('')
-" 2>/dev/null)
-    _TRIAGE=$(python3 -c "
-import json
-try:
-    d = json.load(open('$_PROXY_CFG'))
-    print(str(d.get('triage', False)).lower())
-except: print('false')
-" 2>/dev/null)
-    if [ "$_TRIAGE" = "false" ]; then
-      # triage=false : Ollama intercepts tout → pastille ❌ (métriques Claude N/A)
-      _MOLLAMA="🦙✅${_OLLAMA_LLM:+ $_OLLAMA_LLM}"
-      _PASTILLE="❌"
-    else
-      # triage=true : routage dynamique, Anthropic peut répondre → conserver pastille METRICS
-      _MOLLAMA="🦙⚡${_OLLAMA_LLM:+ $_OLLAMA_LLM}"
-    fi
-  elif curl -s --max-time 1 http://localhost:11434/api/tags &>/dev/null; then
-    _MOLLAMA="🦙❌"
-  else
-    _MOLLAMA="🦙❌"
-  fi
-fi
+# Entête strict : [date heure | model | ctx N%] PASTILLE. Rien d'autre (ni mode, ni ollama, ni proxy).
+# La conso contexte n'est ajoutée que si connue (transcript avec usage) — sinon omise proprement.
+_HDR_CTX=""
+[ -n "$_CTX_PCT" ] && _HDR_CTX=" | ctx $_CTX_PCT"
 [ -n "$MODEL" ] && {
     echo "⚡ §1 ENTÊTE FINAL (pastille réelle) :"
-    _S1_OLLAMA="${_MOLLAMA:+ | $_MOLLAMA}"
-    # Pastille pouls (écrite par start-maestro.sh si pulse activé)
-    PULSE_STATUS_FILE="/tmp/claude-atelier-pulse-status"
-    _PULSE_INDICATOR=""
-    if [ -f "$PULSE_STATUS_FILE" ]; then
-      _PULSE_CONTENT=$(cat "$PULSE_STATUS_FILE")
-      _PULSE_INDICATOR=" | ${_PULSE_CONTENT}"
-    fi
-    _CTX_SUFFIX="${_CTX_INDICATOR:+ | $_CTX_INDICATOR}"
-    echo "\`[$(date '+%Y-%m-%d %H:%M:%S') | $MODEL] $_PASTILLE $_MMODE${_S1_OLLAMA} | $_MPROXY${_PULSE_INDICATOR}${_CTX_SUFFIX}\`"
+    echo "\`[$(date '+%m-%d %H:%M:%S') | $MODEL$_HDR_CTX] $_PASTILLE\`"
 }
 
 exit 0

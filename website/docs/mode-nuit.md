@@ -10,7 +10,7 @@ Le mode nuit permet de laisser Claude travailler en autonomie complète pendant 
 ## Principe
 
 ```
-Soir : specs claires + pouls activé
+Soir : specs claires
          ↓
 Claude travaille en acceptEdits
          ↓
@@ -62,34 +62,6 @@ claude --permission-mode acceptEdits \
 
 :::warning Specs vagues = divergence garantie
 Toujours inclure « Hors scope ». Sans ça, Claude interprète librement.
-:::
-
----
-
-## Le Pouls
-
-Système de présence multi-agents intégré à claude-atelier.
-
-```bash
-npx claude-atelier pulse init    # initialise pouls.md pour l'agent courant
-npx claude-atelier pulse update  # met à jour le heartbeat
-npx claude-atelier pulse status  # état de tous les agents actifs
-npx claude-atelier pulse list    # liste les agents avec leur dernière activité
-```
-
-Chaque agent maintient un fichier `pouls.md` — registre de présence horodaté. **Maestro** (`scripts/pulse-maestro.js`) supervise l'ensemble et détecte les agents silencieux.
-
-### Comportements
-
-| Situation | Action |
-|---|---|
-| Agent actif (heartbeat récent) | Pastille verte dans `pulse status` |
-| Agent silencieux > seuil | Maestro signale l'absence |
-| Session crashée | `pouls.md` stale → Maestro alerte |
-| Reprise de session | `pulse update` remet l'agent en ligne |
-
-:::info Pouls vs ancienne approche
-Le pouls remplace le watchdog (tâche Claude desktop horaire). Il est natif au framework, multi-agents, et ne dépend pas de l'app desktop.
 :::
 
 ---
