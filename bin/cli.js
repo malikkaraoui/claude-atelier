@@ -24,8 +24,8 @@ const pkg = JSON.parse(
 // ⚠️  BLOC GÉNÉRÉ — ne pas éditer manuellement.
 // Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
-claude-atelier v0.26.0
-Framework complet Claude Code: agents, skills, MCP GitHub intégré, vault Peter (graphe + query + MCP), loop Copilot autonome, mémoire persistante, review gate avant push. Production-ready.
+claude-atelier v0.26.1
+Claude Code enforcement framework — hooks, named agents, stack rules, night mode. Zero dependency. | Framework Claude Code : hooks d'enforcement, agents nommés, satellites par stack, mode nuit.
 
 Usage:
   claude-atelier <command> [options]
