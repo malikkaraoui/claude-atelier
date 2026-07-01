@@ -30,6 +30,7 @@ const REQUIRED = [
   { dir: '.claude',   command: 'update',  reason: 'templateDir pour update.js' },
   { dir: 'src',       command: 'init',    reason: 'langDir, stacks, skills, templates' },
   { dir: 'scripts',   command: 'init',    reason: 'scripts/ copiés lors du init' },
+  { dir: 'hooks',     command: 'init',    reason: 'hooks/ copiés lors du init (sinon session-model.sh absent du tarball)' },
   { dir: 'bin',       command: 'all',     reason: 'scripts CLI eux-mêmes' },
 ];
 

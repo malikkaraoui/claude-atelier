@@ -234,14 +234,14 @@ export async function runUpdate(argv) {
   const report = [];
   copyDirRecursive(templateDir, targetDir, opts.dryRun, report);
 
-  // 2a. Always regenerate hooks — paths are machine-specific
+  // 2a. Always regenerate hooks — références runtime, aucun absolu gravé (projet vs global)
   if (!opts.dryRun) {
-    const hooksDir = opts.global ? join(homedir(), '.claude', 'hooks') : join(process.cwd(), 'hooks');
-    const scriptsDir = opts.global ? join(homedir(), '.claude', 'scripts') : join(process.cwd(), 'scripts');
+    const hooksRef = opts.global ? join(homedir(), '.claude', 'hooks') : '${CLAUDE_PROJECT_DIR}/hooks';
+    const scriptsRef = opts.global ? join(homedir(), '.claude', 'scripts') : '${CLAUDE_PROJECT_DIR}/scripts';
     const settingsDest = join(targetDir, 'settings.json');
     if (existsSync(settingsDest)) {
       const s = JSON.parse(readFileSync(settingsDest, 'utf8'));
-      s.hooks = generateHooksSection(hooksDir, scriptsDir);
+      s.hooks = generateHooksSection(hooksRef, scriptsRef);
       writeFileSync(settingsDest, JSON.stringify(s, null, 2) + '\n');
       report.push({ tag: 'MERGED', path: settingsDest + ' (hooks régénérés)' });
     }

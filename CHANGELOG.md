@@ -17,6 +17,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.26.2] — 2026-07-01
+
+### Fixed — hooks `settings.json` en chemin runtime (plus d'absolu gravé)
+
+**La faute.** `generateHooksSection()` gravait un chemin **absolu** résolu à
+l'install (`join(process.cwd(), 'hooks')`) dans le `settings.json` du projet
+consommateur. Au moindre renommage/déplacement du dossier projet, le hook
+`SessionStart` pointait dans le vide :
+
+```
+SessionStart:startup hook error — Failed with non-blocking status code:
+bash: …/Claude instructions/hooks/session-model.sh: No such file or directory
+```
+
+Le script était bien packagé (présent dans le tarball) et copié dans le
+projet — seul le **chemin gravé** était périmé.
+
+**Le fix.**
+- Les commandes de hook référencent désormais `${CLAUDE_PROJECT_DIR}/hooks/…`
+  (placeholder officiel Claude Code, résolu au lancement → insensible au
+  renommage/déplacement du projet). Les hooks **globaux** restent en absolu
+  `~/.claude/hooks` (jamais déplacé), sortie identique.
+- **Garde runtime** : chaque commande sort en `exit 0` silencieux si le script
+  est absent → zéro erreur/pollution au démarrage.
+- Chemin passé en `$0` → tolérant aux espaces (« Claude Atelier »).
+- Tests : format de commande (référence env, pas d'absolu machine), garde
+  silencieuse, script réellement livré, chemin avec espaces ; `hooks/` ajouté
+  à la garde tarball `lint-npm-files`.
+
+Fichiers : `bin/hooks-gen.js`, `bin/init.js`, `bin/update.js`,
+`test/hooks.js`, `test/lint-npm-files.js`.
+
+---
+
 ## [0.22.0-preview.0] — 2026-04-24
 
 ### Added — API programmatique `applyProfile()` (preview)

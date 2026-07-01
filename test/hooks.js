@@ -10,10 +10,11 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { generateHooksSection } from '../bin/hooks-gen.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -906,6 +907,60 @@ test('passe si flag /tmp/claude-atelier-loop-done présent', () => {
     ok(r.status === 0, 'exit 0 si flag présent');
   } finally {
     try { rmSync(flagPath); } catch {}
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// generateHooksSection — install : chemins runtime, jamais d'absolu gravé
+// Fix panne "SessionStart hook error / No such file or directory" au
+// renommage/déplacement du projet consommateur.
+// ─────────────────────────────────────────────────────────────
+console.log('\n── generateHooksSection (chemins hooks) ──');
+
+test('projet : référence ${CLAUDE_PROJECT_DIR}, jamais un absolu machine', () => {
+  const hooks = generateHooksSection('${CLAUDE_PROJECT_DIR}/hooks', '${CLAUDE_PROJECT_DIR}/scripts');
+  const dump = JSON.stringify(hooks);
+  ok(dump.includes('${CLAUDE_PROJECT_DIR}/hooks/session-model.sh'), 'session-model référencé via CLAUDE_PROJECT_DIR');
+  ok(!/"[^"]*\/(Users|home)\//.test(dump), 'aucun chemin absolu machine gravé dans les commandes');
+});
+
+test('guard runtime : script absent → exit 0 silencieux, zéro pollution', () => {
+  const hooks = generateHooksSection('${CLAUDE_PROJECT_DIR}/hooks', '${CLAUDE_PROJECT_DIR}/scripts');
+  const cmd = hooks.SessionStart[0].hooks[0].command;
+  ok(cmd.includes('[ -f "$0" ]') && cmd.includes('exit 0'), 'garde présence + exit 0 présente');
+  // Simulation réelle : substitue CLAUDE_PROJECT_DIR par un dossier SANS le script.
+  const emptyDir = mkdtempSync(resolve(tmpdir(), 'no-hooks-'));
+  try {
+    const resolved = cmd.replace(/\$\{CLAUDE_PROJECT_DIR\}/g, emptyDir);
+    const r = spawnSync('bash', ['-c', resolved], { input: '{}', encoding: 'utf8' });
+    ok(r.status === 0, `exit 0 sur script absent (reçu ${r.status})`);
+    ok(r.stdout.trim() === '' && r.stderr.trim() === '', 'aucune pollution stdout/stderr au démarrage');
+  } finally {
+    rmSync(emptyDir, { recursive: true, force: true });
+  }
+});
+
+test('chemin référencé existe réellement dans le package (script livré)', () => {
+  // Refs absolues sur le repo = miroir de la disposition livrée dans le tarball.
+  const hooks = generateHooksSection(resolve(ROOT, 'hooks'), resolve(ROOT, 'scripts'));
+  const cmd = hooks.SessionStart[0].hooks[0].command;
+  const m = cmd.match(/"([^"]+session-model\.sh)"/);
+  ok(m, 'chemin session-model.sh extractible de la commande');
+  ok(existsSync(m[1]), `le script référencé existe sur disque : ${m && m[1]}`);
+});
+
+test('chemin tolérant aux espaces : « Claude Atelier » résolu correctement', () => {
+  const spaced = mkdtempSync(resolve(tmpdir(), 'Claude Atelier '));
+  try {
+    mkdirSync(resolve(spaced, 'hooks'), { recursive: true });
+    writeFileSync(resolve(spaced, 'hooks', 'session-model.sh'), '#!/bin/bash\ncat >/dev/null\necho SPACED_OK\n');
+    const hooks = generateHooksSection('${CLAUDE_PROJECT_DIR}/hooks', '${CLAUDE_PROJECT_DIR}/scripts');
+    const cmd = hooks.SessionStart[0].hooks[0].command.replace(/\$\{CLAUDE_PROJECT_DIR\}/g, spaced);
+    const r = spawnSync('bash', ['-c', cmd], { input: '{}', encoding: 'utf8' });
+    ok(r.status === 0, `exit 0 malgré l'espace dans le chemin (reçu ${r.status})`);
+    ok(r.stdout.includes('SPACED_OK'), 'le script est bien exécuté malgré l\'espace');
+  } finally {
+    rmSync(spaced, { recursive: true, force: true });
   }
 });
 

@@ -246,11 +246,13 @@ export async function runInit(argv) {
     copyDirRecursive(srcCommands, destCommands, dryRun, copied, { skipExisting: true });
   }
 
-  // 3. Merge settings.json + inject hooks with resolved absolute paths
+  // 3. Merge settings.json + inject hooks (références runtime, aucun absolu gravé)
   const settingsTemplate = join(PKG_ROOT, 'src', 'templates', 'settings.json');
   const settingsDest = join(target, 'settings.json');
-  const hooksDir = isGlobal ? join(homedir(), '.claude', 'hooks') : join(process.cwd(), 'hooks');
-  const scriptsDir = isGlobal ? join(homedir(), '.claude', 'scripts') : join(process.cwd(), 'scripts');
+  // Projet → ${CLAUDE_PROJECT_DIR} (résolu au lancement, insensible au renommage
+  // du dossier). Global → ~/.claude absolu (jamais déplacé).
+  const hooksRef = isGlobal ? join(homedir(), '.claude', 'hooks') : '${CLAUDE_PROJECT_DIR}/hooks';
+  const scriptsRef = isGlobal ? join(homedir(), '.claude', 'scripts') : '${CLAUDE_PROJECT_DIR}/scripts';
   if (existsSync(settingsTemplate)) {
     if (dryRun) {
       if (existsSync(settingsDest)) {
@@ -260,8 +262,8 @@ export async function runInit(argv) {
       }
     } else {
       const merged = mergeSettings(settingsDest, settingsTemplate);
-      // Always regenerate hooks — paths are machine-specific and must reflect the current install
-      merged.hooks = generateHooksSection(hooksDir, scriptsDir);
+      // Always regenerate hooks — la référence runtime doit refléter le mode d'install (projet vs global)
+      merged.hooks = generateHooksSection(hooksRef, scriptsRef);
       if (!existsSync(dirname(settingsDest))) {
         mkdirSync(dirname(settingsDest), { recursive: true });
       }

@@ -1,8 +1,22 @@
-import { join } from 'node:path';
-
-export function generateHooksSection(hooksDir, scriptsDir) {
-  const h = name => `bash "${join(hooksDir, name)}"`;
-  const n = (name, ...args) => `node "${join(scriptsDir, name)}" ${args.join(' ')}`;
+/**
+ * Génère la section `hooks` du settings.json.
+ *
+ * `hooksRef`/`scriptsRef` sont des PRÉFIXES de commande, jamais des chemins
+ * absolus gravés :
+ *   - projet  → `${CLAUDE_PROJECT_DIR}/hooks` (résolu par Claude Code au
+ *     lancement → insensible au renommage/déplacement du dossier projet) ;
+ *   - global  → `~/.claude/hooks` absolu (jamais déplacé).
+ *
+ * Chaque commande embarque une garde runtime : si le script est absent, le
+ * hook sort en exit 0 silencieux (aucune erreur de hook au démarrage). Le
+ * chemin est passé en `$0` → tolérant aux espaces (« Claude Atelier »).
+ */
+export function generateHooksSection(hooksRef, scriptsRef) {
+  const h = name => `bash -c '[ -f "$0" ] && exec bash "$0" || exit 0' "${hooksRef}/${name}"`;
+  const n = (name, ...args) => {
+    const tail = args.length ? ' ' + args.join(' ') : '';
+    return `bash -c '[ -f "$0" ] && exec node "$0" "$@" || exit 0' "${scriptsRef}/${name}"${tail}`;
+  };
   return {
     SessionStart: [{
       matcher: '',
