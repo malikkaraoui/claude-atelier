@@ -7,7 +7,7 @@
 | Clé | Valeur |
 | --- | --- |
 | Projet courant | claude-atelier (framework Claude Code) |
-| Phase | Phase 2 Lot 1 livré — guard-s1-header + guard-loop-master + /chef-projet + /loop-master + vault/50-token-history · next: Lot 2 (/relecteur + /documentaliste) |
+| Phase | Nettoyage/simplification — livré `06c6125` (entête §1 3-segments + routing nettoyé Ollama/proxy/mode + Pulse supprimé) ⛔ NON POUSSÉ (auth GitHub) · next: pousser 6 commits puis revue résidus un-par-un → `vault/00-brief.md` |
 | Stack | Node.js (hooks/scripts) — Go retiré |
 | Repo | claude-atelier/Claude-instructions |
 | Conventions | FR commits, pas de signing, gate pré-push |
