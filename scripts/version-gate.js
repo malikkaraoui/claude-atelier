@@ -11,10 +11,20 @@
 import { spawnSync } from 'child_process';
 import { resolve, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
+
+// Respecte le flag feature : review_copilot désactivé → pas de gate §25.
+// (L'utilisateur a coupé la review Copilot ; on ne bloque plus le bump.)
+try {
+  const feats = JSON.parse(readFileSync(join(ROOT, '.claude', 'features.json'), 'utf8'));
+  if (feats.review_copilot === false) {
+    console.log('version-gate: review_copilot désactivé (features.json) — gate §25 ignoré');
+    process.exit(0);
+  }
+} catch { /* pas de features.json → comportement par défaut (gate actif) */ }
 
 const debtScript = join(ROOT, 'scripts', 'handoff-debt.sh');
 if (!existsSync(debtScript)) {
