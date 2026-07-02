@@ -20,9 +20,10 @@ if echo "$HOOK_COMMAND" | grep -qi "git commit"; then
       exit 2
     fi
 
-    # §25 — rappel doux ciblé (Copilot v4 : éviter l'usure du signal)
-    # S'affiche UNIQUEMENT si : (a) diff staged > 50 lignes OU (b) dette déjà dépassée
-    if echo "$MSG" | grep -qiE "^(feat|fix|refactor):"; then
+    # §25 — rappel doux ciblé, gated par la feature review_copilot
+    # (désactivable d'un coup : claude-atelier features --off review_copilot)
+    # S'affiche UNIQUEMENT si : review_copilot ON ET (diff staged > 50 lignes OU dette dépassée)
+    if python3 -c "import json,sys,os; d=json.load(open(sys.argv[1])) if os.path.exists(sys.argv[1]) else {}; sys.exit(0 if d.get(sys.argv[2],True) else 1)" "$_FF" "review_copilot" 2>/dev/null && echo "$MSG" | grep -qiE "^(feat|fix|refactor):"; then
       if ! echo "$MSG" | grep -qiE "\[(needs-review|no-review-needed:[^]]+)\]"; then
         REPO_ROOT_25="$(cd "$(dirname "$0")/.." && pwd)"
         STAGED_LINES=$(cd "$REPO_ROOT_25" && git diff --cached --shortstat 2>/dev/null | grep -oE "[0-9]+ insertion" | grep -oE "^[0-9]+" || echo 0)

@@ -195,6 +195,15 @@ test('silencieux sur commande non-commit', () => {
   ok(r.stdout.trim() === '', 'aucun output');
 });
 
+test('§25 muet si review_copilot désactivé (feat/fix/refactor)', () => {
+  // review_copilot=false dans .claude/features.json → le rappel §25 est
+  // court-circuité AVANT tout calcul de lignes. Le check FR reste actif.
+  const cmd = `git commit -m "feat: ajout du panneau de contrôle des features"`;
+  const r = hook('guard-commit-french.sh', { tool_input: { command: cmd } });
+  ok(r.status === 0, 'exit 0 — message FR valide, pas de blocage');
+  ok(!/needs-review|no-review-needed|§25/.test(r.stdout), 'aucun rappel §25 quand review_copilot=false');
+});
+
 // ─────────────────────────────────────────────────────────────
 // session-model.sh + routing-check.sh
 // Règle §1 : modèle live > cache > transcript (post bug-fix compaction)

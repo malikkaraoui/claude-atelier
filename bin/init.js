@@ -444,7 +444,6 @@ export async function runInit(argv) {
         console.log(`${CYAN}│${NC}  • Entête §1 (heure + modèle + pastille) à chaque réponse   ${CYAN}│${NC}`);
         console.log(`${CYAN}│${NC}  • Routing Haiku / Sonnet / Opus automatique                 ${CYAN}│${NC}`);
         console.log(`${CYAN}│${NC}  • Guards git (no-sign, commits FR, tests avant push)        ${CYAN}│${NC}`);
-        console.log(`${CYAN}│${NC}  • Ollama status + mode A/M (proxy local ou Anthropic)       ${CYAN}│${NC}`);
         console.log(`${CYAN}│${NC}  Modifie : ~/.claude/settings.json  (section hooks seulement)${CYAN}│${NC}`);
         console.log(`${CYAN}│${NC}  Réversible : supprimez la clé "hooks" pour annuler.         ${CYAN}│${NC}`);
         console.log(`${CYAN}└──────────────────────────────────────────────────────────────┘${NC}`);

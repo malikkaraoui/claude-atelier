@@ -17,6 +17,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.27.0] — 2026-07-02
+
+### Removed — nettoyage des fonctions mortes (doctrine ↔ code enfin alignés)
+
+La doctrine core annonçait ces retraits ; le code résiduel les portait encore.
+Suppression définitive (registry, hooks entête, skills, config) — **278 lignes**,
+zéro cassure de tests :
+
+- **Ollama (UI)** — feature `ollama_status`, skill `skill_ollama_router`, entête
+  `header_show_ollama` (🦙), stack `ollama.md`, câblage UI dans les hooks entête.
+  *Ollama subsiste uniquement comme backend d'embeddings interne de la mémoire —
+  pas une feature exposée.*
+- **Proxy :4000 + Mode A/M** — entête `header_show_proxy` (🔌) et `header_show_mode`.
+- **Pulse / Marketplace** — feature `marketplace_watch` + 8 params `marketplace_*`,
+  groupe `orchestration` du panneau features.
+- **Loop Copilot autonome** — `skill_copilot_loop`, `auto_merge_after_review`,
+  params `copilot_loop_*` + `merge_target_branch`, groupe `copilot_loop`, étape
+  auto-loop du skill `review-copilot`.
+
+### Changed — review Copilot proprement désactivable
+
+- `review_copilot` devient une feature **toggleable** d'un seul geste :
+  `claude-atelier features --off review_copilot` (et `--on` pour réactiver).
+  OFF coupe d'un coup : bandeau dette §25, nag commit, blocage `npm version`.
+- `scripts/version-gate.js` : si `review_copilot=false`, la gate §25 est ignorée
+  (`npm version` n'est plus bloqué par la dette handoff).
+- `hooks/guard-commit-french.sh` : le rappel §25 au commit est gated sur
+  `review_copilot`.
+
+### Docs
+
+- `README.md` réécrit pour **coller exactement au code** : en-tête préservée,
+  chiffres vérifiés (21 skills, 24 stacks, 18 features), suppression de toute
+  mention des fonctions retirées, verrou review décrit via **review-oracle local**
+  (4 agents) et non plus un handoff externe.
+
+---
+
 ## [0.26.2] — 2026-07-01
 
 ### Fixed — hooks `settings.json` en chemin runtime (plus d'absolu gravé)

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "version": "1.0.0",
   "description": "Manifeste typé de tous les hooks claude-atelier. Source de vérité — toute modif d'un hook doit synchroniser cette entrée. Vérifié par test/lint-hooks-manifest.js.",
-  "lastUpdated": "2026-06-26",
+  "lastUpdated": "2026-07-02",
   "hooks": [
     {
       "name": "_parse-input",
@@ -117,7 +117,7 @@
       "file": "hooks/guard-commit-french.sh",
       "type": "PreToolUse",
       "trigger": "Bash tool with `git commit -m` command",
-      "purpose": "Bloque les messages de commit purement anglais (≥ 2 mots EN détectés, 0 mot FR)",
+      "purpose": "Bloque les messages de commit purement anglais (≥ 2 mots EN détectés, 0 mot FR) ; ajoute un rappel §25 review gated par la feature review_copilot (muet si OFF)",
       "inputs": [
         "HOOK_COMMAND"
       ],
@@ -130,7 +130,7 @@
         "0": "allow",
         "2": "block — message anglais détecté"
       },
-      "sha256": "87f79eae1413baa3"
+      "sha256": "fce3a91a16d5f737"
     },
     {
       "name": "guard-qmd-first",
