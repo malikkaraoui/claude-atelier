@@ -9,6 +9,19 @@ const CYAN = '\x1b[0;36m';
 const DIM = '\x1b[2m';
 const NC = '\x1b[0m';
 
+// `npm audit` ne lit QUE le lockfile npm — yarn.lock/pnpm-lock.yaml ne comptent
+// pas ici (un projet 100% pnpm sans package-lock.json fait toujours ENOLOCK).
+const NPM_LOCKFILES = ['package-lock.json', 'npm-shrinkwrap.json'];
+
+// Décision pure, testable sans lancer un vrai `npm audit` : à partir du
+// résultat spawnSync + de la présence réelle d'un lockfile (plus robuste
+// que de parser le texte d'erreur npm ENOLOCK, qui peut changer de forme).
+export function classifyAuditResult(auditResult, hasLockfile) {
+  if (auditResult.status === 0) return 'ok';
+  if (!hasLockfile) return 'no-lockfile';
+  return 'vulnerable';
+}
+
 export function runPostInstallChecks(projectRoot, pkgRoot) {
   console.log(`\n${CYAN}Post-install checks${NC}\n`);
 
@@ -18,16 +31,18 @@ export function runPostInstallChecks(projectRoot, pkgRoot) {
   const hasPackageJson = existsSync(join(projectRoot, 'package.json'));
 
   if (hasPackageJson) {
+    const hasLockfile = NPM_LOCKFILES.some((f) => existsSync(join(projectRoot, f)));
+
     const auditResult = spawnSync('npm', ['audit', '--audit-level=high'], {
       cwd: projectRoot,
       encoding: 'utf-8',
     });
 
-    const noLockfile = auditResult.stderr && auditResult.stderr.includes('ENOLOCK');
+    const verdict = classifyAuditResult(auditResult, hasLockfile);
 
-    if (auditResult.status === 0) {
+    if (verdict === 'ok') {
       console.log(`${GREEN}✓${NC} npm audit OK ${DIM}(${projectRoot})${NC}`);
-    } else if (noLockfile) {
+    } else if (verdict === 'no-lockfile') {
       console.log(`${DIM}─ npm audit ignoré (pas de lockfile dans ${projectRoot})${NC}`);
     } else {
       console.log(`${RED}⚠${NC} npm audit — vulnérabilités high/critical détectées`);

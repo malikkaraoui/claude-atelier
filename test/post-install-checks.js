@@ -8,7 +8,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { runPostInstallChecks } from '../bin/post-install-checks.js';
+import { runPostInstallChecks, classifyAuditResult } from '../bin/post-install-checks.js';
 
 let pass = 0;
 let fail = 0;
@@ -62,6 +62,33 @@ test('pas de package.json → message "audit ignoré (pas de package.json)", inc
   ok(output.includes('npm audit ignoré (pas de package.json'), 'branche existante non régressée');
   ok(!output.includes('vulnérabilités'), 'aucun faux positif sans package.json non plus');
   rmSync(dir, { recursive: true, force: true });
+});
+
+test('projet pnpm (pnpm-lock.yaml, pas de package-lock.json) → "ignoré", pas "vulnérabilités"', () => {
+  // npm audit ne lit QUE son propre lockfile — un yarn.lock/pnpm-lock.yaml
+  // seul fait toujours ENOLOCK côté npm, ne doit donc pas compter comme "a un lockfile".
+  const dir = mkdtempSync(resolve(tmpdir(), 'post-install-pnpm-'));
+  writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ name: 'tmp-test', version: '1.0.0' }));
+  writeFileSync(resolve(dir, 'pnpm-lock.yaml'), 'lockfileVersion: 6.0\n');
+  const output = captureLogs(() => runPostInstallChecks(dir, process.cwd()));
+  ok(!output.includes('vulnérabilités high/critical détectées'), 'pnpm-lock.yaml seul ne doit PAS déclencher le faux positif');
+  ok(output.includes('npm audit ignoré'), 'doit rester sur le message calme "ignoré"');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+console.log('\n[POST-INSTALL-CHECKS] classifyAuditResult — décision pure (3 branches)');
+
+test('status 0 → "ok" quel que soit le lockfile', () => {
+  ok(classifyAuditResult({ status: 0 }, true) === 'ok');
+  ok(classifyAuditResult({ status: 0 }, false) === 'ok');
+});
+
+test('status non-zéro + pas de lockfile → "no-lockfile" (le faux positif corrigé)', () => {
+  ok(classifyAuditResult({ status: 1, stderr: 'npm error code ENOLOCK' }, false) === 'no-lockfile');
+});
+
+test('status non-zéro + lockfile présent → "vulnerable" (vraie vulnérabilité, doit alerter)', () => {
+  ok(classifyAuditResult({ status: 1, stderr: 'found 3 high severity vulnerabilities' }, true) === 'vulnerable');
 });
 
 console.log(`\n${pass + fail} tests — ${pass} ✓ ${fail} ✗\n`);
