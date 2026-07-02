@@ -23,8 +23,12 @@ export function runPostInstallChecks(projectRoot, pkgRoot) {
       encoding: 'utf-8',
     });
 
+    const noLockfile = auditResult.stderr && auditResult.stderr.includes('ENOLOCK');
+
     if (auditResult.status === 0) {
       console.log(`${GREEN}✓${NC} npm audit OK ${DIM}(${projectRoot})${NC}`);
+    } else if (noLockfile) {
+      console.log(`${DIM}─ npm audit ignoré (pas de lockfile dans ${projectRoot})${NC}`);
     } else {
       console.log(`${RED}⚠${NC} npm audit — vulnérabilités high/critical détectées`);
       if (auditResult.stdout) console.log(auditResult.stdout);

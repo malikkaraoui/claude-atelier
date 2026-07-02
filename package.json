@@ -140,7 +140,8 @@
     "test:apply-profile": "node test/apply-profile.js",
     "test:vault": "node test/vault.js",
     "test:vault-update": "node test/vault-update.js",
-    "test": "npm run lint && npm run doctor && npm run test:hooks && npm run test:merge && npm run test:apply-profile && npm run test:vault && npm run test:vault-update"
+    "test:post-install-checks": "node test/post-install-checks.js",
+    "test": "npm run lint && npm run doctor && npm run test:hooks && npm run test:merge && npm run test:apply-profile && npm run test:vault && npm run test:vault-update && npm run test:post-install-checks"
   },
   "publishConfig": {
     "access": "public"
