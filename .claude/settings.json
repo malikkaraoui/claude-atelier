@@ -80,6 +80,17 @@
         "/Users/malik/Vault/Malik"
       ],
       "_comment": "MCP filesystem vault Obsidian — lecture/écriture .md directs, sans dépendance API Obsidian. Vault global : /Users/malik/Vault/Malik/"
+    },
+    "vault-peter": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PROJECT_DIR}/bin/cli.js",
+        "vault",
+        "mcp",
+        "--cwd",
+        "${CLAUDE_PROJECT_DIR}"
+      ],
+      "_comment": "MCP vault Peter — outils: query_vault, get_node, neighbors, stale_status. Expose le graphe dynamique du projet maintenu par Peter via claude-atelier vault."
     }
   },
   "hooks": {
