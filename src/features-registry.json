@@ -7,7 +7,7 @@
     },
     "qualite": {
       "label": "Qualité",
-      "features": ["review_copilot", "stack_detection", "design_detection", "diagnostic", "anti_loop"]
+      "features": ["review_copilot", "stack_detection", "design_detection", "diagnostic", "anti_loop", "file_read_gate"]
     },
     "guards_git": {
       "label": "Guards Git",
@@ -61,6 +61,11 @@
     "anti_loop": {
       "label": "Anti-boucle",
       "description": "Détecte N échecs consécutifs identiques et bloque",
+      "default": true
+    },
+    "file_read_gate": {
+      "label": "File Read Gate",
+      "description": "Active le gate de lecture fichier avec avertissement vault si observations liées",
       "default": true
     },
     "git_guard_sign": {
@@ -154,6 +159,22 @@
       "unit": "min",
       "min": 5,
       "max": 120
+    },
+    "file_read_gate_enabled": {
+      "label": "File Read Gate : actif",
+      "description": "Active le gate de lecture fichier avec avertissement vault si observations liées",
+      "default": true,
+      "unit": "bool",
+      "min": 0,
+      "max": 1
+    },
+    "min_tokens_before_gate": {
+      "label": "File Read Gate : seuil tokens",
+      "description": "Nombre minimum de tokens consumés avant d'appliquer le gate de lecture",
+      "default": 100,
+      "unit": "tokens",
+      "min": 0,
+      "max": 5000
     }
   }
 }

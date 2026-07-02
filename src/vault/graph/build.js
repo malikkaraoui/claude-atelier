@@ -10,6 +10,7 @@ import {
 } from '../core/utils.js';
 import { readFirstHeading, readExcerpt, getFileMtime, extractBmadSignals } from '../docs/scan.js';
 import { computeCommunities } from './explain.js';
+import { buildAssociations, saveAssociations } from '../core/associations.js';
 
 const BMAD_MARKERS = ['.bmad', '.bmad-method', 'bmad-core'];
 
@@ -210,6 +211,11 @@ function graphVault(cwd, symbolCount = 0) {
   const graphPath = join(vaultDir, 'index', 'graph.json');
   mkdirSync(dirname(graphPath), { recursive: true });
   writeFileSync(graphPath, JSON.stringify(graph, null, 2) + '\n', 'utf8');
+
+  // Build and save file ↔ observation associations
+  const assoc = buildAssociations(vaultDir);
+  saveAssociations(vaultDir, assoc);
+
   return {
     ok: true,
     graphPath,

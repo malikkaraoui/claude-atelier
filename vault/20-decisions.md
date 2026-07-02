@@ -81,3 +81,13 @@
   5. Route les messages Telegram vers le bon projet ou répond en Master
 - **Conséquence** : le CLI `claude-atelier master start/stop/status` devient l'interface de contrôle. `bin/master.js` = nouveau entry point principal
 - **À revalider si** : Anthropic sort une API sessions persistantes
+
+---
+
+### YYYY-MM-DD — Titre décision
+
+- Contexte : ...
+- Décision : ...
+- Conséquence : ...
+- À revalider si : ...
+- Fichiers liés : (optionnel, chemin relatif séparé par virgule)

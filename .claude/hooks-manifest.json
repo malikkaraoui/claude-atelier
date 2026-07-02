@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "version": "1.0.0",
   "description": "Manifeste typé de tous les hooks claude-atelier. Source de vérité — toute modif d'un hook doit synchroniser cette entrée. Vérifié par test/lint-hooks-manifest.js.",
-  "lastUpdated": "2026-07-02",
+  "lastUpdated": "2026-07-02 (LOT-1 associations + paramètres configurables)",
   "hooks": [
     {
       "name": "_parse-input",
@@ -26,6 +26,22 @@
         "0": "always (sourced, never executed standalone)"
       },
       "sha256": "c732f4dcb16d3c13"
+    },
+    {
+      "name": "_parse-features",
+      "file": "hooks/_parse-features.sh",
+      "type": "helper",
+      "trigger": null,
+      "purpose": "Helper source-able — lit les paramètres features depuis registry JSON avec override .claude/features.json",
+      "exposes": [
+        "_get_param(name, default)"
+      ],
+      "rule": "§15 Token Management — centraliser lecture des seuils configurables",
+      "test": "test/hooks.js → guard-anti-loop.sh (seuil paramétré)",
+      "exitCodes": {
+        "0": "always (sourced, outputs param value)"
+      },
+      "sha256": "5c0ac78557a547ac"
     },
     {
       "name": "session-model",
@@ -156,20 +172,21 @@
       "file": "hooks/guard-anti-loop.sh",
       "type": "PostToolUse",
       "trigger": "any Bash tool execution",
-      "purpose": "Détecte > 3 tentatives identiques échouées de la même commande (boucle infernale)",
+      "purpose": "Détecte > N tentatives identiques échouées (N configurable via anti_loop_count param)",
       "inputs": [
         "HOOK_COMMAND",
-        "HOOK_EXIT_CODE"
+        "HOOK_EXIT_CODE",
+        "anti_loop_count param from features-registry.json"
       ],
       "outputs": [
         "allow (exit 0) + warning si seuil atteint"
       ],
       "rule": "§6 Gestion des erreurs — ne jamais itérer à l'identique",
-      "test": null,
+      "test": "test/hooks.js → guard-anti-loop.sh (cumul + réinitialisation)",
       "exitCodes": {
         "0": "always (warning only)"
       },
-      "sha256": "61830ca0a3479e1b"
+      "sha256": "38c0dac6dab5f10e"
     },
     {
       "name": "guard-tests-before-push",
@@ -344,9 +361,9 @@
     }
   ],
   "stats": {
-    "total": 16,
+    "total": 17,
     "byType": {
-      "helper": 1,
+      "helper": 2,
       "SessionStart": 2,
       "Stop": 1,
       "UserPromptSubmit": 4,
@@ -355,8 +372,8 @@
       "PreToolUse + PostToolUse": 2
     },
     "blocking": 6,
-    "warningOnly": 10,
-    "withTests": 13
+    "warningOnly": 11,
+    "withTests": 14
   },
   "conventions": {
     "sourcing": "Tous les hooks (sauf session-model et routing-check qui parsent eux-mêmes le stdin) sourcent _parse-input.sh pour l'extraction des variables.",

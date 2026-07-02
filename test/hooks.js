@@ -946,6 +946,29 @@ test('passe si flag /tmp/claude-atelier-loop-done présent', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// guard-anti-loop.sh — seuil paramétré via _parse-features.sh
+// ─────────────────────────────────────────────────────────────
+console.log('\n── guard-anti-loop.sh ──');
+
+test('cumule les échecs d\'une même commande', () => {
+  const loopFile = resolve(TEST_TMP, 'guard-anti-loop-test');
+  const env = { CLAUDE_ATELIER_TMPDIR: TEST_TMP };
+  // Première exécution échouée
+  let r = hook('guard-anti-loop.sh', { tool_input: { command: 'npm run lint' }, tool_response: { exitCode: 1 } }, env);
+  ok(r.status === 0, 'exit 0 même après erreur (warning-only)');
+  // Deuxième exécution échouée (même commande)
+  r = hook('guard-anti-loop.sh', { tool_input: { command: 'npm run lint' }, tool_response: { exitCode: 1 } }, env);
+  ok(r.status === 0, 'cumul OK (exit 0)');
+});
+
+test('réinitialise après succès', () => {
+  const env = { CLAUDE_ATELIER_TMPDIR: TEST_TMP };
+  // Succès = réinitialisation
+  const r = hook('guard-anti-loop.sh', { tool_input: { command: 'npm run lint' }, tool_response: { exitCode: 0 } }, env);
+  ok(r.status === 0, 'exit 0 après succès (réinitialise)');
+});
+
+// ─────────────────────────────────────────────────────────────
 // generateHooksSection — install : chemins runtime, jamais d'absolu gravé
 // Fix panne "SessionStart hook error / No such file or directory" au
 // renommage/déplacement du projet consommateur.

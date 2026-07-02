@@ -50,3 +50,4 @@ Ce que Claude ou Peter apprend sur le projet et qui mérite de survivre à la se
 - Impact :
 - Source :
 - Remontée globale candidate : non
+- Fichiers liés : (optionnel, chemin relatif séparé par virgule)

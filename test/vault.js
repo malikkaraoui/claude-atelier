@@ -1343,6 +1343,70 @@ test('vault mcp --dry-run affiche tous les tools sur stderr', () => {
   }
 });
 
+// ─── LOT-1 — Associations fichier ↔ observations ───────────────────
+
+console.log('\n── LOT-1 — Associations vault ──');
+
+test('buildAssociations extrait "Fichiers liés:" depuis 20-decisions.md', async () => {
+  const { buildAssociations } = await import('../src/vault/core/associations.js');
+  const dir = mkdtempSync(join(tmpdir(), 'assoc-'));
+  try {
+    mkdirSync(join(dir, 'index'), { recursive: true });
+    const decisionsContent = `# Décisions projet
+## Décisions durables
+### 2026-07-01 — Test feature
+- Décision : une décision test
+- Fichiers liés : src/index.js, hooks/guard-test.sh
+`;
+    writeFileSync(join(dir, '20-decisions.md'), decisionsContent, 'utf8');
+    const assoc = buildAssociations(dir);
+    ok(assoc.byFile['src/index.js'], 'src/index.js indexé');
+    ok(assoc.byFile['hooks/guard-test.sh'], 'hooks/guard-test.sh indexé');
+    ok(Object.keys(assoc.byObsId).length > 0, 'observations indexées');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('buildAssociations gère les fichiers liés manquants', async () => {
+  const { buildAssociations } = await import('../src/vault/core/associations.js');
+  const dir = mkdtempSync(join(tmpdir(), 'assoc-nofiles-'));
+  try {
+    mkdirSync(join(dir, 'index'), { recursive: true });
+    const decisionsContent = `# Décisions projet
+## Décisions durables
+### 2026-07-01 — No links
+- Décision : pas de fichiers liés
+`;
+    writeFileSync(join(dir, '20-decisions.md'), decisionsContent, 'utf8');
+    const assoc = buildAssociations(dir);
+    ok(Object.keys(assoc.byFile).length === 0 || assoc.byFile[''] === undefined, 'pas de fichiers indexés quand champ absent');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('saveAssociations écrit et loadAssociations lit', async () => {
+  const { buildAssociations, saveAssociations, loadAssociations } = await import('../src/vault/core/associations.js');
+  const dir = mkdtempSync(join(tmpdir(), 'assoc-persist-'));
+  try {
+    mkdirSync(join(dir, 'index'), { recursive: true });
+    const decisionsContent = `# Décisions projet
+## Décisions durables
+### 2026-07-01 — Persist
+- Décision : test persistance
+- Fichiers liés : test.js
+`;
+    writeFileSync(join(dir, '20-decisions.md'), decisionsContent, 'utf8');
+    const assoc1 = buildAssociations(dir);
+    saveAssociations(dir, assoc1);
+    const assoc2 = loadAssociations(dir);
+    ok(assoc2 && assoc2.byFile['test.js'], 'associations chargées correctement');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 const total = pass + fail;
 console.log(`\n── Vault : ${pass}/${total} tests passés${fail > 0 ? ` · ${fail} ÉCHECS` : ''} ──\n`);
 if (fail > 0) process.exit(1);
