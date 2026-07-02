@@ -56,6 +56,7 @@ function explainVaultNode(cwd, nodeId) {
       id: node.id,
       type: node.type,
       label: node.label,
+      icon: node.icon || '❓',
       excerpt: node.excerpt || '',
       path: node.path || '',
       tags: node.tags || [],

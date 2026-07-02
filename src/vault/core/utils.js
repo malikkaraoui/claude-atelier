@@ -183,6 +183,33 @@ function extractDecisions(content) {
   return decisions.slice(0, 5);
 }
 
+function extractDiscoveries(content) {
+  const lines = content.split('\n');
+  const discoveries = [];
+  let cur = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Start of new discovery: ### YYYY-MM-DD — Title
+    if (line.startsWith('### ') && /^\d{4}-\d{2}-\d{2}/.test(line.slice(4))) {
+      if (cur && cur.title) discoveries.push(cur);
+      const rawTitle = line.slice(4).trim();
+      const dashIdx = rawTitle.indexOf(' — ');
+      const dateStr = rawTitle.slice(0, dashIdx >= 0 ? dashIdx : 0).trim();
+      const title = dashIdx >= 0 ? rawTitle.slice(dashIdx + 3) : rawTitle;
+      cur = { title, date: dateStr, content: '' };
+    }
+
+    if (cur && !line.startsWith('### ')) {
+      cur.content += line + '\n';
+    }
+  }
+
+  if (cur && cur.title) discoveries.push(cur);
+  return discoveries;
+}
+
 function getStateLine(content, key) {
   const prefix = `- ${key} : `;
   for (const line of content.split('\n')) {
@@ -481,6 +508,7 @@ export {
   extractSubsectionItems,
   extractMailboxPending,
   extractDecisions,
+  extractDiscoveries,
   getStateLine,
   generateReport,
   parseIgnoreFile,

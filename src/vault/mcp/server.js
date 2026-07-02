@@ -63,6 +63,7 @@ class MCPServer {
         results.push({
           id: node.id,
           label: node.label,
+          icon: node.icon || '',
           type: node.type,
           path: node.path,
           excerpt: node.excerpt,

@@ -7,10 +7,12 @@ import {
   getStateLine, slugify, extractConcepts, buildIgnoreMatcher, parseIgnoreFile,
   computeFileSHA256, DEFAULT_IGNORE_DIRS, DEFAULT_IGNORE_PATTERNS,
   extractBulletItems, extractSubsectionItems, extractMailboxPending, extractDecisions,
+  extractDiscoveries,
 } from '../core/utils.js';
 import { readFirstHeading, readExcerpt, getFileMtime, extractBmadSignals } from '../docs/scan.js';
 import { computeCommunities } from './explain.js';
 import { buildAssociations, saveAssociations } from '../core/associations.js';
+import { classifyIcon } from '../core/icons.js';
 
 const BMAD_MARKERS = ['.bmad', '.bmad-method', 'bmad-core'];
 
@@ -68,12 +70,32 @@ function buildGraph(cwd, opts = {}) {
     const decisions = extractDecisions(decisionsContent);
     for (const d of decisions) {
       const decisionId = `decision:${slugify(d.title)}`;
-      addNode({
+      const node = {
         id: decisionId, type: 'decision', label: d.title, path: 'vault/20-decisions.md',
         tags: ['decision'], excerpt: d.decision || '',
         mtime: now, sha256: '', confidence: 'EXTRACTED',
-      });
+      };
+      node.icon = classifyIcon(node);
+      addNode(node);
       addEdge({ from: 'vault_file:vault/20-decisions.md', to: decisionId, type: 'contains' });
+    }
+  }
+
+  // Découvertes depuis 30-discoveries.md
+  const discoveriesPath = join(vaultDir, '30-discoveries.md');
+  if (existsSync(discoveriesPath)) {
+    const discoveriesContent = readFileSync(discoveriesPath, 'utf8');
+    const discoveries = extractDiscoveries(discoveriesContent);
+    for (const disc of discoveries) {
+      const discoveryId = `discovery:${slugify(disc.title)}`;
+      const node = {
+        id: discoveryId, type: 'discovery', label: disc.title, path: 'vault/30-discoveries.md',
+        tags: ['discovery'], excerpt: disc.content || '',
+        mtime: now, sha256: '', confidence: 'EXTRACTED',
+      };
+      node.icon = classifyIcon(node);
+      addNode(node);
+      addEdge({ from: 'vault_file:vault/30-discoveries.md', to: discoveryId, type: 'contains' });
     }
   }
 

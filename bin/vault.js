@@ -681,7 +681,7 @@ function printExplain(result) {
   console.log(`\n${CYAN}[PETER] vault explain${NC}`);
   console.log(`  Nœud    : ${node.id}`);
   console.log(`  Type    : ${node.type}`);
-  console.log(`  Label   : ${node.label}`);
+  console.log(`  Label   : ${node.icon} ${node.label}`);
   if (node.path) console.log(`  Path    : ${node.path}`);
   if (node.tags?.length) console.log(`  Tags    : ${node.tags.join(', ')}`);
   if (node.mtime) console.log(`  MTime   : ${node.mtime}`);

@@ -9,6 +9,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { classifyIcon } from '../src/vault/core/icons.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
@@ -1506,6 +1508,82 @@ test('STALE_DAYS (utils.js) reflète les vrais defaults de src/features-registry
   ok(STALE_DAYS.brief === params.vault_stale_brief_days?.default, `brief=${STALE_DAYS.brief} doit matcher le registry`);
   ok(STALE_DAYS.roadmap === params.vault_stale_roadmap_days?.default, `roadmap=${STALE_DAYS.roadmap} doit matcher le registry`);
   ok(STALE_DAYS.report === params.vault_stale_report_days?.default, `report=${STALE_DAYS.report} doit matcher le registry`);
+});
+
+// ─── Iconographie vault (LOT-3) ────────────────────────────────────────────────
+
+console.log('\n── claude-atelier vault icons (LOT-3) ──');
+
+test('decision par défaut a icon 🟤', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '20-decisions.md'),
+      '# Décisions\n\n## Décisions durables\n\n### 2026-05-01 — Architecture\n\n- Contexte : tech\n- Décision : Node.js\n- Conséquence : maintenance allégée\n- À revalider si : changement\n',
+      'utf8');
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const decisionNode = graph.nodes.find(n => n.type === 'decision');
+    ok(decisionNode && decisionNode.icon === '🟤', `decision doit avoir icon 🟤, reçu: ${decisionNode?.icon}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('decision avec "révoque" a icon 🔴', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '20-decisions.md'),
+      '# Décisions\n\n## Décisions durables\n\n### 2026-06-27 — Suppression Pulse\n\n- Contexte : simplification\n- Décision : Révoque la feature Pulse\n- Conséquence : framework allégé\n- À revalider si : jamais\n',
+      'utf8');
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const decisionNode = graph.nodes.find(n => n.type === 'decision' && n.label.includes('Pulse'));
+    ok(decisionNode && decisionNode.icon === '🔴', `decision avec "Révoque" doit avoir icon 🔴, reçu: ${decisionNode?.icon}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('discovery par défaut a icon 🟣', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '30-discoveries.md'),
+      '# Découvertes\n\n## Découvertes\n\n### 2026-07-01 — Phase C graphe\n\n- Observation: graphe minimal implémenté\n- Impact: performance améliorée\n- Source: tests\n- Remontée globale candidate: oui\n',
+      'utf8');
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const discoveryNode = graph.nodes.find(n => n.type === 'discovery');
+    ok(discoveryNode && discoveryNode.icon === '🟣', `discovery doit avoir icon 🟣, reçu: ${discoveryNode?.icon}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('discovery avec "livré" a icon 🟢', () => {
+  const dir = initTestVault();
+  try {
+    writeFileSync(join(dir, 'vault', '30-discoveries.md'),
+      '# Découvertes\n\n## Découvertes\n\n### 2026-07-02 — LOT-1 livré\n\n- Observation: associations.js livré avec succès\n- Impact: indexation fonctionnelle\n- Source: tests\n- Remontée globale candidate: non\n',
+      'utf8');
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const graph = JSON.parse(readFileSync(join(dir, 'vault', 'index', 'graph.json'), 'utf8'));
+    const discoveryNode = graph.nodes.find(n => n.type === 'discovery' && n.label.includes('livré'));
+    ok(discoveryNode && discoveryNode.icon === '🟢', `discovery avec "livré" doit avoir icon 🟢, reçu: ${discoveryNode?.icon}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('classifyIcon: pattern "gotcha" retourne 🔵', () => {
+  const node = { type: 'discovery', label: 'Testing gotcha pattern', excerpt: 'learning how to fix hooks' };
+  const icon = classifyIcon(node);
+  ok(icon === '🔵', `gotcha pattern doit retourner 🔵, reçu: ${icon}`);
+});
+
+test('classifyIcon: pattern "fix" retourne 🟡', () => {
+  const node = { type: 'discovery', label: 'Hook fix for context', excerpt: 'solution to the race condition' };
+  const icon = classifyIcon(node);
+  ok(icon === '🟡', `fix doit retourner 🟡, reçu: ${icon}`);
 });
 
 const total = pass + fail;
