@@ -1,6 +1,6 @@
 {
   "name": "claude-atelier",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "description": "Claude Code enforcement framework — hooks, named agents, stack rules, night mode. Zero dependency. | Framework Claude Code : hooks d'enforcement, agents nommés, satellites par stack, mode nuit.",
   "keywords": [
     "claude",
