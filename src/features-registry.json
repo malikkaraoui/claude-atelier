@@ -123,10 +123,50 @@
     "handoff_threshold_lines": {
       "label": "Seuil handoff §25",
       "description": "Lignes modifiées avant handoff review obligatoire",
-      "default": 100,
+      "default": 300,
       "unit": "lignes",
       "min": 10,
       "max": 1000
+    },
+    "handoff_threshold_commits": {
+      "label": "Seuil handoff : commits",
+      "description": "Commits (feat/fix/refactor) avant handoff review obligatoire",
+      "default": 15,
+      "unit": "commits",
+      "min": 2,
+      "max": 50
+    },
+    "handoff_window_days": {
+      "label": "Seuil handoff : délai",
+      "description": "Jours depuis dernier handoff intégré avant handoff review obligatoire",
+      "default": 7,
+      "unit": "jours",
+      "min": 1,
+      "max": 30
+    },
+    "vault_stale_brief_days": {
+      "label": "Fraîcheur vault : 00-brief.md",
+      "description": "Jours avant 00-brief.md considéré stale",
+      "default": 7,
+      "unit": "jours",
+      "min": 1,
+      "max": 30
+    },
+    "vault_stale_roadmap_days": {
+      "label": "Fraîcheur vault : 40-roadmap.md",
+      "description": "Jours avant 40-roadmap.md considéré stale",
+      "default": 14,
+      "unit": "jours",
+      "min": 1,
+      "max": 60
+    },
+    "vault_stale_report_days": {
+      "label": "Fraîcheur vault : report généré",
+      "description": "Jours avant rapport vault considéré stale",
+      "default": 1,
+      "unit": "jours",
+      "min": 0,
+      "max": 7
     },
     "context_warning_kb": {
       "label": "Alerte contexte (1er)",

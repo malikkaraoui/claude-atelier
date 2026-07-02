@@ -3,7 +3,8 @@
 import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';;
 import { createHash } from 'node:crypto';;
-import { join } from 'node:path';;
+import { dirname, join } from 'node:path';;
+import { fileURLToPath } from 'node:url';;
 
 const DEFAULT_CRON_INTERVAL = '6h';
 
@@ -17,7 +18,36 @@ const DEFAULT_IGNORE_PATTERNS = [
   '*.min.js', '*.min.css', '*.map', '.DS_Store', 'Thumbs.db',
 ];
 
-const STALE_DAYS = { brief: 7, roadmap: 14, report: 1, mailbox_warn: 3 };
+/**
+ * Charge les seuils de fraîcheur vault depuis le registry
+ * Fallback sur les constantes locales si registry manquant
+ */
+function _loadStaleDaysFromRegistry() {
+  try {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const projRoot = dirname(dirname(__dirname));
+    const registryPath = join(projRoot, 'src', 'features-registry.json');
+
+    if (!existsSync(registryPath)) {
+      return { brief: 7, roadmap: 14, report: 1, mailbox_warn: 3 };
+    }
+
+    const registry = JSON.parse(readFileSync(registryPath, 'utf8'));
+    const params = registry.params || {};
+
+    return {
+      brief: params.vault_stale_brief_days?.default ?? 7,
+      roadmap: params.vault_stale_roadmap_days?.default ?? 14,
+      report: params.vault_stale_report_days?.default ?? 1,
+      mailbox_warn: 3, // pas paramétré, reste hard-coded
+    };
+  } catch {
+    // Fallback silencieux si lecture échoue
+    return { brief: 7, roadmap: 14, report: 1, mailbox_warn: 3 };
+  }
+}
+
+const STALE_DAYS = _loadStaleDaysFromRegistry();
 
 function slugify(str) {
   return str

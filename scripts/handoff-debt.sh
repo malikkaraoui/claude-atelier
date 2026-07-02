@@ -22,13 +22,14 @@ set -eu
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HANDOFF_DIR="$REPO_ROOT/docs/handoffs"
 
-# Seuils (configurables via env)
-# Anciens seuils (trop bas → boucle de dette auto-alimentée) :
-#   lines=100, commits=3, days=7
-# Nouveaux seuils calibrés pour bloquer les vrais oublis, pas l'infra :
-THRESHOLD_LINES="${HANDOFF_THRESHOLD_LINES:-300}"
-THRESHOLD_COMMITS="${HANDOFF_THRESHOLD_COMMITS:-15}"
-THRESHOLD_DAYS="${HANDOFF_THRESHOLD_DAYS:-7}"
+# Sourcer le helper pour _get_param
+# shellcheck source=/dev/null
+source "$REPO_ROOT/hooks/_parse-features.sh"
+
+# Seuils lus depuis registry (avec fallbacks)
+THRESHOLD_LINES=$(_get_param "handoff_threshold_lines" "300")
+THRESHOLD_COMMITS=$(_get_param "handoff_threshold_commits" "15")
+THRESHOLD_DAYS=$(_get_param "handoff_window_days" "7")
 VALIDATE_TIMEOUT_SECONDS="${HANDOFF_VALIDATE_TIMEOUT_SECONDS:-3}"
 
 MODE="text"

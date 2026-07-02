@@ -1407,6 +1407,19 @@ test('saveAssociations écrit et loadAssociations lit', async () => {
   }
 });
 
+test('STALE_DAYS (utils.js) reflète les vrais defaults de src/features-registry.json, pas des constantes figées', async () => {
+  // LOT-5 : STALE_DAYS est désormais chargé dynamiquement depuis le registry.
+  // On compare à la source de vérité elle-même (pas des nombres dupliqués en
+  // dur ici) pour que ce test échoue vraiment si le loader se déconnecte du
+  // registry, au lieu de juste re-vérifier une coïncidence de valeurs par défaut.
+  const { STALE_DAYS } = await import('../src/vault/core/utils.js');
+  const registry = JSON.parse(readFileSync(resolve(ROOT, 'src/features-registry.json'), 'utf8'));
+  const params = registry.params || {};
+  ok(STALE_DAYS.brief === params.vault_stale_brief_days?.default, `brief=${STALE_DAYS.brief} doit matcher le registry`);
+  ok(STALE_DAYS.roadmap === params.vault_stale_roadmap_days?.default, `roadmap=${STALE_DAYS.roadmap} doit matcher le registry`);
+  ok(STALE_DAYS.report === params.vault_stale_report_days?.default, `report=${STALE_DAYS.report} doit matcher le registry`);
+});
+
 const total = pass + fail;
 console.log(`\n── Vault : ${pass}/${total} tests passés${fail > 0 ? ` · ${fail} ÉCHECS` : ''} ──\n`);
 if (fail > 0) process.exit(1);
