@@ -6,6 +6,7 @@
 
 ### Livré
 
+- ✅ **Plan intégration 4 repos externes** (claude-mem, last30days-skill, loop-engineering, ponytail) + andrej-karpathy-skills (2026-07-02) — LOT-0 (fix bug CTX bascule modèle), LOT-1 (fondation associations vault + paramètres), LOT-2 (Progressive Disclosure vault query), LOT-3 (icônes par type d'observation), LOT-4 (évalué non applicable, pas de code mort), LOT-5 (fenêtre glissante paramétrique), LOT-6 (activation MCP vault-peter), lot Karpathy (§3 goal-driven). Vision non lancée (validation dédiée requise) : Loop Readiness Score, Path Denylist, benchmarks avant/après, "The Ladder". Plan complet : `~/.claude/plans/replicated-dancing-dijkstra.md`.
 - ✅ Telegram bridge Phase A — service Python, sessions SQLite, CLI npx (PR #47)
 - ✅ Telegram bridge Phase B — voix faster-whisper + Ollama polish + 6 fixes robustesse (PR #49)
 - ✅ Peter Phase A — `vault init`, hook SessionStart, 00-brief/20-decisions/40-roadmap
