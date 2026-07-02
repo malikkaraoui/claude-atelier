@@ -92,6 +92,7 @@ Framework complet : règles runtime, hooks d'enforcement (15 actifs), skills (21
 
 ```bash
 npx claude-atelier init                        # Initialize project + config
+npx claude-atelier@latest update               # Update existing project (keeps §0 + customizations)
 npx claude-atelier doctor                      # Health check (28 tests)
 npx claude-atelier vault init                  # Create dynamic memory (Peter)
 npx claude-atelier vault graph && vault query  # Build + search project graph
@@ -272,6 +273,7 @@ Complete framework: runtime rules, 15 enforcement hooks, 21 skills, 22 named age
 
 ```bash
 npx claude-atelier init                        # Initialize project + config
+npx claude-atelier@latest update               # Update existing project (keeps §0 + customizations)
 npx claude-atelier doctor                      # Health check (28 tests)
 npx claude-atelier vault init                  # Create dynamic memory (Peter)
 npx claude-atelier vault graph && vault query  # Build + search project graph
