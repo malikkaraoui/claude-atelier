@@ -40,7 +40,7 @@ Un vrai tableau de bord pilote : modèle, coût, routage, infrastructure — en 
 | 7 | `guard-no-sign.sh` | `PreToolUse` | Bloque `Co-Authored-By`, `--signoff` (commit) |
 | 8 | `guard-commit-french.sh` | `PreToolUse` | Bloque messages purement anglais (commit) |
 | 9 | `guard-qmd-first.sh` | `PreToolUse` | Redirige `.md` vers QMD avant lecture (Read) |
-| 10 | `guard-loop-master.sh` | `PreToolUse` | Bloque commit si flag §25 manque (commit) |
+| 10 | `guard-loop-master.sh` | `PreToolUse` | Bloque commit si flag §3 (loop-master) manque (commit) |
 | 11 | `guard-tests-before-push.sh` | `PreToolUse + PostToolUse` | Exige tests vert avant push (push / rappel) |
 | 12 | `guard-review-auto.sh` | `PreToolUse + PostToolUse` | Gate 100+ lignes, feat, 10 commits, archi (push / challenger) |
 | 13 | `guard-anti-loop.sh` | `PostToolUse` | Détecte N+ tentatives identiques (param configurable) |
