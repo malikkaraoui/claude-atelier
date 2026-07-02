@@ -77,8 +77,14 @@ fi
 # Le champ `model` du transcript ne porte PAS toujours [1m] → on déduit par id.
 # Priorité : env (override/tests) > features.json "contextWindow" (pin explicite,
 # optionnel, NON posé par défaut) > table modèle→fenêtre > 200k.
-# Hypothèse env-spécifique (vérifiée ici via /context) : claude-opus-4-8 tourne en
-# 1M ; sonnet/haiku = 200k. Un `[1m]` explicite force 1M quel que soit le modèle.
+# Vérifié via /context (source la plus fiable — Claude Code y calcule lui-même
+# le vrai `context_window_size`, mais ce champ n'est exposé qu'au hook statusLine,
+# jamais à UserPromptSubmit ; on ne peut donc que maintenir cette table à jour
+# manuellement à chaque vérification) : claude-opus-4-8 et claude-sonnet-5
+# tournent tous les deux en ~1M (967k réel, buffer autocompact 33k inclus dans
+# le figé 1M) ; sonnet plus anciens/haiku = 200k. Un `[1m]` explicite force 1M
+# quel que soit le modèle. Si un futur modèle a une fenêtre différente et que
+# ça se reproduit : revérifier via /context, ne pas supposer.
 CONTEXT_WINDOW=""
 case "${CLAUDE_ATELIER_CTX_WINDOW:-}" in
     ''|*[!0-9]*) ;;
@@ -99,7 +105,7 @@ except Exception:
 fi
 if [ -z "$CONTEXT_WINDOW" ]; then
     case "$LIVE_MODEL$MODEL" in
-        *'[1m]'*|*'[1M]'*|*opus-4-8*) CONTEXT_WINDOW=1000000 ;;
+        *'[1m]'*|*'[1M]'*|*opus-4-8*|*sonnet-5*) CONTEXT_WINDOW=1000000 ;;
         *) CONTEXT_WINDOW=200000 ;;
     esac
 fi

@@ -540,6 +540,23 @@ test('anti-régression : bascule sur sonnet (200k) → 25%, pas 5% (fenêtre sui
   rmSync(dir, { recursive: true, force: true });
 });
 
+test('fenêtre 1M dérivée du modèle actif (sonnet-5, sans config) → 5% (fix bug /context : 220% rapporté vs 46% réel)', () => {
+  // Bug signalé par Peter via /context : claude-sonnet-5 tombait dans le défaut
+  // 200k (comme les sonnet plus anciens) alors que sa vraie fenêtre est ~1M
+  // (967k réel + buffer autocompact) — d'où un % rapporté ~4.8x trop haut.
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-sonnet-5\n');
+  const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  const usage = { input_tokens: 50000, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, output_tokens: 100 };
+  writeFileSync(transcript, JSON.stringify({ type: 'assistant', message: { usage, content: [] } }) + '\n');
+  const r = hook('model-metrics.sh', { transcript_path: transcript, model: 'claude-sonnet-5' });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes(' 5%✅'), '[CTX] = 5% (fenêtre 1M via table modèle)');
+  ok(!r.stdout.includes('25%'), 'PAS 25% — sonnet-5 doit être mappé sur 1M, pas 200k');
+  ok(r.stdout.includes('ctx 5%'), 'entête §1 porte ctx 5%');
+  rmSync(dir, { recursive: true, force: true });
+});
+
 test('fix bug bascule modèle : cache scoppé session (frais) prime sur cache legacy (périmé)', () => {
   // routing-check.sh tourne AVANT model-metrics.sh (ordre .claude/settings.json) et
   // rafraîchit le cache scoppé dès qu'il détecte un modèle via live/transcript.
