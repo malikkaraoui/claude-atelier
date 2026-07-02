@@ -509,6 +509,94 @@ test('vault query résultats citent au moins un path', () => {
   }
 });
 
+// ─── LOT-2 — vault query tier (progressive disclosure) ────────────────────────
+
+test('vault query --tier index retourne id/label/score/path seulement', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'query', 'vault', '--tier', 'index', '--json', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.results.length > 0, 'au moins 1 résultat');
+    const first = result.results[0];
+    ok(first.id !== undefined, 'id présent');
+    ok(first.label !== undefined, 'label présent');
+    ok(first.score !== undefined, 'score présent');
+    ok(first.path !== undefined, 'path présent');
+    ok(first.type === undefined, 'type ABSENT en tier index');
+    ok(first.excerpt === undefined, 'excerpt ABSENT en tier index');
+    ok(first.tags === undefined, 'tags ABSENT en tier index');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault query --tier summary ajoute excerpt/tags mais pas type', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'query', 'vault', '--tier', 'summary', '--json', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.results.length > 0, 'au moins 1 résultat');
+    const first = result.results[0];
+    ok(first.id !== undefined, 'id présent');
+    ok(first.excerpt !== undefined, 'excerpt présent en tier summary');
+    ok(Array.isArray(first.tags), 'tags (array) présent en tier summary');
+    ok(first.type === undefined, 'type ABSENT en tier summary');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault query --tier full inclut type/excerpt/tags', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'query', 'vault', '--tier', 'full', '--json', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.results.length > 0, 'au moins 1 résultat');
+    const first = result.results[0];
+    ok(first.type !== undefined, 'type présent en tier full');
+    ok(first.excerpt !== undefined, 'excerpt présent en tier full');
+    ok(Array.isArray(first.tags), 'tags présent en tier full');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault query défaut sans --tier = index (compat ascendante)', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'query', 'vault', '--json', '--cwd', dir], dir);
+    ok(r.status === 0, `exit 0 attendu: ${r.stderr}`);
+    const result = JSON.parse(r.stdout);
+    ok(result.tier === 'index', 'défaut tier = index');
+    const first = result.results[0];
+    ok(first.type === undefined, 'type ABSENT (comportement index)');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vault query --tier invalide revient à index silencieusement', () => {
+  const dir = initTestVault();
+  try {
+    cli(['vault', 'graph', '--cwd', dir], dir);
+    const r = cli(['vault', 'query', 'vault', '--tier', 'foobar', '--json', '--cwd', dir], dir);
+    ok(r.status === 0, 'exit 0 (non-blocant)');
+    const result = JSON.parse(r.stdout);
+    ok(result.tier === 'index', 'fallback à index automatique');
+    const first = result.results[0];
+    ok(first.type === undefined, 'tier invalide = index behavior');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 // ─── Phase C — PETER_REPORT avec graphe ───────────────────────────────────────
 
 console.log('\n── vault report + graphe ──');

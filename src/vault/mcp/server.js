@@ -43,7 +43,7 @@ class MCPServer {
   }
 
   // Tool: query_vault — recherche par texte libre dans le graphe
-  queryVault(query, limit = 10) {
+  queryVault(query, limit = 10, tier = 'index') {
     if (!this.graph) this.loadGraph();
 
     const results = [];
@@ -73,7 +73,38 @@ class MCPServer {
 
     // Tri par score décroissant et limite
     results.sort((a, b) => b.score - a.score);
-    return results.slice(0, limit);
+    const limited = results.slice(0, limit);
+
+    // Appliquer la stratification par tier
+    const validTiers = ['index', 'summary', 'full'];
+    const normalizedTier = validTiers.includes(tier) ? tier : 'index';
+
+    return limited.map(r => {
+      const base = {
+        id: r.id,
+        label: r.label,
+        score: r.score,
+        path: r.path,
+      };
+
+      if (normalizedTier === 'index') {
+        return base;
+      } else if (normalizedTier === 'summary') {
+        return {
+          ...base,
+          excerpt: r.excerpt || '',
+          tags: r.tags || [],
+        };
+      } else {
+        // 'full'
+        return {
+          ...base,
+          type: r.type,
+          excerpt: r.excerpt || '',
+          tags: r.tags || [],
+        };
+      }
+    });
   }
 
   // Tool: get_node — retourne un nœud par id ou label
@@ -188,6 +219,12 @@ class MCPServer {
                 type: 'number',
                 description: 'Nombre max de résultats (défaut: 10)',
               },
+              tier: {
+                type: 'string',
+                description: 'Niveau de détail : index (id/label/score/path), summary (+excerpt/tags), full (+type)',
+                enum: ['index', 'summary', 'full'],
+                default: 'index',
+              },
             },
             required: ['query'],
           },
@@ -247,7 +284,7 @@ class MCPServer {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(this.queryVault(args.query, args.limit), null, 2),
+                text: JSON.stringify(this.queryVault(args.query, args.limit, args.tier), null, 2),
               },
             ],
           };

@@ -201,7 +201,7 @@ function parseArgs(argv) {
   let args = argv.slice(2);
   if (args[0] === 'vault') args = args.slice(1);
   const sub = args[0] ?? 'status';
-  const flagsWithValues = new Set(['--cwd', '--interval']);
+  const flagsWithValues = new Set(['--cwd', '--interval', '--tier']);
   const positional = [];
   for (let i = 1; i < args.length; i++) {
     if (args[i].startsWith('-')) { if (flagsWithValues.has(args[i])) i++; continue; }
@@ -216,6 +216,7 @@ function parseArgs(argv) {
     json: args.includes('--json'),
     withSymbols: args.includes('--with-symbols'),
     intervalText: getFlag(args, '--interval'),
+    tier: getFlag(args, '--tier') ?? 'index',
   };
 }
 
@@ -603,7 +604,7 @@ function printGraph(result, cwd) {
   console.log(`\n${GREEN}✓${NC} Graphe minimal Peter prêt.`);
 }
 
-function queryVaultGraph(cwd, queryText) {
+function queryVaultGraph(cwd, queryText, tier = 'index') {
   const graphPath = join(cwd, 'vault', 'index', 'graph.json');
   if (!existsSync(graphPath)) {
     return { ok: false, error: 'graph.json absent — lancez : claude-atelier vault graph' };
@@ -611,7 +612,7 @@ function queryVaultGraph(cwd, queryText) {
   let graph;
   try { graph = JSON.parse(readFileSync(graphPath, 'utf8')); }
   catch { return { ok: false, error: 'graph.json illisible — relancez vault graph' }; }
-  return queryGraph(graph, queryText);
+  return queryGraph(graph, queryText, 10, tier);
 }
 
 // ─── Lot 3 — vault path + vault explain + communautés ────────────────────────
@@ -710,6 +711,7 @@ function printQuery(result, queryText) {
   }
   console.log(`\n${CYAN}[PETER] vault query${NC}`);
   console.log(`  Question : ${queryText}`);
+  console.log(`  Tier     : ${result.tier || 'index'} (${result.tokenEstimate || '?'} tokens)`);
   console.log('');
   if (!result.results.length) {
     console.log(`  Aucun résultat pour "${queryText}".`);
@@ -1110,7 +1112,7 @@ function printExport(result, format, cwd) {
 }
 
 export async function runVault(argv) {
-  const { sub, positional, queryText, cwd, dryRun, json, withSymbols, intervalText } = parseArgs(argv);
+  const { sub, positional, queryText, cwd, dryRun, json, withSymbols, intervalText, tier } = parseArgs(argv);
 
   if (sub === 'init') {
     const result = initVault(cwd, dryRun);
@@ -1157,7 +1159,7 @@ export async function runVault(argv) {
   }
 
   if (sub === 'query') {
-    const result = queryVaultGraph(cwd, queryText);
+    const result = queryVaultGraph(cwd, queryText, tier);
     if (json) {
       process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     } else {

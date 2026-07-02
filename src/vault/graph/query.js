@@ -13,7 +13,12 @@ function scoreNode(node, tokens) {
   return score;
 }
 
-function queryGraph(graph, queryText, limit = 10) {
+// Estime les tokens consommés par une chaîne (heuristique simple : 1 token ~= 4 caractères)
+function estimateTokens(text) {
+  return Math.ceil((text || '').length / 4);
+}
+
+function queryGraph(graph, queryText, limit = 10, tier = 'index') {
   const tokens = (queryText || '')
     .toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -35,13 +40,46 @@ function queryGraph(graph, queryText, limit = 10) {
     if (resultIds.has(edge.to) && !resultIds.has(edge.from)) neighborIds.add(edge.from);
   }
 
+  // Normaliser le tier
+  const validTiers = ['index', 'summary', 'full'];
+  const normalizedTier = validTiers.includes(tier) ? tier : 'index';
+
+  // Projette les résultats selon le tier demandé
+  const results = scored.map(r => {
+    const base = {
+      id: r.node.id,
+      label: r.node.label,
+      score: r.score,
+      path: r.node.path || '',
+    };
+
+    if (normalizedTier === 'index') {
+      // Index tier : id, label, score, path (léger, ~40 tokens)
+      return base;
+    } else if (normalizedTier === 'summary') {
+      // Summary tier : + excerpt, tags (PAS type)
+      return {
+        ...base,
+        excerpt: r.node.excerpt || '',
+        tags: r.node.tags || [],
+      };
+    } else {
+      // Full tier : + type, excerpt, tags, mtime
+      return {
+        ...base,
+        type: r.node.type,
+        excerpt: r.node.excerpt || '',
+        tags: r.node.tags || [],
+      };
+    }
+  });
+
   return {
     ok: true,
-    results: scored.map(r => ({
-      id: r.node.id, type: r.node.type, label: r.node.label,
-      score: r.score, path: r.node.path || '',
-    })),
+    results,
     neighbors: [...neighborIds].slice(0, 10).map(id => id.split(':').pop()),
+    tier: normalizedTier,
+    tokenEstimate: Math.ceil(JSON.stringify(results).length / 4),
   };
 }
 

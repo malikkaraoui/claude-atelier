@@ -215,6 +215,13 @@
       "unit": "tokens",
       "min": 0,
       "max": 5000
+    },
+    "progressive_disclosure_default_tier": {
+      "label": "Tier par défaut vault query",
+      "description": "Niveau de détail retourné par défaut : index (id/label/score/path), summary (+excerpt/tags), full (+type)",
+      "default": "index",
+      "unit": "enum: index|summary|full",
+      "choices": ["index", "summary", "full"]
     }
   }
 }
