@@ -4,6 +4,13 @@
 
 ## Décisions durables
 
+### 2026-07-02 — LOT-4 (plan repos externes) abandonné : pas de code mort
+
+- Contexte : plan d'intégration validait un "lookup credentials en couches" (env→fichier→Keychain) et un "setup lazy", inspirés de last30days-skill.
+- Décision : NE PAS coder `src/core/secrets-lookup.js` — vérification exhaustive (grep repo) : aucun secret local géré par claude-atelier aujourd'hui (NPM_TOKEN est CI-only). Le lazy-setup visait `bin/atelier-config.js`, qui **n'existe pas** (confusion avec le skill `/atelier-config`, pas un bin) — pas de cible réelle non plus.
+- Conséquence : LOT-4 clos sans implémentation. Si un vrai besoin de secret local apparaît un jour, revérifier avant de recoder — ne pas réutiliser cette décision comme blocage permanent.
+- À revalider si : un secret/credential local devient nécessaire (ex: token API tiers stocké côté utilisateur).
+
 ### 2026-06-27 — Suppression de la feature Pulse / Maestro
 
 - Contexte : simplification du framework (LLM cloud uniquement). Pulse (présence multi-agents, `pouls.md`, Maestro watcher) ajoutait du code et des sorties hook sans usage actif — le hook `stop-pulse.sh` n'était même pas câblé dans `settings.json`.
