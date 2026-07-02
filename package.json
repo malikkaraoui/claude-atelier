@@ -115,7 +115,9 @@
     "test/vault.js",
     "LICENSE",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "PHILOSOPHY.md",
+    "PARITY.md"
   ],
   "engines": {
     "node": ">=18.0.0"
