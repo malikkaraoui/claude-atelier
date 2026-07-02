@@ -30,17 +30,43 @@ try:
 except: pass
 " 2>/dev/null)
 
+SESSION_ID=$(echo "$_RAW_INPUT" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    print(d.get('session_id', ''))
+except: pass
+" 2>/dev/null)
+
 # Pas de transcript = silencieux
 [ -z "$TRANSCRIPT" ] && exit 0
 [ ! -f "$TRANSCRIPT" ] && exit 0
 
-# Résoudre le modèle : live > cache
+# Résoudre le modèle : cache scoppé session (rafraîchi par routing-check.sh,
+# qui tourne AVANT ce hook sur le même événement UserPromptSubmit — cf. ordre
+# dans .claude/settings.json) > live (stdin brut, peut retarder d'un tour
+# juste après un /model) > cache legacy global.
+# Avant ce fix : LIVE_MODEL était prioritaire sur le cache, donc un LIVE_MODEL
+# brut périmé faisait calculer la fenêtre de contexte sur l'ANCIEN modèle
+# (ex: fenêtre 1M d'Opus gardée après switch vers Sonnet 200k) → % incohérent.
+BASE_TMP="${CLAUDE_ATELIER_TMPDIR:-/tmp}"
+if [ -n "$SESSION_ID" ]; then
+    CACHE_SCOPE="$SESSION_ID"
+elif [ -n "$TRANSCRIPT" ]; then
+    CACHE_SCOPE=$(printf '%s' "$TRANSCRIPT" | cksum | awk '{print $1}')
+else
+    CACHE_SCOPE="global"
+fi
+SCOPED_MODEL_FILE="$BASE_TMP/claude-atelier-model-cache/${CACHE_SCOPE}.model"
+
 MODEL=""
-if [ -n "$LIVE_MODEL" ]; then
+if [ -f "$SCOPED_MODEL_FILE" ]; then
+    MODEL=$(cat "$SCOPED_MODEL_FILE" 2>/dev/null | tr -d '\r\n')
+fi
+if [ -z "$MODEL" ] && [ -n "$LIVE_MODEL" ]; then
     MODEL=$(echo "$LIVE_MODEL" | sed 's/\[.*$//' | tr -d '\r\n')
 fi
 if [ -z "$MODEL" ]; then
-    BASE_TMP="${CLAUDE_ATELIER_TMPDIR:-/tmp}"
     MODEL=$(cat "$BASE_TMP/claude-atelier-current-model" 2>/dev/null | tr -d '\r\n')
 fi
 [ -z "$MODEL" ] && exit 0

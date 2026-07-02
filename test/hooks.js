@@ -540,6 +540,28 @@ test('anti-régression : bascule sur sonnet (200k) → 25%, pas 5% (fenêtre sui
   rmSync(dir, { recursive: true, force: true });
 });
 
+test('fix bug bascule modèle : cache scoppé session (frais) prime sur cache legacy (périmé)', () => {
+  // routing-check.sh tourne AVANT model-metrics.sh (ordre .claude/settings.json) et
+  // rafraîchit le cache scoppé dès qu'il détecte un modèle via live/transcript.
+  // Avant ce fix, model-metrics.sh ignorait ce cache scoppé et retombait sur le
+  // cache legacy (périmé) dès que son propre LIVE_MODEL était vide → mauvaise
+  // fenêtre (1M au lieu de 200k) juste après une bascule opus → sonnet.
+  resetRoutingEnv();
+  writeFileSync(ROUTING_LEGACY_MODEL, 'claude-opus-4-8\n');
+  mkdirSync(ROUTING_CACHE_DIR, { recursive: true });
+  writeFileSync(resolve(ROUTING_CACHE_DIR, 'sess-abc.model'), 'claude-sonnet-4-6\n');
+  const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));
+  const transcript = resolve(dir, 'session.jsonl');
+  const usage = { input_tokens: 50000, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, output_tokens: 100 };
+  writeFileSync(transcript, JSON.stringify({ type: 'assistant', message: { usage, content: [] } }) + '\n');
+  // Pas de `model` dans le stdin (LIVE_MODEL vide) → force la résolution par cache.
+  const r = hook('model-metrics.sh', { transcript_path: transcript, session_id: 'sess-abc' });
+  ok(r.status === 0, 'exit 0');
+  ok(r.stdout.includes('ctx 25%'), 'fenêtre 200k (sonnet, cache scoppé) → 25%, pas 5% (opus/legacy périmé)');
+  ok(!r.stdout.includes('ctx 5%'), 'PAS 5% — le cache legacy périmé ne doit plus primer sur le cache scoppé');
+  rmSync(dir, { recursive: true, force: true });
+});
+
 test('override env CLAUDE_ATELIER_CTX_WINDOW=200k prime sur la table modèle → 25%', () => {
   writeFileSync(ROUTING_LEGACY_MODEL, 'claude-opus-4-8\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));

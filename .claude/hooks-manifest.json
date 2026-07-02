@@ -219,21 +219,23 @@
       "file": "hooks/model-metrics.sh",
       "type": "UserPromptSubmit",
       "trigger": "every user prompt",
-      "purpose": "Analyse les 5 derniers tours assistant (outil dominant par tour, 3 niveaux low/medium/high). Émet [METRICS] avec pastille 🟢/🟠/🔴 pour §1. Silencieux si transcript absent ou < 2 tours.",
+      "purpose": "Analyse les 5 derniers tours assistant (outil dominant par tour, 3 niveaux low/medium/high). Émet [METRICS] avec pastille 🟢/🟠/🔴 pour §1. Résout le modèle via le cache scoppé session (rafraîchi par routing-check.sh, qui tourne avant ce hook) en priorité, pour éviter qu'un LIVE_MODEL ou un cache legacy périmé calcule la fenêtre de contexte sur le mauvais modèle juste après un /model switch. Silencieux si transcript absent ou < 2 tours.",
       "inputs": [
         "transcript_path",
         "model (if available in hook JSON)",
-        "current-model from /tmp"
+        "session_id (if available in hook JSON)",
+        "cache scoppé session /tmp/claude-atelier-model-cache/<scope>.model (écrit par routing-check.sh, prioritaire)",
+        "cache legacy /tmp/claude-atelier-current-model (dernier recours)"
       ],
       "outputs": [
         "additionalContext: [METRICS] fit:VERDICT(Xh/Xm/Xl/Xt) | model:MODEL | verdict → suggestion PASTILLE"
       ],
       "rule": "§1 Horodatage + pastille · §15 Auto-métriques",
-      "test": "test/hooks.js → model-metrics.sh (5 tests)",
+      "test": "test/hooks.js → model-metrics.sh (12 tests)",
       "exitCodes": {
         "0": "always (warning only, never blocks)"
       },
-      "sha256": "cd6147e67ae0d2be"
+      "sha256": "3bec07b66bb137e0"
     },
     {
       "name": "guard-hooks-reload",

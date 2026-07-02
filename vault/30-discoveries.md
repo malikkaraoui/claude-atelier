@@ -34,6 +34,16 @@ Ce que Claude ou Peter apprend sur le projet et qui mérite de survivre à la se
 - **Déférés PR #50** : mcp/server.js framing stdio (Phase G), graph reload, telegram-bridge.py erreurs vocaux, test vault maintain
 - **Prochains chantiers identifiés** : bump version, Phase B voix (faster-whisper), Phase C graphe minimal (déjà partiellement implémenté dans Lots 0+4+10)
 
+### 2026-07-02 — Fix bug CTX bascule modèle + lancement plan intégration 4 repos externes
+
+- **Contexte / but** : Malik signale un bug réel — `[CTX] fenêtre: N%` devient incohérent (ex: 136%) juste après un `/model` switch. En parallèle, 5 repos externes analysés (claude-mem, last30days-skill, loop-engineering, ponytail, andrej-karpathy-skills) pour extraire des patterns réutilisables ; plan de chantier validé (`/Users/malik/.claude/plans/replicated-dancing-dijkstra.md`), Malik en chef d'orchestre, moi en exécutant multi-agents.
+- **Livré ce jour (LOT-0 + lot Karpathy, RATIFIÉ par relecture indépendante, 81/81 tests)** :
+  1. **Fix bug CTX** — `hooks/model-metrics.sh` avait sa propre résolution de modèle (LIVE_MODEL brut → cache legacy), indépendante de `routing-check.sh` qui tourne AVANT lui sur le même événement et rafraîchit un cache scoppé session. Un LIVE_MODEL périmé après un switch faisait retomber sur le cache legacy (obsolète) → mauvaise fenêtre (1M au lieu de 200k). Fix : lire le cache scoppé session en priorité (même clé que `routing-check.sh`/`session-model.sh` : session_id sinon hash transcript).
+  2. **§3 CLAUDE.md renforcé** (`.claude/CLAUDE.md`) : ajout du principe *Goal-driven* (`1. [étape] → verify: [check]` avant d'exécuter une tâche multi-étapes) — seul apport net du repo andrej-karpathy-skills (les 3 autres principes recoupent §5/§7/§8 déjà en place).
+- **Review** : agent Relecteur indépendant → RATIFIÉ, aucune régression, aucun secret/injection.
+- **Gotcha réutilisable** : deux hooks qui résolvent le même modèle indépendamment (au lieu de partager une source unique) créent une race silencieuse dès que l'un des deux est en retard d'un tour — toujours faire lire la valeur déjà résolue par le hook qui tourne en premier plutôt que ré-implémenter sa propre résolution.
+- ⚠️ **Découverte annexe (non résolue, hors scope)** : `src/fr/CLAUDE.md` (committed, propre) référence désormais `AGENTS.md` pour §3 (nouvelle architecture delta + fichier partagé), mais `AGENTS.md` à la racine est **untracked** (`git status` : `??`) — repo cassé pour un clone frais tant qu'il n'est pas commité ou que la référence n'est pas retirée. Distinct du problème déjà connu (`.claude/CLAUDE.md`/`.claude/settings.json` modifiés localement, restore en attente côté Malik). Ne pas toucher sans validation explicite — périmètre flou entre les deux soucis.
+
 ### YYYY-MM-DD — Découverte
 
 - Observation :
