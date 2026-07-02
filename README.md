@@ -82,7 +82,7 @@ Claude Code sans structure : Opus toute la nuit sur une tâche Haiku → budget 
 
 ### Ce que c'est
 
-Framework complet : règles runtime, hooks d'enforcement (16 actifs), skills (21), agents nommés (22), mémoire persistante, vault dynamique, contexte calibré, gates review, mode éco. Tout ce qu'on a durci en production.
+Framework complet : règles runtime, hooks d'enforcement (15 actifs), skills (21), agents nommés (22), mémoire persistante, vault dynamique, contexte calibré, gates review, mode éco. Tout ce qu'on a durci en production.
 
 **Des rails réels.** Push, versioning, review, coût et hygiène passent par des mécanismes système, pas par du texte en prose.
 
@@ -107,12 +107,17 @@ Le vault projet est la mémoire opérationnelle locale de Claude. À chaque dém
 npx claude-atelier vault init              # Create vault/ structure
 npx claude-atelier vault update             # SHA256 index (local, gitignored)
 npx claude-atelier vault graph              # Extract graph + centrality
-npx claude-atelier vault query "concept"    # Search + neighbors
+npx claude-atelier vault query "concept"    # Search + neighbors (Progressive Disclosure)
+npx claude-atelier vault explain <obsId>   # Explode node avec icônes
 ```
 
-Crée : `brief.md`, `mailbox.md`, `decisions.md`, `discoveries.md`, `roadmap.md`, `sources.md` + `index/manifest.json` + `index/graph.json`.
+Crée : `brief.md`, `mailbox.md`, `decisions.md`, `discoveries.md`, `roadmap.md`, `sources.md` + `index/manifest.json` + `index/graph.json` + `index/associations.json`.
 
-**Résultat** : Claude reprend contexte sans relire tout le repo. Tokens économisés, sessions plus fluides.
+**Progressive Disclosure** : `vault query --tier [index|summary|full]` permet de contrôler le volume réponse (~40–200 tokens vs 1000+). Défaut `index` : id/label/score/path. Expose aussi en MCP pour accès Claude en session.
+
+**Icônes par observation** : 🔴 critique · 🟢 livré · 🔵 pattern · ⚖️ trade-off · 🟠 pourquoi · 🟡 problème-solution · 🟤 décision · 🟣 découverte.
+
+**Résultat** : Claude reprend contexte sans relire tout le repo. Tokens économisés, sessions plus fluides, réponses contextuées par type d'observation.
 
 ---
 
@@ -150,7 +155,7 @@ Détection automatique. Example : mention `swift` → Steve 🍎 (iOS + Xcode). 
 
 ---
 
-### Hooks — 16 enforcement rails
+### Hooks — 15 enforcement rails
 
 | Rule | Hook | Trigger |
 | --- | --- | --- |
@@ -174,12 +179,12 @@ Détection automatique. Example : mention `swift` → Steve 🍎 (iOS + Xcode). 
 
 ```text
 /atelier-help        /atelier-setup       /atelier-doctor
-/design-senior       /angle-mort          /audit-safe
-/handoff-debt        /review-oracle       /integrate-review
-/night-launch        /token-routing       /compress
-/qmd-init            /bmad-init           /ios-setup
-/freebox-init        /la-bise             /loop-master
-/chef-projet
+/atelier-config      /design-senior       /angle-mort
+/audit-safe          /handoff-debt        /review-oracle
+/review-copilot      /integrate-review    /night-launch
+/token-routing       /compress            /qmd-init
+/bmad-init           /ios-setup           /freebox-init
+/la-bise             /loop-master         /chef-projet
 ```
 
 **Key skills**: `/review-oracle` (4-agent review), `/loop-master` (recurring tasks), `/token-routing` (Haiku/Sonnet/Opus config), `/vault` (manage project memory).
@@ -257,7 +262,7 @@ Claude Code without structure: Opus overnight on Haiku-level task → budget gon
 
 ### What It Is
 
-Complete framework: runtime rules, 16 enforcement hooks, 21 skills, 22 named agents, persistent memory, dynamic vault, calibrated context, review gates, eco mode. Hardened in production.
+Complete framework: runtime rules, 15 enforcement hooks, 21 skills, 22 named agents, persistent memory, dynamic vault, calibrated context, review gates, eco mode. Hardened in production.
 
 **Real rails.** Push, versioning, review, cost and hygiene operate through system mechanisms, not prose promises.
 
@@ -325,7 +330,7 @@ Auto-detected. Example: mention `swift` → Steve 🍎 (iOS + Xcode). Mention `d
 
 ---
 
-### Hooks — 16 enforcement rails
+### Hooks — 15 enforcement rails
 
 | Rule | Hook | Trigger |
 | --- | --- | --- |
@@ -349,12 +354,12 @@ Auto-detected. Example: mention `swift` → Steve 🍎 (iOS + Xcode). Mention `d
 
 ```text
 /atelier-help        /atelier-setup       /atelier-doctor
-/design-senior       /angle-mort          /audit-safe
-/handoff-debt        /review-oracle       /integrate-review
-/night-launch        /token-routing       /compress
-/qmd-init            /bmad-init           /ios-setup
-/freebox-init        /la-bise             /loop-master
-/chef-projet
+/atelier-config      /design-senior       /angle-mort
+/audit-safe          /handoff-debt        /review-oracle
+/review-copilot      /integrate-review    /night-launch
+/token-routing       /compress            /qmd-init
+/bmad-init           /ios-setup           /freebox-init
+/la-bise             /loop-master         /chef-projet
 ```
 
 **Key skills**: `/review-oracle` (4-agent review), `/loop-master` (recurring tasks), `/token-routing` (Haiku/Sonnet/Opus config), `/vault` (manage project memory).

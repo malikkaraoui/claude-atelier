@@ -7,18 +7,18 @@ Les skills sont des slash commands disponibles dans Claude Code. Ils chargent dy
 
 ---
 
-## Les 20 skills
+## Les 21 skills
 
 | Skill | Commande | Description |
 |---|---|---|
 | Atelier Help | `/atelier-help` | Vue d'ensemble, navigation, aide |
 | Atelier Setup | `/atelier-setup` | Auto-découvre le projet (package.json, git, stack) et configure §0 |
-| Atelier Doctor | `/atelier-doctor` | Diagnostic complet installation (27+ checks) |
+| Atelier Doctor | `/atelier-doctor` | Diagnostic complet installation (28+ checks) |
 | Atelier Config | `/atelier-config` | Tableau de contrôle features + état système |
 | Night Launch | `/night-launch` | Lance une session de nuit avec checklist |
-| Review Copilot | `/review-copilot` | Génère un handoff JSON pour Copilot via PR GitHub |
+| Review Copilot | `/review-copilot` | Génère un handoff JSON pour Copilot via PR GitHub (toggleable) |
+| Review Oracle | `/review-oracle` | Review local 4-agents (DOCTRINE/CODE/SÉCURITÉ/TESTS) |
 | Integrate Review | `/integrate-review` | Intègre la réponse Copilot depuis docs/handoffs/ |
-| Copilot Loop | `/copilot-loop` | Loop autonome PR → review → merge |
 | Angle Mort | `/angle-mort` | Auto-review anti-complaisance avant release |
 | Audit Safe | `/audit-safe` | Audit sécurité + secrets sur le diff staged |
 | BMAD Init | `/bmad-init` | Plan → validation → implémentation |
@@ -29,7 +29,8 @@ Les skills sont des slash commands disponibles dans Claude Code. Ils chargent dy
 | Design Senior | `/design-senior` | Propose Séréna + installe UI/UX Pro Max |
 | La Bise | `/la-bise` | Échange inter-LLM (GPT/Mistral) |
 | Freebox Init | `/freebox-init` | Bootstrap autorisation app Freebox |
-| Ollama Router | `/ollama-router` | Setup Ollama bout-en-bout + proxy |
+| Loop Master | `/loop-master` | Orchestre le pipeline Chef Projet → Codeur → Relecteur → Documentaliste, sprint par sprint jusqu'à la target |
+| Chef Projet | `/chef-projet` | PM permanent du pipeline : découpe, estime, monitore, décide clôture ou nouveau sprint |
 | Handoff Debt | `/handoff-debt` | Affiche la dette §25 + draft handoff |
 
 ---

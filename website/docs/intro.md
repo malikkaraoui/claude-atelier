@@ -34,10 +34,10 @@ C'est tout. Claude Code est configuré avec 15 rails d'enforcement et un cockpit
 
 - **15 hooks bash** — s'exécutent automatiquement (message, commit, push, session)
 - **Cockpit §1** — chaque réponse s'ouvre sur `` `[MM-DD HH:MM:SS | model] 🟢` `` : horodatage, modèle, pastille fit — en un coup d'œil
-- **20 slash commands** — `/review-copilot`, `/night-launch`, `/angle-mort`…
+- **21 slash commands** — `/review-oracle`, `/loop-master`, `/night-launch`, `/angle-mort`…
 - **Satellites de stack** — JS, Python, iOS, Docker… chargés selon le projet
 - **Mode nuit** — Claude travaille seul, le pouls surveille, vous dormez
-- **Bridge Telegram** — commandes depuis mobile + alertes temps réel + messages vocaux (faster-whisper + Ollama local)
+- **Vault + Peter** — mémoire locale du projet (decisions, roadmap, graph), accessible en CLI ou MCP vault-peter en session
 - **Gate pré-push** — 5 vérifications avant chaque `git push`
 
 ---
@@ -91,9 +91,9 @@ scripts/
 
 - [Installation](./installation) — mise en place complète
 - [Hooks d'enforcement](./hooks) — les 15 rails + cockpit §1
-- [Agents nommés](./agents) — Steve, Isaac, Mohamed, Amine, Peter
+- [Agents nommés](./agents) — Steve, Isaac, Mohamed, Amine, Séréna, Peter
 - [Mode Nuit](./mode-nuit) — autonomie supervisée + pouls
-- [Skills](./skills) — 20 slash commands
+- [Skills](./skills) — 21 slash commands
 - [Satellites par stack](./stacks) — iOS, JS, Python…
 - [Sécurité](./securite) — gate, secrets, permissions
 - [Bridge Telegram](./telegram) — commandes mobile + voix + alertes FIFO

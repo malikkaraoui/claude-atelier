@@ -17,6 +17,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.28.0] — 2026-07-02
+
+### Added — Vault graph enrichment (LOT 1-3, 5-6) + multi-agent foundations
+
+- **LOT-1 : Associations fichier ↔ observation** (`src/vault/core/associations.js`)
+  Fondation pour le futur File Read Gate — index bidirectionnel { byFile, byObsId }
+  extrait depuis `vault/20-decisions.md` et `vault/30-discoveries.md` (champ optionnel
+  "Fichiers liés:"). Génère `index/associations.json` à chaque mise à jour.
+- **LOT-2 : Progressive Disclosure 3 tiers** (`src/vault/graph/query.js`, MCP `query_vault`)
+  Paramétrisation des résultats : `tier: 'index'|'summary'|'full'` (défaut `'index'`).
+  Index = `id/label/score/path` (~40 tokens). Summary ajoute `excerpt/tags`. Full ajoute `type`.
+  CLI expose `--tier` ; MCP expose le paramètre `tier`.
+- **LOT-3 : Icônes par type d'observation** (`src/vault/core/icons.js`)
+  Classification heuristique (regex patterns ordonnés) + défaut par type :
+  🔴 critique/cassé · 🟢 livré/shipped · 🔵 gotcha/pattern · ⚖️ trade-off ·
+  🟠 pourquoi · 🟡 problème-solution · 🟤 décision (défaut) · 🟣 découverte (défaut).
+  Affichage dans `vault explain`, MCP `query_vault`, `bin/vault.js explain`.
+- **LOT-5 : Fenêtre glissante paramétrique** (`src/features-registry.json`)
+  Seuils handoff (lignes/commits/jours) et fraîcheur vault (brief/roadmap/report)
+  configurables. `scripts/handoff-debt.sh` et `src/vault/core/utils.js` les lisent
+  au lieu de constantes en dur. Ajout test : STALE_DAYS vérifié contra registry.
+- **LOT-6 : MCP vault-peter activation** (`.claude/settings.json`)
+  Déclare le serveur MCP `vault-peter` (stdio JSON-RPC), rend les tiers LOT-2 et
+  icônes LOT-3 accessibles à Claude en session, pas juste en CLI.
+
+### Changed — Paramètres configurables centralisés
+
+- **`hooks/_parse-features.sh`** : nouveau helper `_get_param(name, default)` centralise
+  la lecture des paramètres features depuis `src/features-registry.json` avec override
+  `.claude/features.json`. Paramètres actuels :
+  - `anti_loop_count` (défaut 3) — seuil guard-anti-loop.sh, au lieu d'une constante en dur
+  - `handoff_threshold_lines` (défaut 300) — corrections ancien default 100 obsolète
+  - `handoff_threshold_commits` · `handoff_window_days`
+  - `vault_stale_brief_days`, `vault_stale_roadmap_days`, `vault_stale_report_days`
+- **`src/vault/core/utils.js`** : `getStaleDays()` lit registry au lieu de seuils codés.
+
+### Fixed — Deux bugs CTX
+
+- **d4eec5b — Bug CTX bascule modèle** : `model-metrics.sh` résolvait le modèle
+  indépendamment de `routing-check.sh` (qui rafraîchit un cache scoppé session avant
+  ce hook) → un LIVE_MODEL périmé après un `/model` switch retombait sur le cache
+  legacy obsolète → fenêtre de contexte incohérente (ex: 220% rapporté vs 46% réel).
+  Fix : lire le cache scoppé en priorité, comme `routing-check.sh`.
+- **25b3143 — Bug CTX #2 table fenêtre ignorait `claude-sonnet-5`** : retombait sur
+  200k au lieu de ~1M. Ajout de sonnet-5 au pattern 1M + test non-régression.
+
+### Docs
+
+- **Renfort §3 (Karpathy)** : ajout du principe goal-driven
+  (« 1. [étape] → verify: [check] avant d'exécuter une tâche multi-étapes »)
+  dans `.claude/CLAUDE.md`. Les 3 autres principes (§5/§7/§8) recoupent déjà le repo.
+- **Vault discoveries** : ajout test guard-loop-master flaky si flag `/tmp` préexistant.
+- **LOT-4 évalué, non implémenté** : secrets-lookup décision tracée dans
+  `vault/20-decisions.md`, pas de code mort (aucun consommateur réel identifié).
+
+### Tests
+
+- 85/85 tests `test/hooks.js` · 89/89 tests `test/vault.js`
+
+---
+
 ## [0.27.0] — 2026-07-02
 
 ### Removed — nettoyage des fonctions mortes (doctrine ↔ code enfin alignés)

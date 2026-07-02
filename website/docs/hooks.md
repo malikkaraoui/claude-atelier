@@ -31,21 +31,21 @@ Un vrai tableau de bord pilote : modèle, coût, routage, infrastructure — en 
 
 | # | Hook | Événement | Ce qu'il fait |
 |---|---|---|---|
-| 1 | `routing-check.sh` | `UserPromptSubmit` | Routing modèle (live > transcript > cache), détection stack, diagnostic throttled 30 min, longueur session, §1 instruction cockpit |
-| 2 | `model-metrics.sh` | `UserPromptSubmit` | Analyse 5 derniers tours assistant → pastille `🟢/⬆️/⬇️` → §1 ENTÊTE FINAL avec vraie pastille |
-| 3 | `detect-design-need.sh` | `UserPromptSubmit` | Détecte besoin UI/UX/design → propose Séréna 🎨 |
-| 4 | `guard-no-sign.sh` | `PreToolUse` (commit) | Bloque `Co-Authored-By`, `--signoff` |
-| 5 | `guard-commit-french.sh` | `PreToolUse` (commit) | Bloque messages purement anglais |
-| 6 | `guard-tests-before-push.sh` | `PreToolUse` (push) | Exige `npm test` vert avant push |
-| 7 | `guard-review-auto.sh` | `PostToolUse` (commit) | Challenger : 100+ lignes, feat, 10 commits, archi |
-| 8 | `guard-anti-loop.sh` | `PostToolUse` | Détecte 3+ tentatives identiques → STOP |
-| 9 | `guard-hooks-reload.sh` | `PostToolUse` (Edit/Write) | Rappel rechargement si hooks/settings modifiés |
-| 10 | `guard-qmd-first.sh` | `PreToolUse` (Read) | Redirige `.md` vers QMD avant lecture complète |
-| 11 | `session-model.sh` | `SessionStart` | Cache le modèle de session pour routing cross-hooks |
-| 12 | `guard-no-force-push.sh` | `PreToolUse` (push) | Bloque `git push --force` |
-| 13 | `vault-context.sh` | `SessionStart` | Charge le résumé Peter (PETER_REPORT) en contexte |
-| 14 | `memory-read.js` | `SessionStart` + `UserPromptSubmit` | Injecte les épisodes et le contexte mémoire |
-| 15 | `detect-design-need.sh` | `UserPromptSubmit` | Détecte besoin UI/UX/design → propose Séréna 🎨 |
+| 1 | `session-model.sh` | `SessionStart` | Cache le modèle de session pour routing cross-hooks |
+| 2 | `vault-context.sh` | `SessionStart` | Charge le résumé Peter (brief/mailbox/roadmap) en contexte |
+| 3 | `routing-check.sh` | `UserPromptSubmit` | Routing modèle (live > transcript > cache), détection stack, diagnostic, longueur session |
+| 4 | `model-metrics.sh` | `UserPromptSubmit` | Analyse 5 derniers tours assistant → pastille `🟢/⬆️/⬇️` → §1 entête final |
+| 5 | `detect-design-need.sh` | `UserPromptSubmit` | Détecte besoin UI/UX/design → propose Séréna 🎨 |
+| 6 | `peter-inbox-check.sh` | `UserPromptSubmit` | Vérifie vault mailbox, signale priorités |
+| 7 | `guard-no-sign.sh` | `PreToolUse` | Bloque `Co-Authored-By`, `--signoff` (commit) |
+| 8 | `guard-commit-french.sh` | `PreToolUse` | Bloque messages purement anglais (commit) |
+| 9 | `guard-qmd-first.sh` | `PreToolUse` | Redirige `.md` vers QMD avant lecture (Read) |
+| 10 | `guard-loop-master.sh` | `PreToolUse` | Bloque commit si flag §25 manque (commit) |
+| 11 | `guard-tests-before-push.sh` | `PreToolUse + PostToolUse` | Exige tests vert avant push (push / rappel) |
+| 12 | `guard-review-auto.sh` | `PreToolUse + PostToolUse` | Gate 100+ lignes, feat, 10 commits, archi (push / challenger) |
+| 13 | `guard-anti-loop.sh` | `PostToolUse` | Détecte N+ tentatives identiques (param configurable) |
+| 14 | `guard-hooks-reload.sh` | `PostToolUse` | Rappel rechargement si hooks/settings modifiés |
+| 15 | `guard-s1-header.sh` | `Stop` | Applique le format entête §1 final |
 
 ---
 
