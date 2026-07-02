@@ -35,7 +35,7 @@ jobs:
 
       - name: Publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_PUBLISH }}
         run: |
           PKG_VERSION=$(jq -r '.version' package.json)
           if npm view "claude-atelier@${PKG_VERSION}" version 2>/dev/null | grep -qF "${PKG_VERSION}"; then
