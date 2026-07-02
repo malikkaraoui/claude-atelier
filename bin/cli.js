@@ -24,7 +24,7 @@ const pkg = JSON.parse(
 // ⚠️  BLOC GÉNÉRÉ — ne pas éditer manuellement.
 // Source : src/features.json → scripts/gen-help.js → npm version (preversion)
 const HELP = `
-claude-atelier v0.28.0
+claude-atelier v0.28.1
 Claude Code enforcement framework — hooks, named agents, stack rules, night mode. Zero dependency. | Framework Claude Code : hooks d'enforcement, agents nommés, satellites par stack, mode nuit.
 
 Usage:
