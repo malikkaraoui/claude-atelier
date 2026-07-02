@@ -919,6 +919,10 @@ test('passe si moins de 2 fichiers stagés', () => {
 });
 
 test('bloque (exit 2) si multi-fichiers et loop-done absent', () => {
+  // Le flag est un fichier /tmp global, partagé avec une vraie session en cours
+  // (loop-master réel) : le nettoyer avant d'asserter son absence, sinon faux
+  // échec si un /loop-master a légitimement tourné juste avant ce test.
+  try { rmSync('/tmp/claude-atelier-loop-done'); } catch {}
   const r = hook('guard-loop-master.sh',
     { tool_input: { command: 'git commit -m "feat: nouveau skill"' } },
     { GUARD_LOOP_TEST_STAGED: '3' }
