@@ -44,6 +44,13 @@ Ce que Claude ou Peter apprend sur le projet et qui mérite de survivre à la se
 - **Gotcha réutilisable** : deux hooks qui résolvent le même modèle indépendamment (au lieu de partager une source unique) créent une race silencieuse dès que l'un des deux est en retard d'un tour — toujours faire lire la valeur déjà résolue par le hook qui tourne en premier plutôt que ré-implémenter sa propre résolution.
 - ⚠️ **Découverte annexe (non résolue, hors scope)** : `src/fr/CLAUDE.md` (committed, propre) référence désormais `AGENTS.md` pour §3 (nouvelle architecture delta + fichier partagé), mais `AGENTS.md` à la racine est **untracked** (`git status` : `??`) — repo cassé pour un clone frais tant qu'il n'est pas commité ou que la référence n'est pas retirée. Distinct du problème déjà connu (`.claude/CLAUDE.md`/`.claude/settings.json` modifiés localement, restore en attente côté Malik). Ne pas toucher sans validation explicite — périmètre flou entre les deux soucis.
 
+### 2026-07-02 — LOT-1 livré (fondation vault + paramètres configurables), bug critique corrigé en review
+
+- **Livré** (worktree agent, rebasé sur LOT-0 puis mergé `ff-only`, commits `760ad3a` + `051d225`) : `src/vault/core/associations.js` (index `{byFile, byObsId}` depuis `Fichiers liés:` en template dans `20-decisions.md`/`30-discoveries.md`), `hooks/_parse-features.sh` (`_get_param` : lit `src/features-registry.json` avec override `.claude/features.json`), `guard-anti-loop.sh` paramétré (`anti_loop_count` au lieu de `3` en dur).
+- 🔴 **Bug critique attrapé en review (moi-même, pas l'agent codeur)** : `_get_param` faisait `python3 -c "..." && return 0` sans jamais vérifier si la clé demandée avait vraiment été trouvée — python sort toujours en succès même sans rien imprimer, donc `return 0` se déclenchait systématiquement dès que `.claude/features.json` existait (ce qui est le cas dans ce repo), renvoyant une chaîne **vide** au lieu du défaut registry. Les 2 tests écrits par l'agent codeur ne l'ont pas détecté : ils ne vérifiaient que l'exit code (toujours 0, warning-only), jamais la vraie valeur du seuil.
+- **Gotcha réutilisable** : un test qui vérifie seulement qu'un hook "warning-only" renvoie exit 0 ne prouve RIEN sur la valeur qu'il a réellement lue/utilisée — toujours faire asserter le comportement observable qui dépend de la valeur (ici : le 3e échec précis, pas le 1er ni le 2e) pour qu'un bug de calcul silencieux fasse échouer le test.
+- **Review** : vérification manuelle directe (reproduction du bug par exécution réelle du hook, fix, test de non-régression ajouté, `npm test` 84/84 + 77/77 verts) — pas de 4e passage agent séparé vu le volume de contexte de session déjà élevé à ce stade.
+
 ### YYYY-MM-DD — Découverte
 
 - Observation :
