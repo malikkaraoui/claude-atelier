@@ -968,6 +968,30 @@ test('réinitialise après succès', () => {
   ok(r.status === 0, 'exit 0 après succès (réinitialise)');
 });
 
+test('seuil réellement lu depuis le registry via _get_param (pas juste exit 0)', () => {
+  // guard-anti-loop.sh utilise /tmp/claude-atelier-loop-detect en dur (pas
+  // CLAUDE_ATELIER_TMPDIR) — on nettoie ce fichier réel avant/après pour ne
+  // pas polluer d'autres tests. Vérifie que le seuil par défaut du registry
+  // (3) déclenche bien le message au 3e échec, pas avant — preuve que
+  // _get_param renvoie une vraie valeur numérique, pas une chaîne vide.
+  const realLoopFile = '/tmp/claude-atelier-loop-detect';
+  let saved = null;
+  try { saved = readFileSync(realLoopFile, 'utf8'); } catch {}
+  try {
+    writeFileSync(realLoopFile, '');
+    const cmd = 'echo test-seuil-registry-unique';
+    let r = hook('guard-anti-loop.sh', { tool_input: { command: cmd }, tool_response: { exitCode: 1 } });
+    ok(!r.stdout.includes('§6'), '1er échec : pas encore de warning');
+    r = hook('guard-anti-loop.sh', { tool_input: { command: cmd }, tool_response: { exitCode: 1 } });
+    ok(!r.stdout.includes('§6'), '2e échec : toujours pas de warning (seuil=3)');
+    r = hook('guard-anti-loop.sh', { tool_input: { command: cmd }, tool_response: { exitCode: 1 } });
+    ok(r.stdout.includes('§6') && r.stdout.includes('seuil=3'), '3e échec : warning avec seuil=3 (registry, pas vide)');
+  } finally {
+    if (saved !== null) writeFileSync(realLoopFile, saved);
+    else { try { rmSync(realLoopFile); } catch {} }
+  }
+});
+
 // ─────────────────────────────────────────────────────────────
 // generateHooksSection — install : chemins runtime, jamais d'absolu gravé
 // Fix panne "SessionStart hook error / No such file or directory" au
