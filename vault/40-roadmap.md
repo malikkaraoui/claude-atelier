@@ -7,6 +7,7 @@
 ### Livré
 
 - ✅ **Plan intégration 4 repos externes** (claude-mem, last30days-skill, loop-engineering, ponytail) + andrej-karpathy-skills (2026-07-02) — LOT-0 (fix bug CTX bascule modèle), LOT-1 (fondation associations vault + paramètres), LOT-2 (Progressive Disclosure vault query), LOT-3 (icônes par type d'observation), LOT-4 (évalué non applicable, pas de code mort), LOT-5 (fenêtre glissante paramétrique), LOT-6 (activation MCP vault-peter), lot Karpathy (§3 goal-driven). Vision non lancée (validation dédiée requise) : Loop Readiness Score, Path Denylist, benchmarks avant/après, "The Ladder". Plan complet : `~/.claude/plans/replicated-dancing-dijkstra.md`.
+- ✅ **Publication v0.28.0 → v0.28.2** (2026-07-02) — fix bug CTX #2 (table fenêtre sonnet-5), doc CHANGELOG/README/website resynchronisée (review-oracle, 3 erreurs trouvées/corrigées), fix faux positif npm audit critique (`classifyAuditResult`), fix pipeline `gen-help.js` (préversion→version), fix `package.json#files` (PHILOSOPHY.md/PARITY.md manquants). `latest` npm = 0.28.2.
 - ✅ Telegram bridge Phase A — service Python, sessions SQLite, CLI npx (PR #47)
 - ✅ Telegram bridge Phase B — voix faster-whisper + Ollama polish + 6 fixes robustesse (PR #49)
 - ✅ Peter Phase A — `vault init`, hook SessionStart, 00-brief/20-decisions/40-roadmap
@@ -15,7 +16,8 @@
 
 ### Sur le feu
 
-- **Bump version v0.23.12**
+- **Réparer la CI npm-publish** — `NPM_TOKEN_PUBLISH` échoue en boucle (EOTP/403), publication manuelle en attendant (voir `30-discoveries.md` 2026-07-02)
+- Résidus à trancher un-par-un : Telegram (mort ?), `bin/review-local.js` (Ollama, mort) — voir `00-brief.md`
 - **Telegram Phase C** — FIFO hardening : hook PostToolUse → alertes commit/push/gate en temps réel
 - proxy tool_use mapping Go (ollama-proxy bidirectionnel)
 
