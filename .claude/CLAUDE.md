@@ -25,7 +25,7 @@ Mise à jour : « Mets à jour §0 : [ce qui change] » → Claude édite + comm
 ## §1 Horodatage + Modèle — EXIGENCE non négociable
 
 Extraire MODEL-ID de `[ROUTING] modèle actif: MODEL-ID` (jamais du system prompt). Source : `live > transcript > cache scoppé session > cache legacy` — si `transcript`, signaler fragilité.
-**Réponse DOIT commencer par** (strict, rien d'autre) : `` `[MM-DD HH:MM:SS | MODEL-ID | ctx N%] PASTILLE` `` — pas d'année. `ctx N%` = conso contexte (ligne `[CTX]`, omise si inconnue). Fenêtre du **modèle actif** : env `CLAUDE_ATELIER_CTX_WINDOW` > `features.json contextWindow` (pin optionnel, absent par défaut → fallback table) > table modèle (`opus-4-8`/`[1m]` → 1M, sinon 200k). PASTILLE de `[METRICS]` : `⬆️` sous-dimensionné (monter) · `⬇️` surdimensionné (descendre) · `🟢` ok.
+**PRIORITAIRE — premier token de la réponse, avant tout autre texte ou tool call** : `` `[MM-DD HH:MM:SS | MODEL-ID | ctx N%] PASTILLE` `` (strict, rien d'autre) — pas d'année. Ne jamais composer le reste de la réponse d'abord et rajouter l'entête après coup, même en pleine séquence d'outils. `ctx N%` = conso contexte (ligne `[CTX]`, omise si inconnue). Fenêtre du **modèle actif** : env `CLAUDE_ATELIER_CTX_WINDOW` > `features.json contextWindow` (pin optionnel, absent par défaut → fallback table) > table modèle (`opus-4-8`/`sonnet-5`/`[1m]` → 1M, sinon 200k). PASTILLE de `[METRICS]` : `⬆️` sous-dimensionné (monter) · `⬇️` surdimensionné (descendre) · `🟢` ok.
 Switch **toujours manuel** : si `⬆️`/`⬇️`, annoncer la reco (`/model <x>`) et attendre validation — jamais de switch automatique. Plus de mode A/M, plus de 🦙 (Ollama retiré), plus de 🔌 (proxy retiré).
 Enforcement : hook `Stop` `guard-s1-header.sh` (contrôle ma sortie, jamais ton entrée). Horodatage hook = contexte, **pas** ta sortie. Modèle indispo → `[date | modèle inconnu]`.
 
@@ -95,7 +95,7 @@ Stateless, idempotent, secrets externalisés, IaC, fail fast, tests locaux avant
 
 ## §15 Token Management → `../templates/settings.json`
 
-Input : ne relire que si modifié. Routing : Haiku exploration / Sonnet dev / Opus archi. Début session : signaler modèle, proposer switch si surdimensionné (ex: Opus→dev → « tape `/model sonnet` »). `/compact` à **~60% fenêtre** — pas 75-98%. Déclencher aussi après explore, feature, switch.
+Input : ne relire que si modifié. Routing : Haiku exploration / Sonnet dev / Opus archi. Début session : signaler modèle, proposer switch si surdimensionné (ex: Opus→dev → « tape `/model sonnet` »). `/compact` à **~45% fenêtre** — pas 60-98%. Déclencher aussi après explore, feature, switch.
 **QMD-first** : pour tout `.md`, utiliser `mcp__qmd__get`/`mcp__qmd__query` avant `Read`. `Read` sur `.md` uniquement si ligne exacte connue (offset+limit obligatoire).
 **Auto-métriques** : `model-metrics.sh` → `[METRICS]` — mécanique. Inclure en §1. Switch explicite → `python3 scripts/switch_model.py <model> [pane]` immédiat.
 

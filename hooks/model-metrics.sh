@@ -287,8 +287,8 @@ if CONTEXT_WINDOW <= 0:
 pct = round(last_total / CONTEXT_WINDOW * 100)
 indicator = f"{pct}%{'🔥' if pct >= 50 else '✅'}"
 print(f"[CTX] fenêtre: {indicator}")
-if pct >= 40:
-    print(f"[CTX-WARN] ⚠️ CONTEXTE {pct}% — seuil 40% dépassé → /compact")
+if pct >= 45:
+    print(f"[CTX-WARN] ⚠️ CONTEXTE {pct}% — seuil 45% dépassé → /compact")
 if pct >= 60:
     print("CTX-ALERT")
 elif pct >= 35:

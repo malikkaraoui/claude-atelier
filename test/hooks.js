@@ -489,22 +489,22 @@ test('CTX% schéma type=assistant + message.usage → [CTX] dans sortie', () => 
   ok(r.stdout.includes('30%✅'), 'indicateur 30%✅ correct');
   // L'entête §1 porte désormais la conso contexte : [date | model | ctx N%] PASTILLE
   ok(r.stdout.includes('ctx 30%'), 'entête §1 porte la conso contexte (ctx 30%)');
-  ok(!r.stdout.includes('[CTX-WARN]'), 'pas d\'alerte sous le seuil 40% (ici 30%)');
+  ok(!r.stdout.includes('[CTX-WARN]'), 'pas d\'alerte sous le seuil 45% (ici 30%)');
   rmSync(dir, { recursive: true, force: true });
 });
 
-test('[CTX-WARN] s\'affiche dès que le contexte dépasse 40%', () => {
+test('[CTX-WARN] s\'affiche dès que le contexte atteint 45%', () => {
   writeFileSync(ROUTING_LEGACY_MODEL, 'claude-sonnet-4-6\n');
   const dir = mkdtempSync(resolve(tmpdir(), 'ctx-'));
   const transcript = resolve(dir, 'session.jsonl');
-  // 90k tokens = 90k / 200k = 45% → > 40% → alerte (fenêtre épinglée à 200k via env)
+  // 90k tokens = 90k / 200k = 45% → ≥ 45% → alerte (fenêtre épinglée à 200k via env)
   const usage = { input_tokens: 90000, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, output_tokens: 100 };
   writeFileSync(transcript, JSON.stringify({ type: 'assistant', message: { usage, content: [] } }) + '\n');
   const r = hook('model-metrics.sh', { transcript_path: transcript }, { CLAUDE_ATELIER_CTX_WINDOW: '200000' });
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes('45%'), 'indicateur 45% calculé');
-  ok(r.stdout.includes('[CTX-WARN]'), 'alerte [CTX-WARN] présente au-dessus de 40%');
-  ok(r.stdout.includes('seuil 40%'), 'message mentionne le seuil 40%');
+  ok(r.stdout.includes('[CTX-WARN]'), 'alerte [CTX-WARN] présente au seuil 45%');
+  ok(r.stdout.includes('seuil 45%'), 'message mentionne le seuil 45%');
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -520,7 +520,7 @@ test('fenêtre 1M dérivée du modèle actif (opus-4-8, sans config) → 5% (fix
   ok(r.status === 0, 'exit 0');
   ok(r.stdout.includes(' 5%✅'), '[CTX] = 5% (fenêtre 1M via table modèle)');
   ok(!r.stdout.includes('25%'), 'PAS 25% — opus-4-8 mappé sur 1M');
-  ok(!r.stdout.includes('[CTX-WARN]'), 'pas d\'alerte (5% < 40%)');
+  ok(!r.stdout.includes('[CTX-WARN]'), 'pas d\'alerte (5% < 45%)');
   ok(r.stdout.includes('ctx 5%'), 'entête §1 porte ctx 5%');
   rmSync(dir, { recursive: true, force: true });
 });
